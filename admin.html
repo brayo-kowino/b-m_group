@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B&M Group - Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 flex h-screen">
+
+    <aside class="w-64 bg-slate-900 text-white flex flex-col">
+        <div class="p-6 text-2xl font-bold border-b border-slate-700">B&M Admin</div>
+        <nav class="flex-1 p-4 space-y-2">
+            <a href="#" class="block px-4 py-2 rounded bg-blue-600 hover:bg-blue-700">Overview</a>
+            <a href="#members" class="block px-4 py-2 rounded hover:bg-slate-800">Members</a>
+            <a href="#loans" class="block px-4 py-2 rounded hover:bg-slate-800">Loans</a>
+            <a href="#ledger" class="block px-4 py-2 rounded hover:bg-slate-800">Ledger</a>
+            <a href="#adminInbox" class="block px-4 py-2 rounded hover:bg-slate-800">Inbox & Exits</a>
+            <a href="member.html" class="block px-4 py-2 rounded text-blue-400 hover:bg-slate-800 hover:text-blue-300 font-semibold">
+              &rarr; Go to My Member Portal
+            </a>
+        </nav>
+        <button id="logoutBtn" class="p-4 bg-red-600 hover:bg-red-700 w-full text-left">Logout</button>
+    </aside>
+
+    <main class="flex-1 p-8 overflow-y-auto">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Group Analytics</h1>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-blue-500">
+                <h3 class="text-gray-500 text-sm font-medium">Total Capital</h3>
+                <p id="totalCapital" class="text-3xl font-bold text-gray-800">KSH 0</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-red-500">
+                <h3 class="text-gray-500 text-sm font-medium">Active Loans (Max 70%)</h3>
+                <p id="activeLoans" class="text-3xl font-bold text-gray-800">KSH 0</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-green-500">
+                <h3 class="text-gray-500 text-sm font-medium">Liquidity Reserve (Min 30%)</h3>
+                <p id="liquidityReserve" class="text-3xl font-bold text-gray-800">KSH 0</p>
+            </div>
+        </div>
+
+
+<section id="members" class="bg-white rounded-lg shadow p-6 mb-8 mt-8">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold text-gray-800">Member Management</h2>
+        <div class="text-sm text-gray-500">
+            * Group closed to new members until Jan 2027
+        </div>
+    </div>
+    
+    <div class="overflow-x-auto">
+        <table class="min-w-full text-left text-sm">
+            <thead class="bg-gray-100 text-gray-600">
+                <tr>
+                    <th class="p-3">Member Info</th>
+                    <th class="p-3">Financials</th>
+                    <th class="p-3">Verification</th>
+                    <th class="p-3">Status</th>
+                    <th class="p-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="membersTableBody" class="divide-y">
+                </tbody>
+        </table>
+    </div>
+</section>
+
+<section id="contributions" class="bg-white rounded-lg shadow p-6 mb-8 mt-8 border-l-4 border-blue-900">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+        <div>
+            <h2 class="text-xl font-bold text-gray-800">Monthly Contribution Tracker</h2>
+            <p id="monthTargetText" class="text-sm font-medium text-blue-600 mt-1">
+                Calculating target...
+            </p>
+        </div>
+    </div>
+    
+    <div class="overflow-x-auto">
+        <table class="min-w-full text-left text-sm">
+            <thead class="bg-slate-100 text-slate-600">
+                <tr>
+                    <th class="p-3">Member</th>
+                    <th class="p-3">Arrears / Past Status</th> <th class="p-3">Total Savings</th>
+                    <th class="p-3">Record New Payment</th>
+                </tr>
+            </thead>
+            <tbody id="contributionsTableBody" class="divide-y">
+                </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="bg-white rounded-lg shadow border border-gray-200 p-6 mb-8 mt-8 border-l-4 border-l-green-500">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-800">Pending Payment Verifications</h2>
+                <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-bold">Action Required</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-left text-sm">
+                    <thead class="bg-slate-50 text-slate-600">
+                        <tr>
+                            <th class="p-3">Member</th>
+                            <th class="p-3">M-Pesa Code</th>
+                            <th class="p-3">Claimed Amount</th>
+                            <th class="p-3">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pendingPaymentsTable" class="divide-y">
+                        </tbody>
+                </table>
+            </div>
+        </section>
+
+ <section class="bg-white rounded-lg shadow p-6 mb-8">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Pending Loan Requests</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-left text-sm">
+                    <thead class="bg-gray-100 text-gray-600">
+                        <tr>
+                            <th class="p-3">Member</th>
+                            <th class="p-3">Amount</th>
+                            <th class="p-3">Interest (15%)</th>
+                            <th class="p-3">Duration</th>
+                            <th class="p-3">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pendingLoansTable" class="divide-y">
+                        </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8 mt-8 border-t-4 border-t-purple-600">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-800">Active Loans & Repayments</h2>
+                <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full font-bold">Awaiting Payment</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-left text-sm">
+                    <thead class="bg-slate-50 text-slate-600">
+                        <tr>
+                            <th class="p-3">Borrower</th>
+                            <th class="p-3">Principal Issued</th>
+                            <th class="p-3">Interest (15%)</th>
+                            <th class="p-3">Total Due</th>
+                            <th class="p-3">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="activeLoansTableBody" class="divide-y">
+                        </tbody>
+                </table>
+            </div>
+        </section>
+
+<div class="bg-blue-50 border border-blue-200 p-4 rounded-lg mt-6 flex justify-between items-center">
+    <div>
+        <h3 class="text-blue-800 font-bold">Annual Profit Distribution</h3>
+        <p class="text-sm text-blue-600">Distribute accumulated profits equally among all approved members.</p>
+    </div>
+    <button onclick="distributeAnnualProfit()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow">
+        Run Distribution
+    </button>
+</div>
+
+<section id="adminInbox" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 mt-8">
+            
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-800">Member Grievances</h2>
+                    <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full font-bold">Inbox</span>
+                </div>
+                <div class="overflow-y-auto max-h-80 pr-2 space-y-3" id="grievancesContainer">
+                    </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border border-red-200 p-6 border-t-4 border-t-red-600">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-800">Exit Applications</h2>
+                    <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-bold">Sec 13</span>
+                </div>
+                <div class="overflow-y-auto max-h-80 space-y-4" id="exitRequestsContainer">
+                    </div>
+            </div>
+
+        </section>
+
+        <section id="ledger" class="bg-white rounded-lg shadow p-6 mb-8 mt-8">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold text-gray-800">Group Ledger</h2>
+        <button onclick="exportLedgerCSV()" class="bg-blue-100 text-blue-700 px-4 py-2 rounded font-medium hover:bg-blue-200 text-sm flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Export to CSV
+            </button>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="min-w-full text-left text-sm">
+            <thead class="bg-gray-100 text-gray-600">
+                <tr>
+                    <th class="p-3">Date</th>
+                    <th class="p-3">Member</th>
+                    <th class="p-3">Type</th>
+                    <th class="p-3">Amount</th>
+                    <th class="p-3">Status</th>
+                </tr>
+            </thead>
+            <tbody id="ledgerTableBody" class="divide-y">
+                </tbody>
+        </table>
+    </div>
+</section>
+    </main>
+
+    <script type="module" src="admin.js"></script>
+</body>
+</html>
