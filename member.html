@@ -2,34 +2,43 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=0.9">
     <title>B&M Group - Member Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-gray-100">
 
-    <nav class="bg-blue-900 text-white p-4 flex justify-between items-center shadow-md">
-        <div class="text-xl font-bold flex items-center gap-2">
-            <div class="w-6 h-6 bg-white text-blue-900 rounded flex items-center justify-center font-bold text-xs">B&M</div>
-            Member Portal
-        </div>
-        <div class="flex items-center space-x-4">
-            <span id="memberName" class="text-sm font-medium">Loading...</span>
-            <a href="guidelines.html" class="text-sm text-blue-200 hover:text-white font-medium transition underline underline-offset-4">Read Guidelines</a>
-            <a href="admin.html" id="adminReturnBtn" class="hidden bg-slate-800 px-4 py-2 rounded text-sm hover:bg-slate-700 transition">
-                Admin Dashboard
-            </a>
-            <button id="logoutBtn" class="bg-red-500 px-4 py-2 rounded text-sm hover:bg-red-600">Logout</button>
+    <nav class="bg-blue-900 text-white shadow-md relative z-30">
+        <div class="max-w-7xl mx-auto p-4 flex flex-wrap justify-between items-center w-full">
+            <div class="text-xl font-bold flex items-center gap-2">
+                <div class="w-6 h-6 bg-white text-blue-900 rounded flex items-center justify-center font-bold text-xs">B&M</div>
+                <span class="truncate">Member Portal</span>
+            </div>
+            
+            <button id="mobileNavBtn" class="md:hidden p-2 focus:outline-none hover:text-blue-300 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
+
+            <div id="navMenu" class="hidden w-full md:flex md:w-auto md:items-center flex-col md:flex-row mt-4 md:mt-0 space-y-3 md:space-y-0 md:space-x-4 pb-2 md:pb-0">
+                <span id="memberName" class="text-sm font-medium border-b border-blue-800 md:border-none pb-2 md:pb-0 block text-center md:text-left">Loading...</span>
+                <a href="guidelines.html" class="block text-center md:inline-block text-sm text-blue-200 hover:text-white font-medium transition underline underline-offset-4">Read Guidelines</a>
+                <a href="admin.html" id="adminReturnBtn" class="hidden bg-slate-800 px-4 py-2 rounded text-sm hover:bg-slate-700 transition text-center md:inline-block w-full md:w-auto">
+                    Admin Dashboard
+                </a>
+                <button id="logoutBtn" class="bg-red-500 px-4 py-2 rounded text-sm hover:bg-red-600 w-full md:w-auto">Logout</button>
+            </div>
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto p-6 mt-2">
+    <main class="max-w-7xl mx-auto p-4 md:p-6 mt-2">
 
         <div id="communicationsHub" class="flex flex-col gap-4 mb-6">
             
             <div id="systemAlert" class="hidden bg-gradient-to-r from-amber-400 to-orange-400 p-[1px] rounded-xl shadow-sm transition-all">
-                <div class="bg-white/95 backdrop-blur-sm rounded-[11px] p-4 flex items-start gap-4">
+                <div class="bg-white/95 backdrop-blur-sm rounded-[11px] p-4 flex flex-col sm:flex-row items-start gap-4">
                     <div class="bg-amber-100 p-2.5 rounded-full flex-shrink-0">
                         <svg class="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
@@ -43,7 +52,7 @@
             </div>
 
             <div id="personalAlertsBanner" class="hidden bg-gradient-to-r from-red-500 to-rose-400 p-[1px] rounded-xl shadow-sm transition-all">
-                <div class="bg-white/95 backdrop-blur-sm rounded-[11px] p-4 flex items-start gap-4">
+                <div class="bg-white/95 backdrop-blur-sm rounded-[11px] p-4 flex flex-col sm:flex-row items-start gap-4">
                     <div class="bg-red-100 p-2.5 rounded-full flex-shrink-0">
                         <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
@@ -57,7 +66,7 @@
             </div>
 
             <div id="personalInfoBanner" class="hidden bg-gradient-to-r from-emerald-400 to-teal-400 p-[1px] rounded-xl shadow-sm transition-all">
-                <div class="bg-white/95 backdrop-blur-sm rounded-[11px] p-4 flex items-start gap-4">
+                <div class="bg-white/95 backdrop-blur-sm rounded-[11px] p-4 flex flex-col sm:flex-row items-start gap-4">
                     <div class="bg-emerald-100 p-2.5 rounded-full flex-shrink-0">
                         <svg class="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
@@ -72,32 +81,32 @@
 
         </div>
 
-        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
-            <div class="flex justify-between items-center mb-4">
+        <div class="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
                 <h3 class="text-gray-800 text-base font-bold">2026 Clearance History</h3>
                 <span class="text-xs text-slate-500 font-medium">Automatically allocated based on total savings</span>
             </div>
             
-            <div id="clearanceTimeline" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            <div id="clearanceTimeline" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                 <div class="text-sm text-slate-500">Loading history...</div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
+            <div class="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200">
                 <h3 class="text-gray-500 text-sm uppercase tracking-wide font-semibold">My Total Savings</h3>
-                <p id="mySavings" class="text-4xl font-bold text-green-600 mt-2">KSH 0</p>
+                <p id="mySavings" class="text-3xl md:text-4xl font-bold text-green-600 mt-2">KSH 0</p>
             </div>
-            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <div class="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200">
                 <h3 class="text-gray-500 text-sm uppercase tracking-wide font-semibold">Loan Limit (2x Savings)</h3>
-                <p id="myLoanLimit" class="text-4xl font-bold text-blue-600 mt-2">KSH 0</p>
+                <p id="myLoanLimit" class="text-3xl md:text-4xl font-bold text-blue-600 mt-2">KSH 0</p>
                 <p class="text-xs text-gray-400 mt-1">Min. KSH 500 savings required to unlock credit.</p>
             </div>
             
-            <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 col-span-1 md:col-span-2">
+            <div class="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200 col-span-1 md:col-span-2">
                 <div class="flex justify-between items-end mb-3">
                     <h3 id="monthTitle" class="text-gray-500 text-sm uppercase tracking-wide font-semibold">Monthly Target Progress</h3>
-                    <span id="monthlyText" class="text-lg font-bold text-slate-700">0 / 0 KSH</span>
+                    <span id="monthlyText" class="text-base md:text-lg font-bold text-slate-700">0 / 0 KSH</span>
                 </div>
                 <div class="w-full bg-slate-100 rounded-full h-4 border border-slate-200 shadow-inner">
                     <div id="monthlyProgressBar" class="bg-blue-500 h-4 rounded-full transition-all duration-1000 ease-out" style="width: 0%"></div>
@@ -106,11 +115,11 @@
             </div>
         </div>
 
-        <section class="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6 border-l-4 border-l-green-500">
+        <section class="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200 mb-6 border-l-4 border-l-green-500">
             <h2 class="text-lg font-bold text-gray-800 mb-2">Submit Payment Proof</h2>
             <p class="text-xs text-slate-500 mb-4">After sending your contribution via M-Pesa or Bank, submit the exact details below for Admin verification.</p>
             
-            <form id="paymentForm" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <form id="paymentForm" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Amount Sent (KSH)</label>
                     <input type="number" id="payAmount" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" required>
@@ -119,7 +128,7 @@
                     <label class="block text-sm font-medium text-gray-700">M-Pesa / Bank Ref Code</label>
                     <input type="text" id="payCode" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 uppercase" placeholder="e.g. SGH1234567" required>
                 </div>
-                <div class="flex items-end">
+                <div class="flex items-end sm:col-span-2 md:col-span-1">
                     <button type="submit" id="paySubmitBtn" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 font-bold transition shadow-sm text-sm">
                         Submit for Verification
                     </button>
@@ -131,7 +140,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
             <div class="space-y-6 lg:col-span-1">
-                <section class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <section class="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200">
                     <h2 class="text-lg font-bold text-gray-800 mb-4">Request a Loan</h2>
                     <form id="loanForm" class="space-y-4">
                         <div>
@@ -151,7 +160,7 @@
                     </form>
                 </section>
 
-                <section class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <section class="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200">
                     <h2 class="text-lg font-bold text-gray-800 mb-2">Support & Grievances</h2>
                     <p class="text-xs text-slate-500 mb-4">Submit a secure message directly to the executive administrators.</p>
                     <form id="grievanceForm" class="space-y-3">
@@ -162,11 +171,11 @@
             </div>
 
             <div class="space-y-6 lg:col-span-2">
-                <section class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                <section class="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200">
                     <h2 class="text-lg font-bold text-gray-800 mb-4">My Transaction History</h2>
-                    <div class="overflow-y-auto max-h-64 border rounded-md">
-                        <table class="min-w-full text-left text-sm">
-                            <thead class="bg-slate-50 text-slate-600 sticky top-0">
+                    <div class="overflow-y-auto overflow-x-auto max-h-64 border rounded-md">
+                        <table class="min-w-full text-left text-sm whitespace-nowrap">
+                            <thead class="bg-slate-50 text-slate-600 sticky top-0 z-10">
                                 <tr>
                                     <th class="p-3">Date</th>
                                     <th class="p-3">Type</th>
@@ -180,7 +189,7 @@
                     </div>
                 </section>
 
-                <section class="bg-red-50 p-6 rounded-lg shadow-sm border border-red-200">
+                <section class="bg-red-50 p-4 md:p-6 rounded-lg shadow-sm border border-red-200">
                     <div class="flex items-center gap-2 mb-2">
                         <h2 class="text-lg font-bold text-red-800">Group Withdrawal Policy</h2>
                         <span class="bg-red-200 text-red-800 text-xs px-2 py-0.5 rounded-full font-bold">Sec 13</span>
@@ -202,7 +211,7 @@
                             </div>
                         </div>
                         <div id="exitError" class="text-red-600 text-sm font-bold hidden bg-red-100 p-2 rounded"></div>
-                        <button type="submit" id="exitSubmitBtn" class="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 font-bold transition shadow-sm text-sm">
+                        <button type="submit" id="exitSubmitBtn" class="w-full sm:w-auto bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 font-bold transition shadow-sm text-sm">
                             Submit Official Exit Request
                         </button>
                     </form>
@@ -212,6 +221,13 @@
         </div>
     </main>
 
+    <script>
+        document.getElementById('mobileNavBtn').addEventListener('click', function() {
+            const navMenu = document.getElementById('navMenu');
+            navMenu.classList.toggle('hidden');
+            navMenu.classList.toggle('flex');
+        });
+    </script>
     <script type="module" src="member.js"></script>
 </body>
 </html>
