@@ -46,20 +46,24 @@
             <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Group Analytics</h1>
         </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-blue-500">
-                <h3 class="text-gray-500 text-sm font-medium">Total Capital</h3>
-                <p id="totalCapital" class="text-3xl font-bold text-gray-800">KSH 0</p>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-red-500">
-                <h3 class="text-gray-500 text-sm font-medium">Active Loans (Max 70%)</h3>
-                <p id="activeLoans" class="text-3xl font-bold text-gray-800">KSH 0</p>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-green-500">
-                <h3 class="text-gray-500 text-sm font-medium">Liquidity Reserve (Min 30%)</h3>
-                <p id="liquidityReserve" class="text-3xl font-bold text-gray-800">KSH 0</p>
-            </div>
-        </div>
+       <div class="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-8">
+
+    <div class="bg-white p-4 md:p-6 rounded-lg shadow border-l-4 border-blue-500">
+        <h3 class="text-gray-500 text-xs md:text-sm font-medium">Total Capital</h3>
+        <p id="totalCapital" class="text-xl md:text-3xl font-bold text-gray-800">KSH 0</p>
+    </div>
+
+    <div class="bg-white p-4 md:p-6 rounded-lg shadow border-l-4 border-red-500">
+        <h3 class="text-gray-500 text-xs md:text-sm font-medium">Active Loans (Max 70%)</h3>
+        <p id="activeLoans" class="text-xl md:text-3xl font-bold text-gray-800">KSH 0</p>
+    </div>
+
+    <div class="bg-white p-4 md:p-6 rounded-lg shadow border-l-4 border-green-500">
+        <h3 class="text-gray-500 text-xs md:text-sm font-medium">Liquidity Reserve (Min 30%)</h3>
+        <p id="liquidityReserve" class="text-xl md:text-3xl font-bold text-gray-800">KSH 0</p>
+    </div>
+
+</div>
 
         <section id="members" class="bg-white rounded-lg shadow p-4 md:p-6 mb-8 mt-8">
             <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
@@ -174,7 +178,7 @@
             </div>
         </section>
 
-        <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg mt-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div class="hidden bg-blue-50 border border-blue-200 p-4 rounded-lg mt-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
                 <h3 class="text-blue-800 font-bold">Annual Profit Distribution</h3>
                 <p class="text-sm text-blue-600">Distribute accumulated profits equally among all approved members.</p>
