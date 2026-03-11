@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+/* Your custom CSS stays exactly the same below */
+.glass-nav {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
