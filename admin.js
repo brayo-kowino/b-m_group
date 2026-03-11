@@ -53,7 +53,12 @@ export async function loadMembers() {
 
             const verifiedBadge = user.verified 
                 ? '<span class="text-blue-500 font-bold" title="Verified">✓</span>' 
-                : '<button onclick="verifyMember(\'' + userId + '\')" class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100">Verify Now</button>';
+                : `<button onclick="verifyMember('${userId}')" class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100">Verify Now</button>`;
+
+            // --- CRITICAL FIX: Sanitize strings for inline HTML injection ---
+            const safeName = (user.name || '').replace(/'/g, "\\'").replace(/"/g, "&quot;");
+            const safeWarning = (user.warningMessage || '').replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/(\r\n|\n|\r)/gm, "\\n");
+            const safeInfo = (user.infoMessage || '').replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/(\r\n|\n|\r)/gm, "\\n");
 
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -69,17 +74,19 @@ export async function loadMembers() {
                 <td class="p-3 text-center">${verifiedBadge}</td>
                 <td class="p-3">${statusBadge}</td>
                 <td class="p-3">
-                    <select onchange="handleStatusChange('${userId}', this.value)" class="text-xs border-gray-300 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500 p-1">
+                    <select onchange="handleStatusChange('${userId}', this.value)" class="text-xs border-gray-300 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500 p-1 mb-1 block w-full">
                         <option value="" disabled selected>Change Status...</option>
                         <option value="approved">Approve</option>
                         <option value="pending">Set Pending</option>
                         <option value="restricted">Restrict</option>
                         <option value="suspended">Suspend</option>
                     </select>
-                    <button onclick="issueWarning('${userId}', '${user.name}', '${user.warningMessage || ''}')" class="text-xs bg-red-50 text-red-600 border border-red-200 px-2 py-1 rounded hover:bg-red-100 font-medium transition">
+                    
+                    <button onclick="issueWarning('${userId}', '${safeName}', '${safeWarning}')" class="text-xs bg-red-50 text-red-600 border border-red-200 px-2 py-1 rounded hover:bg-red-100 font-medium transition block w-full text-left mt-1">
                         ${user.warningMessage ? 'Update Warning' : 'Issue Warning'}
                     </button>
-                    <button onclick="issueUpdate('${userId}', '${user.name}', '${user.infoMessage || ''}')" class="text-xs bg-green-50 text-green-600 border border-green-200 px-2 py-1 rounded hover:bg-green-100 font-medium transition">
+                    
+                    <button onclick="issueUpdate('${userId}', '${safeName}', '${safeInfo}')" class="text-xs bg-green-50 text-green-600 border border-green-200 px-2 py-1 rounded hover:bg-green-100 font-medium transition block w-full text-left mt-1">
                         ${user.infoMessage ? 'Edit Update' : 'Send Update'}
                     </button>
                 </td>
@@ -537,12 +544,14 @@ export async function loadGrievances() {
             orderBy("createdAt", "asc") // Oldest unresolved first
         );
         const snapshot = await getDocs(q);
-        container.innerHTML = '';
 
         if (snapshot.empty) {
             container.innerHTML = '<p class="text-sm text-slate-500 italic">No pending grievances.</p>';
             return;
         }
+
+        // Build the HTML string first (much better for browser performance than appending inside the loop)
+        let htmlContent = '';
 
         for (const docSnap of snapshot.docs) {
             const data = docSnap.data();
@@ -550,25 +559,35 @@ export async function loadGrievances() {
             const userName = userSnap.exists() ? userSnap.data().name : 'Unknown User';
             const dateStr = data.createdAt ? data.createdAt.toDate().toLocaleDateString() : 'Just now';
 
-            container.innerHTML += `
-                <div class="bg-slate-50 p-4 rounded border border-slate-200">
+            // Sanitize the message: escape HTML tags to prevent broken layouts, and convert enters/returns to <br> tags
+            const safeMessage = (data.message || '')
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/\n/g, "<br>");
+
+            // docSnap.id and data.userId are Firebase IDs (alphanumeric), so they are naturally safe inside the onclick
+            htmlContent += `
+                <div class="bg-slate-50 p-4 rounded border border-slate-200 mb-3">
                     <div class="flex justify-between items-start mb-2">
                         <span class="font-bold text-sm text-slate-800">${userName}</span>
                         <span class="text-xs text-slate-500">${dateStr}</span>
                     </div>
-                    <p class="text-sm text-slate-700 mb-3">${data.message}</p>
+                    <p class="text-sm text-slate-700 mb-3">${safeMessage}</p>
                     <button onclick="resolveGrievance('${docSnap.id}', '${data.userId}')" class="bg-green-600 text-white px-3 py-1.5 rounded hover:bg-green-700 text-xs font-bold shadow-sm transition">
                         Mark as Resolved
                     </button>
                 </div>
             `;
         }
+
+        // Inject everything at once
+        container.innerHTML = htmlContent;
+
     } catch (error) {
         console.error("Error loading grievances:", error);
         container.innerHTML = '<p class="text-sm text-red-500">Error loading messages. Check index.</p>';
     }
 }
-
 window.resolveGrievance = async function(messageId, userId) {
     if (!confirm("Mark this grievance as resolved and notify the member?")) return;
 
