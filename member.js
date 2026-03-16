@@ -366,7 +366,7 @@ document.getElementById('loanForm').addEventListener('submit', async (e) => {
     const amount = Number(document.getElementById('loanAmount').value);
     const duration = document.getElementById('loanDuration').value;
 
-    if (currentUserData.savings < 200) {
+    if (currentUserData.savings < 500) {
         errorDiv.textContent = "You must have at least KSH 500 in savings to borrow.";
         errorDiv.classList.remove('hidden');
         return;
