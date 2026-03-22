@@ -39,8 +39,18 @@
               Go to My Member Portal
             </a>
         </nav>
-        <button id="logoutBtn" class="p-4 bg-red-600 hover:bg-red-700 w-full text-left mt-auto">Logout</button>
+        <button onclick="logout()" class="p-4 bg-red-600 hover:bg-red-700 w-full text-left mt-auto">Logout</button>
     </aside>
+
+    <script>
+
+        function logout() {
+            // Clear session or token here if needed
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = 'login.html';
+        }
+    </script>
 
     <main class="flex-1 p-4 pt-20 md:pt-8 md:p-8 overflow-y-auto w-full">
         <header class="mb-8">
