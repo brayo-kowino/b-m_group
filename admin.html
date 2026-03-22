@@ -4,20 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=0.8">
     <title>B&M Group - Admin Dashboard</title>
-    <script>
-        // Check if the user is inside our official Android App wrapper
-        if (!navigator.userAgent.includes("BM_GROUP_SECURE_APP_V1")) {
-            // They are using Chrome/Safari/Laptop. Wipe the screen and block access.
-            document.documentElement.innerHTML = `
-                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; font-family:sans-serif; background-color:#f8fafc; color:#0f172a; text-align:center; padding:20px;">
-                    <svg style="width:64px; height:64px; color:#ef4444; margin-bottom:20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                    <h1 style="font-size:24px; font-weight:bold; margin-bottom:10px;">Secure Environment Required</h1>
-                    <p style="color:#64748b; max-w:400px;">For the security of our members' capital, the B&M Group portal can only be accessed via the official B&M FINANCE Application.</p>
-                </div>
-            `;
-            throw new Error("Unauthorized browser access blocked by B&M Security Protocol.");
-        }
-    </script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 flex h-screen overflow-hidden">
@@ -49,7 +36,7 @@
             <a href="#ledger" class="block px-4 py-2 rounded hover:bg-slate-800">Ledger</a>
             <a href="#adminInbox" class="block px-4 py-2 rounded hover:bg-slate-800">Inbox & Exits</a>
             <a href="member.html" class="block px-4 py-2 rounded text-blue-400 hover:bg-slate-800 hover:text-blue-300 font-semibold mt-4">
-              &rarr; Go to My Member Portal
+              Go to My Member Portal
             </a>
         </nav>
         <button id="logoutBtn" class="p-4 bg-red-600 hover:bg-red-700 w-full text-left mt-auto">Logout</button>

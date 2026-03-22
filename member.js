@@ -1,7 +1,7 @@
 import { auth, db } from './firebase.js';
-import { doc, getDoc, collection, addDoc, serverTimestamp, query, where, getDocs, Timestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+// 🛡️ Added doc and setDoc for Anti-Spam (Idempotency)
+import { doc, setDoc, getDoc, collection, serverTimestamp, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { orderBy } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 let currentUserData = null;
 
@@ -13,7 +13,7 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-      // ==========================================
+// ==========================================
 // NEW FEATURE LOGIC: LEDGER, SUPPORT & EXIT
 // ==========================================
 
@@ -62,10 +62,71 @@ async function loadMyLedger(uid) {
     }
 }
 
-// Call this inside your loadUserData function right after updating the UI!
-// Just add this line inside loadUserData: await loadMyLedger(uid);
+// --- Load Personal Loan Requests ---
+async function loadMyLoans(uid) {
+    const container = document.getElementById('myLoansList');
+    if (!container) return;
 
-// --- 2. Grievance / Support Form ---
+    try {
+        const q = query(
+            collection(db, "loans"),
+            where("userId", "==", uid),
+            orderBy("createdAt", "desc")
+        );
+        const snapshot = await getDocs(q);
+        container.innerHTML = '';
+
+        if (snapshot.empty) {
+            container.innerHTML = '<div class="text-sm text-slate-500 text-center bg-slate-50 p-3 rounded border border-slate-100">No loan history found.</div>';
+            return;
+        }
+
+        snapshot.forEach((docSnap) => {
+            const loan = docSnap.data();
+            const dateStr = loan.createdAt ? loan.createdAt.toDate().toLocaleDateString() : 'Just now';
+
+            let statusBadge = '';
+            let extraInfo = '';
+
+            if (loan.status === 'pending') {
+                statusBadge = '<span class="bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">Pending Review</span>';
+            } else if (loan.status === 'approved') {
+                statusBadge = '<span class="bg-blue-100 text-blue-700 border border-blue-200 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">Active</span>';
+            } else if (loan.status === 'repaid') {
+                statusBadge = '<span class="bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">Cleared</span>';
+            } else if (loan.status === 'rejected') {
+                statusBadge = '<span class="bg-red-100 text-red-700 border border-red-200 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">Rejected</span>';
+                if (loan.rejectReason) {
+                    extraInfo = `
+                        <div class="mt-2 text-xs text-red-700 bg-red-50 p-2.5 rounded border border-red-100">
+                            <strong>Admin Note:</strong> ${loan.rejectReason}
+                        </div>`;
+                }
+            }
+
+            const card = document.createElement('div');
+            card.className = 'border border-slate-200 rounded-md p-3 bg-white shadow-sm transition hover:shadow-md';
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-1.5">
+                    <div class="font-bold text-slate-800 text-sm">KSH ${loan.amount}</div>
+                    ${statusBadge}
+                </div>
+                <div class="flex justify-between items-center text-xs text-slate-500 mb-1">
+                    <span>${dateStr}</span>
+                    <span>${loan.durationWeeks} Weeks</span>
+                </div>
+                <div class="text-xs text-slate-600 font-medium">Repayment: KSH ${loan.repayment}</div>
+                ${extraInfo}
+            `;
+            container.appendChild(card);
+        });
+    } catch (error) {
+        console.error("Error loading personal loans:", error);
+        container.innerHTML = '<div class="text-xs text-red-500 text-center p-2 bg-red-50 rounded">Failed to load requests. Please refresh.</div>';
+    }
+}
+
+// --- 2. Grievance / Support Form (IMMUNIZED) ---
 document.getElementById('grievanceForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector('button');
@@ -75,7 +136,11 @@ document.getElementById('grievanceForm').addEventListener('submit', async (e) =>
     btn.textContent = "Sending...";
 
     try {
-        await addDoc(collection(db, "messages"), {
+        // 🛡️ ANTI-SPAM: One message per user per day
+        const todayString = new Date().toISOString().split('T')[0];
+        const uniqueMsgId = `${auth.currentUser.uid}_msg_${todayString}`;
+
+        await setDoc(doc(db, "messages", uniqueMsgId), {
             userId: auth.currentUser.uid,
             type: "grievance",
             message: text,
@@ -93,7 +158,7 @@ document.getElementById('grievanceForm').addEventListener('submit', async (e) =>
     }
 });
 
-// --- 3. Constitution-Compliant Exit Strategy ---
+// --- 3. Constitution-Compliant Exit Strategy (IMMUNIZED) ---
 document.getElementById('exitForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const errorDiv = document.getElementById('exitError');
@@ -104,11 +169,10 @@ document.getElementById('exitForm').addEventListener('submit', async (e) => {
 
     // RULE ENFORCEMENT: Sec 13.1 - Member must clear all loans before voluntary exit
     if (exitType === 'voluntary') {
-        // Query to check if they have any un-repaid loans
         const loansQuery = query(
             collection(db, "loans"),
             where("userId", "==", auth.currentUser.uid),
-            where("status", "in", ["pending", "approved"]) // Unpaid states
+            where("status", "in", ["pending", "approved"]) 
         );
         const loansSnap = await getDocs(loansQuery);
 
@@ -126,8 +190,10 @@ document.getElementById('exitForm').addEventListener('submit', async (e) => {
     btn.textContent = "Processing...";
 
     try {
-        // Log the exit request into an admin queue
-        await addDoc(collection(db, "exitRequests"), {
+        // 🛡️ ANTI-SPAM: User can only have ONE exit request document ever
+        const uniqueExitId = `${auth.currentUser.uid}_exit_request`;
+
+        await setDoc(doc(db, "exitRequests", uniqueExitId), {
             userId: auth.currentUser.uid,
             type: exitType,
             reason: exitReason,
@@ -184,12 +250,40 @@ async function loadUserData(uid) {
         document.getElementById('memberName').textContent = currentUserData.name;
         document.getElementById('mySavings').textContent = `KSH ${currentUserData.savings}`;
         
-        const limit = currentUserData.savings >= 500 ? currentUserData.savings * 2 : 0;
-        document.getElementById('myLoanLimit').textContent = `KSH ${limit}`;
-
         if (currentUserData.role === 'admin') {
             document.getElementById('adminReturnBtn').classList.remove('hidden');
         }
+
+        // ==========================================
+        // SMART LOAN LIMIT (THE TRUST LADDER)
+        // ==========================================
+        const savings = currentUserData.savings || 0;
+        const loansRepaid = currentUserData.loansRepaidCount || 0; 
+        
+        let limit = 0;
+        let limitStatus = "Min. KSH 500 savings required to unlock credit.";
+        let helperClass = "text-xs text-gray-400 mt-1"; 
+
+        if (savings >= 500) {
+            if (loansRepaid === 0) {
+                limit = 600;
+                limitStatus = "Probation: Repay 1st loan to unlock 2x limit.";
+                helperClass = "text-xs text-amber-500 mt-1 font-semibold";
+            } else {
+                limit = savings * 2;
+                limitStatus = "Trust Earned: Limit is 2x your savings.";
+                helperClass = "text-xs text-green-500 mt-1 font-semibold";
+            }
+        }
+
+        document.getElementById('myLoanLimit').textContent = `KSH ${limit}`;
+        const limitHelper = document.getElementById('myLoanLimit').nextElementSibling;
+        if(limitHelper) {
+            limitHelper.textContent = limitStatus;
+            limitHelper.className = helperClass;
+        }
+
+        currentUserData.calculatedLimit = limit;
 
         // 2. Fetch Admin Announcements
         try {
@@ -201,7 +295,6 @@ async function loadUserData(uid) {
             }
         } catch(e) { console.error("Could not load announcements", e); }
 
-        // Check for Personal Positive Updates (Green Banner)
         const personalInfoBanner = document.getElementById('personalInfoBanner');
         if (currentUserData.infoMessage) {
             document.getElementById('infoMessageText').textContent = currentUserData.infoMessage;
@@ -211,6 +304,7 @@ async function loadUserData(uid) {
         }
 
         await loadMyLedger(uid);
+        await loadMyLoans(uid);
 
         // 3. Load Monthly Progress (Waterfall Algorithm)
         const now = new Date();
@@ -221,7 +315,6 @@ async function loadUserData(uid) {
         let unclearedPastMonths = [];
         let timelineHTML = '';
         
-        // Variables to hold the current month's math for the warning engine
         let currentMonthAllocated = 0;
         let currentMonthTarget = 0;
 
@@ -249,7 +342,6 @@ async function loadUserData(uid) {
                 }
             }
 
-            // Build Timeline Card for UI
             timelineHTML += `
                 <div class="border border-slate-200 rounded-md p-3 bg-slate-50 text-center flex flex-col items-center justify-center">
                     <span class="text-sm font-bold text-slate-800 mb-1">${monthName}</span>
@@ -258,7 +350,6 @@ async function loadUserData(uid) {
                 </div>
             `;
 
-            // If this is the current month, update the main progress bar and save vars for warnings
             if (i === currentMonth) {
                 currentMonthAllocated = allocated;
                 currentMonthTarget = target;
@@ -294,7 +385,6 @@ async function loadUserData(uid) {
         let hasWarnings = false;
         alertsList.innerHTML = ''; 
 
-        // A. Check for uncleared past months
         if (unclearedPastMonths.length > 0) {
             alertsList.innerHTML += `<li><strong>Arrears Detected:</strong> You have uncleared targets for <strong>${unclearedPastMonths.join(', ')}</strong>. As mandated by the admins, all prior balances must be fully cleared before June.</li>`;
             hasWarnings = true;
@@ -302,13 +392,11 @@ async function loadUserData(uid) {
 
         const today = new Date().getDate();
 
-        // B. Check for Admin Manual Warning
         if (currentUserData.warningMessage) {
             alertsList.innerHTML += `<li><strong>Admin Note:</strong> ${currentUserData.warningMessage}</li>`;
             hasWarnings = true;
         }
 
-        // C. Check Account Status Restrictions
         if (currentUserData.status === 'restricted') {
             alertsList.innerHTML += `<li>Your account has been restricted. You cannot access credit facilities at this time.</li>`;
             hasWarnings = true;
@@ -317,15 +405,11 @@ async function loadUserData(uid) {
             hasWarnings = true;
         }
 
-        // D. Automated Contribution Warnings (Discipline Check using Waterfall Math)
         if (currentUserData.status === 'approved') {
-            // If it's past the 7th of the month and they haven't deposited anything towards this month
             if (today > 7 && currentMonthAllocated === 0) {
                 alertsList.innerHTML += `<li>You have missed the first weekly contribution deadline. Please deposit KSH 70 immediately.</li>`;
                 hasWarnings = true;
             }
-            
-            // If it's nearing the end of the month (past the 21st) and they are behind target
             if (today > 21 && currentMonthAllocated < currentMonthTarget) {
                 const deficit = currentMonthTarget - currentMonthAllocated;
                 alertsList.innerHTML += `<li><strong>Approaching Deadline:</strong> The month is ending soon. You are short KSH ${deficit}. Clear this to maintain good standing.</li>`;
@@ -333,7 +417,6 @@ async function loadUserData(uid) {
             }
         }
 
-        // Display the banner if any rules were triggered
         if (hasWarnings) {
             personalAlertsBanner.classList.remove('hidden');
         } else {
@@ -357,7 +440,7 @@ amountInput.addEventListener('input', (e) => {
     }
 });
 
-// Handle Loan Submission
+// --- Handle Loan Submission (IMMUNIZED) ---
 document.getElementById('loanForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const errorDiv = document.getElementById('loanError');
@@ -372,8 +455,8 @@ document.getElementById('loanForm').addEventListener('submit', async (e) => {
         return;
     }
 
-    if (amount > (currentUserData.savings * 2)) {
-        errorDiv.textContent = "Loan amount exceeds your maximum limit (2x savings).";
+    if (amount > currentUserData.calculatedLimit) {
+        errorDiv.textContent = `Limit Exceeded: Based on your current trust tier, your max is KSH ${currentUserData.calculatedLimit}.`;
         errorDiv.classList.remove('hidden');
         return;
     }
@@ -384,7 +467,12 @@ document.getElementById('loanForm').addEventListener('submit', async (e) => {
 
     try {
         const interest = amount * 0.15;
-        await addDoc(collection(db, "loans"), {
+        
+        // 🛡️ ANTI-SPAM: One loan request per user per day
+        const todayString = new Date().toISOString().split('T')[0];
+        const uniqueLoanId = `${auth.currentUser.uid}_loan_${todayString}`;
+
+        await setDoc(doc(db, "loans", uniqueLoanId), {
             userId: auth.currentUser.uid,
             amount: amount,
             interest: interest,
@@ -398,6 +486,9 @@ document.getElementById('loanForm').addEventListener('submit', async (e) => {
         document.getElementById('loanForm').reset();
         interestPreview.classList.add('hidden');
         
+        // Refresh the UI to show the new pending request immediately
+        if (typeof loadMyLoans === 'function') loadMyLoans(auth.currentUser.uid);
+        
     } catch (error) {
         errorDiv.textContent = "Error submitting request. Please try again.";
         errorDiv.classList.remove('hidden');
@@ -407,7 +498,7 @@ document.getElementById('loanForm').addEventListener('submit', async (e) => {
     }
 });
 
-// --- Handle Payment Proof Submission ---
+// --- Handle Payment Proof Submission (IMMUNIZED) ---
 document.getElementById('paymentForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('paySubmitBtn');
@@ -427,19 +518,23 @@ document.getElementById('paymentForm').addEventListener('submit', async (e) => {
     btn.textContent = "Submitting...";
 
     try {
-        await addDoc(collection(db, "paymentClaims"), {
+        // 🛡️ ANTI-SPAM: One payment claim per user per day
+        const todayString = new Date().toISOString().split('T')[0]; 
+        const uniqueClaimId = `${auth.currentUser.uid}_payment_${todayString}`;
+
+        await setDoc(doc(db, "paymentClaims", uniqueClaimId), {
             userId: auth.currentUser.uid,
             amount: amount,
             mpesaCode: mpesaCode,
-            status: "pending", // Awaiting admin approval
-            createdAt: serverTimestamp()
+            status: "pending", 
+            createdAt: serverTimestamp() 
         });
 
         statusDiv.innerHTML = `<strong>Success!</strong> Receipt ${mpesaCode} submitted. It will reflect in your savings once verified by an Admin.`;
         statusDiv.className = "mt-3 text-sm font-medium rounded p-2 bg-green-50 text-green-700";
         statusDiv.classList.remove('hidden');
         
-        e.target.reset(); // Clear the form
+        e.target.reset(); 
     } catch (error) {
         console.error("Payment submission error:", error);
         statusDiv.innerHTML = "Error submitting payment info. Please try again.";
@@ -449,5 +544,4 @@ document.getElementById('paymentForm').addEventListener('submit', async (e) => {
         btn.disabled = false;
         btn.textContent = "Submit for Verification";
     }
-
 });

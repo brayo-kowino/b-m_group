@@ -305,30 +305,81 @@ window.handleDeposit = async function(userId) {
 
 async function loadPendingLoans() {
     const tableBody = document.getElementById('pendingLoansTable');
-    tableBody.innerHTML = ''; 
+    tableBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500">Fetching requests...</td></tr>'; 
 
-    const q = query(collection(db, "loans"), where("status", "==", "pending"));
-    const querySnapshot = await getDocs(q);
+    try {
+        const q = query(collection(db, "loans"), where("status", "==", "pending"));
+        const querySnapshot = await getDocs(q);
+        tableBody.innerHTML = '';
 
-    querySnapshot.forEach(async (loanDoc) => {
-        const loan = loanDoc.data();
-        
-        const userSnap = await getDoc(doc(db, "users", loan.userId));
-        const userName = userSnap.exists() ? userSnap.data().name : 'Unknown';
+        if (querySnapshot.empty) {
+            tableBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500 italic">No pending loan requests.</td></tr>';
+            return;
+        }
 
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td class="p-3">${userName}</td>
-            <td class="p-3 font-semibold">KSH ${loan.amount}</td>
-            <td class="p-3 text-red-500">KSH ${loan.interest}</td>
-            <td class="p-3">${loan.durationWeeks} Weeks</td>
-            <td class="p-3">
-                <button onclick="approveLoan('${loanDoc.id}')" class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 text-xs">Approve</button>
-                <button onclick="rejectLoan('${loanDoc.id}')" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-xs ml-2">Reject</button>
-            </td>
-        `;
-        tableBody.appendChild(row);
-    });
+        for (const loanDoc of querySnapshot.docs) {
+            const loan = loanDoc.data();
+            
+            // 1. FETCH RAW USER DATA (Do not trust the loan request's math)
+            const userSnap = await getDoc(doc(db, "users", loan.userId));
+            const user = userSnap.exists() ? userSnap.data() : null;
+            
+            const userName = user ? user.name : 'Unknown/Deleted';
+            const savings = user ? (user.savings || 0) : 0;
+            const repaidCount = user ? (user.loansRepaidCount || 0) : 0;
+            const activeDebt = user ? (user.loansActive || 0) : 0;
+
+            // 2. THE LIE DETECTOR: Recalculate the True Limit
+            let trueLimit = 0;
+            if (savings >= 500) {
+                if (repaidCount === 0) {
+                    trueLimit = 600; // Tier 1: Probation
+                } else {
+                    trueLimit = savings * 2; // Tier 2: Trusted
+                }
+            }
+
+            // 3. FLAG VIOLATIONS
+            const isFraudulent = loan.amount > trueLimit;
+            const hasActiveLoan = activeDebt > 0;
+
+            let warningHTML = '';
+            if (isFraudulent) {
+                warningHTML += `<span class="bg-red-100 text-red-700 text-[10px] px-2 py-0.5 rounded font-bold block mb-1">⚠️ TAMPERING: EXCEEDS KSH ${trueLimit} LIMIT</span>`;
+            }
+            if (hasActiveLoan) {
+                warningHTML += `<span class="bg-orange-100 text-orange-700 text-[10px] px-2 py-0.5 rounded font-bold block mb-1">⚠️ HAS ACTIVE DEBT: KSH ${activeDebt}</span>`;
+            }
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="p-3">
+                    <div class="font-bold text-slate-800">${userName}</div>
+                    <div class="text-xs text-slate-500 font-medium">Savings: KSH ${savings} | Repaid: ${repaidCount}</div>
+                </td>
+                <td class="p-3 font-semibold ${isFraudulent ? 'text-red-600' : 'text-blue-600'}">
+                    KSH ${loan.amount}
+                    <div class="mt-1">${warningHTML}</div>
+                </td>
+                <td class="p-3 text-red-500">KSH ${loan.interest}</td>
+                <td class="p-3">${loan.durationWeeks} Weeks</td>
+                <td class="p-3 flex gap-2">
+                    <button onclick="approveLoan('${loanDoc.id}')" 
+                        class="px-3 py-1 rounded text-xs transition shadow-sm font-bold ${isFraudulent || hasActiveLoan ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-green-500 text-white hover:bg-green-600'}"
+                        ${isFraudulent || hasActiveLoan ? 'disabled' : ''}>
+                        Approve
+                    </button>
+                    <button onclick="rejectLoan('${loanDoc.id}')" class="bg-red-100 text-red-700 px-3 py-1 rounded hover:bg-red-200 text-xs font-bold transition shadow-sm">
+                        Reject
+                    </button>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        }
+    } catch (error) {
+        console.error("Error loading pending loans:", error);
+        tableBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-red-500">Error loading data.</td></tr>';
+    }
 }
 
 window.approveLoan = async function(loanId) {
@@ -350,6 +401,27 @@ window.approveLoan = async function(loanId) {
             const currentLiquidity = statsDoc.data().liquidityReserve || 0;
             const currentCapital = statsDoc.data().capital || 0;
 
+            const userData = userDoc.data();
+            const savings = userData.savings || 0;
+            const repaidCount = userData.loansRepaidCount || 0;
+            const activeDebt = userData.loansActive || 0;
+
+            // ==========================================
+            // BACKEND SHIELD: Final Trust Verification
+            // ==========================================
+            if (activeDebt > 0) {
+                throw new Error("Approval Blocked: This member currently has an active loan.");
+            }
+
+            let trueLimit = 0;
+            if (savings >= 500) {
+                trueLimit = repaidCount === 0 ? 600 : savings * 2;
+            }
+
+            if (loanAmount > trueLimit) {
+                throw new Error(`Fraud Prevention: Member limit is KSH ${trueLimit}, but requested KSH ${loanAmount}. Transaction aborted.`);
+            }
+
             // ==========================================
             // RULE ENFORCEMENT: 30% Liquidity Minimum
             // ==========================================
@@ -357,8 +429,7 @@ window.approveLoan = async function(loanId) {
             const projectedLiquidity = currentLiquidity - loanAmount;
 
             if (projectedLiquidity < minimumRequiredLiquidity) {
-                // If this throws, the entire transaction aborts automatically!
-                throw new Error(`Approval Blocked: Disbursing KSH ${loanAmount} drops liquidity to KSH ${projectedLiquidity}. The Constitution requires a strict minimum of KSH ${minimumRequiredLiquidity} (30% of total capital).`);
+                throw new Error(`Approval Blocked: Disbursing drops liquidity to KSH ${projectedLiquidity}. Minimum required is KSH ${minimumRequiredLiquidity}.`);
             }
 
             // 1. Deduct from Liquidity & Add to Active Group Loans
@@ -369,7 +440,7 @@ window.approveLoan = async function(loanId) {
 
             // 2. Add the debt to the specific user's profile
             transaction.update(userRef, {
-                loansActive: (userDoc.data().loansActive || 0) + loanData.repayment
+                loansActive: activeDebt + loanData.repayment
             });
 
             // 3. Mark the loan document as approved
@@ -394,21 +465,35 @@ window.approveLoan = async function(loanId) {
         
         // Refresh the UI to show the new balances
         loadPendingLoans();
-        loadGroupStats();
-        loadMembers();
-        loadMasterLedger();
+        if(typeof loadGroupStats === 'function') loadGroupStats();
+        if(typeof loadMembers === 'function') loadMembers();
+        if(typeof loadMasterLedger === 'function') loadMasterLedger();
 
     } catch (error) {
         console.error("Loan Approval Failed:", error);
-        // This alerts the admin if the 30% rule was triggered
+        // This alerts the admin exactly why it failed (Liquidity, Active Debt, or Fraud)
         alert(error.message || "Failed to process loan. Check console.");
     }
 };
 
 window.rejectLoan = async function(loanId) {
-    await updateDoc(doc(db, "loans", loanId), { status: "rejected" });
-    loadPendingLoans(); 
+    const reason = prompt("Enter a reason for rejecting this loan (Member will see this):");
+    if (reason === null) return; // Admin cancelled the prompt
+
+    try {
+        await updateDoc(doc(db, "loans", loanId), { 
+            status: "rejected",
+            rejectReason: reason,
+            rejectedAt: serverTimestamp()
+        });
+        alert("Loan request rejected successfully.");
+        loadPendingLoans(); 
+    } catch (error) {
+        console.error("Error rejecting loan:", error);
+        alert("Failed to reject loan.");
+    }
 };
+
 // Helper: Calculate mathematically exact target for ANY month
 function calculateTargetForMonth(year, monthIndex) {
     const daysInMonth = new Date(year, monthIndex + 1, 0).getDate(); 
@@ -905,14 +990,17 @@ window.processRepayment = async function(loanId, userId, principal, interest, us
                 totalProfit: currentProfit + interest // Add to the year-end dividend pool
             });
 
-            // 2. Clear User's Debt
+            // 2. Clear User's Debt & UPDATE TRUST SCORE
             const currentUserDebt = userDoc.data().loansActive || 0;
-            // Ensure we don't go below 0 due to float math
             let newDebt = currentUserDebt - totalRepayment;
             if (newDebt < 0) newDebt = 0; 
+
+            // Get current count of repaid loans, default to 0 if it doesn't exist
+            const currentRepaidCount = userDoc.data().loansRepaidCount || 0;
             
             transaction.update(userRef, {
-                loansActive: newDebt
+                loansActive: newDebt,
+                loansRepaidCount: currentRepaidCount + 1 // INCREMENT THE TRUST TIER
             });
 
             // 3. Mark Loan as Repaid
@@ -934,13 +1022,13 @@ window.processRepayment = async function(loanId, userId, principal, interest, us
             });
         });
 
-        alert(`Success! KSH ${totalRepayment} recorded. The group capital has grown by KSH ${interest}.`);
+        alert(`Success! KSH ${totalRepayment} recorded. ${userName}'s trust score has increased. Group capital grew by KSH ${interest}.`);
         
         // Refresh all Admin UI components to reflect the new wealth
         loadActiveLoans();
-        loadGroupStats();
-        loadMembers();
-        loadMasterLedger(); // If you have the ledger loaded!
+        if(typeof loadGroupStats === 'function') loadGroupStats();
+        if(typeof loadMembers === 'function') loadMembers();
+        if(typeof loadMasterLedger === 'function') loadMasterLedger();
 
     } catch (error) {
         console.error("Repayment failed:", error);

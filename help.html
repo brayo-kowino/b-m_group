@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth overflow-x-hidden">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.8">
+    <title>Help Centre | B&M Group</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Smooth accordion animation */
+        details > summary { list-style: none; outline: none; }
+        details > summary::-webkit-details-marker { display: none; }
+        details[open] summary ~ * { animation: slideDown 0.3s ease-in-out; }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased selection:bg-blue-200 selection:text-blue-900">
+
+    <header class="bg-slate-900 pt-32 pb-24 text-center px-6 relative overflow-hidden border-b border-slate-800">
+        <div class="absolute top-0 right-1/4 w-[40rem] h-[40rem] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none"></div>
+        
+        <div class="relative z-10 max-w-3xl mx-auto">
+            <h1 class="text-blue-400 font-bold tracking-widest uppercase text-xs mb-4">Member Support Portal</h1>
+            <h2 class="text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-6">How can we assist you?</h2>
+            
+            <div class="relative max-w-xl mx-auto mt-8 shadow-2xl">
+                <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <input type="text" placeholder="Search 'Missing deposit' or 'Guarantor liability'..." class="block w-full pl-14 pr-32 py-4 rounded-xl border border-slate-700 bg-slate-800/80 text-white placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none backdrop-blur-md">
+                <button class="absolute right-2 top-2 bottom-2 bg-blue-600 text-white px-6 rounded-lg font-semibold hover:bg-blue-500 transition-colors shadow-md">
+                    Search
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-6 py-20 relative z-20">
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16 border-b border-slate-200 pb-12">
+            <a href="#deposits" class="flex flex-col items-center p-4 bg-white rounded-xl shadow-sm border border-slate-100 hover:border-blue-300 hover:shadow-md transition-all group text-center">
+                <div class="p-3 bg-blue-50 text-blue-600 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors mb-3">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <span class="text-sm font-bold text-slate-800">Deposits & Ledger</span>
+            </a>
+            <a href="#loans" class="flex flex-col items-center p-4 bg-white rounded-xl shadow-sm border border-slate-100 hover:border-blue-300 hover:shadow-md transition-all group text-center">
+                <div class="p-3 bg-blue-50 text-blue-600 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors mb-3">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                </div>
+                <span class="text-sm font-bold text-slate-800">Loan Processing</span>
+            </a>
+            <a href="#guarantors" class="flex flex-col items-center p-4 bg-white rounded-xl shadow-sm border border-slate-100 hover:border-blue-300 hover:shadow-md transition-all group text-center">
+                <div class="p-3 bg-blue-50 text-blue-600 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors mb-3">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                </div>
+                <span class="text-sm font-bold text-slate-800">Guarantor Liability</span>
+            </a>
+            <a href="#account" class="flex flex-col items-center p-4 bg-white rounded-xl shadow-sm border border-slate-100 hover:border-blue-300 hover:shadow-md transition-all group text-center">
+                <div class="p-3 bg-blue-50 text-blue-600 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors mb-3">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                </div>
+                <span class="text-sm font-bold text-slate-800">Account & Exit</span>
+            </a>
+        </div>
+
+        <div class="space-y-12">
+            
+            <div id="deposits" class="scroll-mt-32">
+                <h3 class="text-2xl font-bold text-slate-900 mb-6 flex items-center">
+                    <span class="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm mr-3">1</span> 
+                    Ledger & Deposit Issues
+                </h3>
+                <div class="space-y-4">
+                    <details class="bg-white rounded-xl shadow-sm border border-slate-200 group [&_summary::-webkit-details-marker]:hidden" open>
+                        <summary class="flex items-center justify-between p-6 cursor-pointer font-bold text-slate-900 hover:bg-slate-50 transition-colors rounded-xl">
+                            "I made my deposit, but it's not reflecting and tomorrow is the 5th."
+                            <span class="transition group-open:rotate-180 text-blue-600">
+                                <svg fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24"><path d="M19 9l-7 7-7-7"></path></svg>
+                            </span>
+                        </summary>
+                        <div class="px-6 pb-6 text-slate-600 border-t border-slate-100 pt-4">
+                            <p class="mb-4 text-sm leading-relaxed">Don't panic. System ledger reconciliations happen in batches. If you face this issue on the deadline day, follow these steps:</p>
+                            <ol class="list-decimal pl-5 space-y-2 text-sm">
+                                <li>Take a screenshot of your bank/mobile money transfer receipt showing the **Transaction Code** and **Timestamp**.</li>
+                                <li>Navigate to <strong>Support > Submit Ticket</strong> in the app and upload the receipt.</li>
+                                <li><strong>Resolution:</strong> Per our policy, the system honors the timestamp of the actual transfer. If the transfer occurred before 11:59 PM on the 5th, any automated late fines generated by the app will be reversed by the Treasurer upon verification.</li>
+                            </ol>
+                        </div>
+                    </details>
+                    
+                    <details class="bg-white rounded-xl shadow-sm border border-slate-200 group [&_summary::-webkit-details-marker]:hidden">
+                        <summary class="flex items-center justify-between p-6 cursor-pointer font-bold text-slate-900 hover:bg-slate-50 transition-colors rounded-xl">
+                            "I was charged a late fee, but I didn't have the funds until the 6th."
+                            <span class="transition group-open:rotate-180 text-blue-600">
+                                <svg fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24"><path d="M19 9l-7 7-7-7"></path></svg>
+                            </span>
+                        </summary>
+                        <div class="px-6 pb-6 text-slate-600 border-t border-slate-100 pt-4 text-sm leading-relaxed">
+                            <p><strong>Article III of the Constitution</strong> dictates that the 5th-Day Rule is absolute and non-negotiable. Emotional variables and personal emergencies are not factored into the automated ledger.</p>
+                            <p class="mt-2 text-red-600 font-semibold">Resolution: You must pay the accrued late penalty alongside your minimum deposit to restore your account to "Good Standing." Refusal to pay the fine will result in compounded interest and account restriction.</p>
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+            <div id="loans" class="scroll-mt-32">
+                <h3 class="text-2xl font-bold text-slate-900 mb-6 flex items-center">
+                    <span class="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm mr-3">2</span> 
+                    Loan Processing & Rejections
+                </h3>
+                <div class="space-y-4">
+                    <details class="bg-white rounded-xl shadow-sm border border-slate-200 group [&_summary::-webkit-details-marker]:hidden">
+                        <summary class="flex items-center justify-between p-6 cursor-pointer font-bold text-slate-900 hover:bg-slate-50 transition-colors rounded-xl">
+                            "My loan request was rejected, but I requested exactly 2x my savings."
+                            <span class="transition group-open:rotate-180 text-blue-600">
+                                <svg fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24"><path d="M19 9l-7 7-7-7"></path></svg>
+                            </span>
+                        </summary>
+                        <div class="px-6 pb-6 text-slate-600 border-t border-slate-100 pt-4 text-sm leading-relaxed">
+                            <p class="mb-2">There are three common reasons a loan within your 2x limit (Article IV) is rejected by the system or the Executive Committee:</p>
+                            <ul class="list-disc pl-5 space-y-2">
+                                <li><strong>Missing Guarantors:</strong> Your loan might have required additional guarantors approval but none were provided.</li>
+                                <li><strong>Group Liquidity:</strong> The total treasury liquidity has dipped below the mandatory reserve threshold. (Check the notifications on your home screen for more information).</li>
+                                <li><strong>Policy Violation:</strong> If you have any outstanding obligations or violations, or if you are currently in default, the system or the Executive Committee will reject new loan requests until those obligations are resolved.</li>
+                                <li><strong>System Glitch:</strong> Although rare, technical issues can occur. If you believe this is the case, please submit a support ticket with screenshots of your loan request and the error message.</li>
+                            </ul>
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+            <div id="guarantors" class="scroll-mt-32">
+                <h3 class="text-2xl font-bold text-slate-900 mb-6 flex items-center">
+                    <span class="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm mr-3">3</span> 
+                    Guarantor Liability
+                </h3>
+                <div class="space-y-4">
+                    <details class="bg-white rounded-xl shadow-sm border border-slate-200 group [&_summary::-webkit-details-marker]:hidden">
+                        <summary class="flex items-center justify-between p-6 cursor-pointer font-bold text-slate-900 hover:bg-slate-50 transition-colors rounded-xl">
+                            "The person I guaranteed defaulted. Why is my balance frozen?"
+                            <span class="transition group-open:rotate-180 text-blue-600">
+                                <svg fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24"><path d="M19 9l-7 7-7-7"></path></svg>
+                            </span>
+                        </summary>
+                        <div class="px-6 pb-6 text-slate-600 border-t border-slate-100 pt-4 text-sm leading-relaxed">
+                            <p class="mb-3">By digitally signing as a guarantor in the app, you accepted joint liability for the borrower's debt.</p>
+                            <p class="mb-3"><strong>Per Article V, Section 3 of the Constitution:</strong> If a default persists beyond 30 days, the liability transfers to the Guarantor.</p>
+                            <div class="p-4 bg-red-50 border border-red-100 rounded-lg text-red-800">
+                                <strong>System Action:</strong> The app will automatically deduct the outstanding principal and compounded interest from your personal savings ledger. If your balance is insufficient, your account will also be placed in arrears. You must pursue the primary borrower privately to recover your funds.
+                            </div>
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+            <div id="account" class="scroll-mt-32">
+                <h3 class="text-2xl font-bold text-slate-900 mb-6 flex items-center">
+                    <span class="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm mr-3">4</span> 
+                    Membership Exit Procedures
+                </h3>
+                <div class="space-y-4">
+                    <details class="bg-white rounded-xl shadow-sm border border-slate-200 group [&_summary::-webkit-details-marker]:hidden">
+                        <summary class="flex items-center justify-between p-6 cursor-pointer font-bold text-slate-900 hover:bg-slate-50 transition-colors rounded-xl">
+                            "I want to leave the group and withdraw my accumulated savings."
+                            <span class="transition group-open:rotate-180 text-blue-600">
+                                <svg fill="none" height="24" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="24"><path d="M19 9l-7 7-7-7"></path></svg>
+                            </span>
+                        </summary>
+                        <div class="px-6 pb-6 text-slate-600 border-t border-slate-100 pt-4 text-sm leading-relaxed">
+                            <p class="mb-4">Voluntary exit is permitted under Article II, Section 3, subject to the following strict timeline to protect group liquidity:</p>
+                            <ol class="list-decimal pl-5 space-y-2">
+                                <li>Submit a formal exit request via the "Account Management" tab in the app.</li>
+                                <li><strong>Clearance Phase:</strong> You must have zero active loans, and you cannot be actively acting as a Guarantor for another member. If you are a guarantor, the borrower must find a replacement before your exit is approved.</li>
+                                <li><strong>14-Day Notice:</strong> A mandatory 14-day holding period begins upon clearance. This allows the treasury to recalibrate liquidity.</li>
+                                <li><strong>Disbursement:</strong> Your total savings, minus the standard administrative exit deduction, will be disbursed to your registered bank account on day 15.</li>
+                            </ol>
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="mt-20 text-center bg-gradient-to-b from-slate-900 to-blue-950 rounded-2xl p-10 shadow-xl border border-slate-800">
+            <h3 class="text-2xl font-bold text-white mb-3">Does your issue require Executive Intervention?</h3>
+            <p class="text-slate-400 text-sm mb-8 max-w-lg mx-auto">
+                If the automated system has made an error not covered above, or if you require an emergency administrative override, you may contact the Executive Committee directly.
+            </p>
+            <a href="contact.html" class="inline-flex items-center gap-2 bg-blue-600 text-white font-bold px-8 py-4 rounded-xl hover:bg-blue-500 transition-colors shadow-lg shadow-blue-600/20">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                Contact Management
+            </a>
+        </div>
+
+    </main>
+</body>
+</html>
