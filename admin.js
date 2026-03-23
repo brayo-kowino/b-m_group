@@ -1,6 +1,8 @@
 import { auth, db } from './firebase.js';
 // FIXED: Added runTransaction, serverTimestamp, writeBatch, and Timestamp to the imports
 import { collection, query, where, orderBy, getDocs, doc, updateDoc, getDoc, runTransaction, serverTimestamp, writeBatch, Timestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js";
+
 
 document.addEventListener('DOMContentLoaded', () => {
     loadGroupStats();
@@ -12,6 +14,52 @@ document.addEventListener('DOMContentLoaded', () => {
     loadMasterLedger();
     loadActiveLoans();
     loadPendingPayments();
+});
+
+// Initialize the Functions service
+const functions = getFunctions();
+
+const addMemberForm = document.getElementById('addMemberForm');
+const mintStatus = document.getElementById('mintStatus');
+const btnMintUser = document.getElementById('btnMintUser');
+
+addMemberForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    btnMintUser.disabled = true;
+    btnMintUser.innerText = "Transmitting to Secure Server...";
+    mintStatus.classList.add('hidden');
+
+    const name = document.getElementById('newMemberName').value;
+    const memberId = document.getElementById('newMemberId').value.toUpperCase();
+    const email = document.getElementById('newMemberEmail').value;
+    const password = document.getElementById('newMemberPassword').value;
+
+    try {
+        // 1. POINT TO YOUR NEW CLOUD FUNCTION
+        const addNewMember = httpsCallable(functions, 'addNewMember');
+
+        // 2. SEND THE DATA TO THE BACKEND
+        const result = await addNewMember({
+            fullName: name,
+            memberId: memberId,
+            email: email,
+            password: password
+        });
+
+        // 3. SUCCESS UI
+        mintStatus.innerText = result.data.message;
+        mintStatus.className = "text-sm font-semibold text-center mt-4 p-3 rounded-lg bg-green-50 text-green-700 border border-green-200 block";
+        addMemberForm.reset();
+
+    } catch (error) {
+        console.error("Backend Error: ", error);
+        mintStatus.innerText = `Server Rejected: ${error.message}`;
+        mintStatus.className = "text-sm font-semibold text-center mt-4 p-3 rounded-lg bg-red-50 text-red-700 border border-red-200 block";
+    } finally {
+        btnMintUser.disabled = false;
+        btnMintUser.innerText = "Execute Account Creation";
+    }
 });
 
 async function loadGroupStats() {
