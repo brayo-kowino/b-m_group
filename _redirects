@@ -1,1 +1,14 @@
-/* /maintenance.html  302!
+# Allow root-level images (common extensions)
+/*.png    /:splat    200
+/*.jpg    /:splat    200
+/*.jpeg   /:splat    200
+/*.webp   /:splat    200
+/*.gif    /:splat    200
+/*.svg    /:splat    200
+
+# Allow other important files
+/favicon.ico   /favicon.ico   200
+/maintenance.html   /maintenance.html   200
+
+# Catch everything else
+/*   /maintenance.html   200
