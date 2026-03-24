@@ -1,8 +1,7 @@
 import { auth, db } from './firebase.js';
-// FIXED: Added runTransaction, serverTimestamp, writeBatch, and Timestamp to the imports
 import { collection, query, where, orderBy, getDocs, doc, updateDoc, getDoc, runTransaction, serverTimestamp, writeBatch, Timestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js";
-
+import { httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js";
+//import { functions } from './firebase.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     loadGroupStats();
@@ -15,9 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loadActiveLoans();
     loadPendingPayments();
 });
-
-// Initialize the Functions service
-const functions = getFunctions();
 
 const addMemberForm = document.getElementById('addMemberForm');
 const mintStatus = document.getElementById('mintStatus');

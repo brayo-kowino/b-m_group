@@ -3,6 +3,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebas
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app-check.js";
+//import { getFunctions } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAX5J0R_MwxZ-H0nuDCgfKaodbuAz4H4dE",
@@ -40,3 +41,4 @@ const appCheck = initializeAppCheck(app, {
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+//export const functions = getFunctions(app);
