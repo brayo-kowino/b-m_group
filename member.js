@@ -386,7 +386,7 @@ async function loadUserData(uid) {
         alertsList.innerHTML = ''; 
 
         if (unclearedPastMonths.length > 0) {
-            alertsList.innerHTML += `<li><strong>Arrears Detected:</strong> You have uncleared targets for <strong>${unclearedPastMonths.join(', ')}</strong>. As mandated by the admins, all prior balances must be fully cleared before June.</li>`;
+            alertsList.innerHTML += `<li><strong>Arrears Detected:</strong> You have uncleared targets for <strong>${unclearedPastMonths.join(', ')}</strong>. Our policies require all prior balances to be fully cleared before June.</li>`;
             hasWarnings = true;
         }
 
