@@ -6,50 +6,102 @@
     <title>B&M Group - Member Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
-</head>
-<body class="bg-gray-100">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        /* Soft iOS style shadow */
+        .ios-shadow {
+            box-shadow: 0 4px 24px -6px rgba(0, 0, 0, 0.04);
+        }
+        /* Hide scrollbar for cleaner look */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        /* Smooth transitions for the hamburger menu */
+        #mobileNavIcon path {
+            transition: all 0.3s ease;
+        }
+        
+        /* --- CREATIVE POLYGON NAV THEME --- */
+        .nav-polygon-theme {
+            background-color: rgba(255, 255, 255, 0.85);
+            /* Custom Low-Poly Soft Blue SVG Pattern */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cpolygon points='0,0 100,50 0,100' fill='%23bfdbfe' opacity='0.15'/%3E%3Cpolygon points='200,0 100,50 200,100' fill='%2393c5fd' opacity='0.1'/%3E%3Cpolygon points='100,50 200,100 100,150 0,100' fill='%2360a5fa' opacity='0.05'/%3E%3Cpolygon points='0,200 100,150 0,100' fill='%23bfdbfe' opacity='0.15'/%3E%3Cpolygon points='200,200 100,150 200,100' fill='%2393c5fd' opacity='0.1'/%3E%3C/svg%3E");
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
 
-    <nav class="bg-blue-900 text-white shadow-md relative z-50">
-        <div class="max-w-7xl mx-auto p-4 flex flex-wrap justify-between items-center w-full">
-            <div class="text-xl font-bold flex items-center gap-2">
-                <div class="hidden w-6 h-6 bg-white text-blue-900 rounded flex items-center justify-center font-bold text-xs">B&M</div>
-                <img src="bm_group_logo.png" alt="B&M Logo" class="h-10 w-auto brightness-0 invert">
+        /* Adds a creative polygonal slant to the bottom of the mobile drawer */
+        .drawer-polygon {
+            clip-path: polygon(0 0, 100% 0, 100% calc(100% - 15px), 0 100%);
+            padding-bottom: 25px !important; /* Extra padding to prevent cutting off content */
+        }
+        @media (min-width: 768px) {
+            .drawer-polygon {
+                clip-path: none !important; /* Disables the slant on desktop */
+                padding-bottom: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-[#F5F5F7] text-slate-800">
+
+    <nav class="nav-polygon-theme border-b border-blue-200/50 sticky top-0 z-50 transition-all shadow-sm shadow-blue-900/5">
+        <div class="max-w-7xl mx-auto px-4 md:px-8 py-3 flex flex-wrap justify-between items-center w-full relative">
+            
+            <div class="text-xl font-bold flex items-center gap-3 z-10">
+                <img src="bm_group_logo.png" alt="B&M Logo" class="h-12 w-auto object-contain">
             </div>
             
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 md:gap-4 z-10">
                 <div class="relative">
-                    <button id="notifBtn" class="p-2 hover:bg-blue-800 rounded-full transition relative focus:outline-none">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button id="notifBtn" class="p-2.5 text-slate-500 hover:text-blue-700 hover:bg-blue-100/50 rounded-full transition-all relative focus:outline-none">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
                         </svg>
-                        <span id="notifBadge" class="absolute top-1 right-1 flex h-2 w-2">
-                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                            <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                        <span id="notifBadge" class="absolute top-1 right-1 flex h-2.5 w-2.5">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500 border-2 border-white"></span>
                         </span>
                     </button>
 
-                    <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 md:w-96 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden z-50">
-                        <div class="p-3 border-b bg-gray-50 text-gray-700 font-bold text-sm">Notifications</div>
-                        <div id="communicationsHub" class="flex flex-col gap-2 p-2 max-h-96 overflow-y-auto">
+                    <div id="notifDropdown" class="hidden absolute right-0 mt-4 w-80 md:w-96 bg-white rounded-[24px] shadow-2xl shadow-blue-900/10 border border-slate-100 overflow-hidden z-50">
+                        <div class="p-4 border-b border-slate-50 bg-slate-50/50 text-slate-800 font-bold text-sm flex justify-between items-center">
+                            Notifications
+                            <span class="bg-blue-100 text-blue-700 text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider font-bold">New</span>
+                        </div>
+                        <div id="communicationsHub" class="flex flex-col gap-2 p-3 max-h-96 overflow-y-auto">
                             
-                            <div id="systemAlert" class="hidden bg-gradient-to-r from-amber-400 to-orange-400 p-[1px] rounded-xl shadow-sm">
-                                <div class="bg-white/95 backdrop-blur-sm rounded-[11px] p-4 flex flex-col items-start gap-2">
-                                    <h3 class="text-xs font-bold text-gray-900 uppercase tracking-wide">Group Announcement</h3>
-                                    <p id="alertMessage" class="text-sm text-gray-600 leading-relaxed"></p>
+                            <div id="systemAlert" class="hidden bg-gradient-to-r from-amber-400 to-orange-400 p-[1px] rounded-[16px] shadow-sm">
+                                <div class="bg-white/95 backdrop-blur-sm rounded-[15px] p-4 flex flex-col items-start gap-1">
+                                    <h3 class="text-xs font-bold text-amber-600 uppercase tracking-wider">Group Announcement</h3>
+                                    <p id="alertMessage" class="text-sm text-slate-700 leading-relaxed font-medium"></p>
                                 </div>
                             </div>
 
-                            <div id="personalAlertsBanner" class="hidden bg-gradient-to-r from-red-500 to-rose-400 p-[1px] rounded-xl shadow-sm">
-                                <div class="bg-white/95 backdrop-blur-sm rounded-[11px] p-4 flex flex-col items-start gap-2">
-                                    <h3 class="text-xs font-bold text-gray-900 uppercase tracking-wide">Action Required</h3>
-                                    <ul id="alertsList" class="list-disc list-inside text-sm text-gray-600 space-y-1.5 marker:text-red-400"></ul>
+                            <div id="personalAlertsBanner" class="hidden bg-gradient-to-r from-rose-500 to-red-400 p-[1px] rounded-[16px] shadow-sm">
+                                <div class="bg-white/95 backdrop-blur-sm rounded-[15px] p-4 flex flex-col items-start gap-1">
+                                    <h3 class="text-xs font-bold text-rose-600 uppercase tracking-wider">Action Required</h3>
+                                    <ul id="alertsList" class="list-disc list-inside text-sm text-slate-700 space-y-1.5 marker:text-rose-400 font-medium"></ul>
                                 </div>
                             </div>
 
-                            <div id="personalInfoBanner" class="hidden bg-gradient-to-r from-emerald-400 to-teal-400 p-[1px] rounded-xl shadow-sm">
-                                <div class="bg-white/95 backdrop-blur-sm rounded-[11px] p-4 flex flex-col items-start gap-2">
-                                    <h3 class="text-xs font-bold text-gray-900 uppercase tracking-wide">Admin Update</h3>
-                                    <p id="infoMessageText" class="text-sm text-gray-600 leading-relaxed"></p>
+                            <div id="personalInfoBanner" class="hidden bg-gradient-to-r from-emerald-400 to-teal-400 p-[1px] rounded-[16px] shadow-sm">
+                                <div class="bg-white/95 backdrop-blur-sm rounded-[15px] p-4 flex flex-col items-start gap-1">
+                                    <h3 class="text-xs font-bold text-emerald-600 uppercase tracking-wider">Admin Update</h3>
+                                    <p id="infoMessageText" class="text-sm text-slate-700 leading-relaxed font-medium"></p>
                                 </div>
                             </div>
 
@@ -57,171 +109,207 @@
                     </div>
                 </div>
 
-                <button id="mobileNavBtn" class="md:hidden p-2 focus:outline-none hover:text-blue-300 transition">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button id="mobileNavBtn" class="md:hidden p-2 focus:outline-none text-blue-900 hover:text-blue-600 transition-colors bg-white/50 backdrop-blur rounded-full border border-blue-200/50 shadow-sm">
+                    <svg id="mobileNavIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                     </svg>
                 </button>
             </div>
 
-            <div id="navMenu" class="hidden w-full md:flex md:w-auto md:items-center flex-col md:flex-row mt-4 md:mt-0 space-y-3 md:space-y-0 md:space-x-4 pb-2 md:pb-0">
-                <span id="memberName" class="text-sm font-medium border-b border-blue-800 md:border-none pb-2 md:pb-0 block text-center md:text-left">Loading...</span>
-                <a href="guidelines.html" class="block text-center md:inline-block text-sm text-blue-200 hover:text-white font-medium transition underline underline-offset-4">Read Guidelines</a>
-                <a href="admin.html" id="adminReturnBtn" class="hidden bg-slate-800 px-4 py-2 rounded text-sm hover:bg-slate-700 transition text-center md:inline-block w-full md:w-auto">Admin Dashboard</a>
-                <button id="logoutBtn" class="bg-red-500 px-4 py-2 rounded text-sm hover:bg-red-600 w-full md:w-auto">Logout</button>
+            <div id="navMenu" class="hidden md:flex absolute md:static top-full left-0 w-full md:w-auto nav-polygon-theme drawer-polygon md:bg-transparent md:backdrop-blur-none border-b border-blue-200/50 md:border-none shadow-2xl shadow-blue-900/10 md:shadow-none flex-col md:flex-row md:items-center p-6 md:p-0 mt-0 gap-6 transition-all duration-300 transform origin-top">
+                
+                <div class="flex items-center gap-3 bg-white/80 backdrop-blur-md border border-blue-200/80 px-4 py-2 rounded-2xl md:rounded-full shadow-sm">
+                    <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    </div>
+                    <span id="memberName" class="text-sm font-bold text-blue-900 tracking-tight pr-2">Loading...</span>
+                </div>
+
+                <a href="guidelines.html" class="block text-slate-600 hover:text-blue-700 font-bold transition-colors text-sm px-2">Guidelines</a>
+                
+                <div class="flex flex-col md:flex-row gap-3 pt-4 md:pt-0 border-t border-blue-200/50 md:border-none w-full md:w-auto">
+                    <a href="admin.html" id="adminReturnBtn" class="hidden w-full md:w-auto text-center bg-blue-900 text-white px-6 py-2.5 rounded-full text-sm hover:bg-blue-800 shadow-md shadow-blue-900/20 transition-all font-semibold tracking-tight">Admin Dashboard</a>
+                    <button id="logoutBtn" class="w-full md:w-auto text-center bg-white border border-rose-200 text-rose-600 px-6 py-2.5 rounded-full text-sm hover:bg-rose-50 hover:border-rose-300 shadow-sm transition-all font-semibold tracking-tight">Logout</button>
+                </div>
             </div>
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto p-4 md:p-6 mt-2">
+    <main class="max-w-7xl mx-auto p-4 md:p-8 mt-2 space-y-6 md:space-y-8">
 
-        <div class="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
-                <h3 class="text-gray-800 text-base font-bold">2026 Clearance History</h3>
-                <span class="text-xs text-slate-500 font-medium">Automatically allocated based on total savings</span>
+        <div class="bg-white p-6 md:p-8 rounded-[24px] ios-shadow border border-slate-100">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-2">
+                <h3 class="text-slate-900 text-lg font-bold tracking-tight">2026 Clearance History</h3>
+                <span class="text-xs text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1.5 rounded-full font-medium">Auto-allocated based on savings</span>
             </div>
             
             <div id="clearanceTimeline" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                <div class="text-sm text-slate-500">Loading history...</div>
+                <div class="text-sm text-slate-500 font-medium">Loading history...</div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
-            <div class="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200">
-    <div class="flex items-center justify-between">
-        <h3 class="text-gray-500 text-sm uppercase tracking-wide font-semibold">My Total Savings</h3>
-        <button id="toggleSavingsBtn" class="text-gray-400 hover:text-gray-600 focus:outline-none transition" aria-label="Toggle balance visibility">
-            <svg id="eyeOpen" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-            </svg>
-            <svg id="eyeClosed" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
-            </svg>
-        </button>
-    </div>
-    <p id="mySavings" class="text-3xl md:text-4xl font-bold text-green-600 mt-2 transition-all duration-300">KSH 0</p>
-</div>
-            <div class="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 class="text-gray-500 text-sm uppercase tracking-wide font-semibold">Loan Limit (Upto 2x Savings)</h3>
-                <p id="myLoanLimit" class="text-3xl md:text-4xl font-bold text-blue-600 mt-2">KSH 0</p>
-                <p class="text-xs text-gray-400 mt-1">Min. KSH 500 savings required to unlock credit.</p>
-            </div>
-            
-            <div class="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200 col-span-1 md:col-span-2">
-                <div class="flex justify-between items-end mb-3">
-                    <h3 id="monthTitle" class="text-gray-500 text-sm uppercase tracking-wide font-semibold">Monthly Target Progress</h3>
-                    <span id="monthlyText" class="text-base md:text-lg font-bold text-slate-700">0 / 0 KSH</span>
-                </div>
-                <div class="w-full bg-slate-100 rounded-full h-4 border border-slate-200 shadow-inner">
-                    <div id="monthlyProgressBar" class="bg-blue-500 h-4 rounded-full transition-all duration-1000 ease-out" style="width: 0%"></div>
-                </div>
-                <p id="monthlyStatusText" class="text-sm text-slate-500 mt-3 font-medium">Calculating your deposits...</p>
-            </div>
-        </div>
-
-        <section class="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200 mb-6 border-l-4 border-l-green-500">
-            <h2 class="text-lg font-bold text-gray-800 mb-2">Submit Payment Proof</h2>
-            <p class="text-xs text-slate-500 mb-4">After sending your contribution via M-Pesa or Bank, submit the exact details below for Admin verification.</p>
-            
-            <form id="paymentForm" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Amount Sent (KSH)</label>
-                    <input type="number" id="payAmount" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500" required>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">M-Pesa / Bank Ref Code</label>
-                    <input type="text" id="payCode" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 uppercase" placeholder="e.g. SGH1234567" required>
-                </div>
-                <div class="flex items-end sm:col-span-2 md:col-span-1">
-                    <button type="submit" id="paySubmitBtn" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 font-bold transition shadow-sm text-sm">
-                        Submit for Verification
+        <div class="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-6">
+            <div class="bg-white p-5 md:p-8 rounded-[20px] md:rounded-[24px] ios-shadow border border-slate-100 flex flex-col justify-center">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 md:w-8 md:h-8 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
+                            <div class="w-2 h-2 md:w-3 md:h-3 rounded-full bg-emerald-500"></div>
+                        </div>
+                        <h3 class="text-slate-500 text-xs md:text-sm font-medium leading-tight">Total Savings</h3>
+                    </div>
+                    <button id="toggleSavingsBtn" class="text-slate-400 hover:text-slate-800 focus:outline-none transition p-1 bg-slate-50 rounded-full" aria-label="Toggle balance visibility">
+                        <svg id="eyeOpen" class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                        </svg>
+                        <svg id="eyeClosed" class="w-4 h-4 md:w-5 md:h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
+                        </svg>
                     </button>
                 </div>
-            </form>
-            <div id="payStatus" class="mt-3 text-sm hidden font-medium rounded p-2"></div>
-        </section>
+                <p id="mySavings" class="text-2xl md:text-4xl font-bold text-slate-800 tracking-tight mt-1 transition-all duration-300">KSH 0</p>
+            </div>
+            
+            <div class="bg-white p-5 md:p-8 rounded-[20px] md:rounded-[24px] ios-shadow border border-slate-100 flex flex-col justify-center">
+                <div class="flex items-center gap-2 mb-2">
+                    <div class="w-6 h-6 md:w-8 md:h-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
+                        <div class="w-2 h-2 md:w-3 md:h-3 rounded-full bg-blue-500"></div>
+                    </div>
+                    <h3 class="text-slate-500 text-xs md:text-sm font-medium leading-tight">Available Loan Limit</h3>
+                </div>
+                
+                <div class="flex items-baseline gap-1 mt-1">
+                    <p id="availableLoanLimit" class="text-2xl md:text-4xl font-bold text-blue-600 tracking-tight">KSH 0</p>
+                    <p class="text-xs md:text-sm text-slate-400 font-medium ml-1">of <span id="totalLoanLimit">0</span></p>
+                </div>
+                
+                <p id="limitHelperText" class="text-[10px] md:text-xs text-slate-400 mt-2 font-medium">Min. KSH 500 savings to unlock.</p>
+            </div>
+        </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="space-y-6 lg:col-span-1">
-                <section class="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200">
-                    <h2 class="text-lg font-bold text-gray-800 mb-4">Request a Loan</h2>
-                    <form id="loanForm" class="space-y-4">
+         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 mb-6 md:mb-8">
+            
+            <section class="bg-white p-6 md:p-8 rounded-[24px] ios-shadow border border-slate-100 relative overflow-hidden flex flex-col justify-center">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-indigo-500"></div>
+                
+                <div class="flex justify-between items-end mb-5 mt-1">
+                    <h3 id="monthTitle" class="text-slate-500 text-sm font-medium tracking-tight">Monthly Target Progress</h3>
+                    <span id="monthlyText" class="text-lg font-bold text-slate-800">0 / 0 KSH</span>
+                </div>
+                
+                <div class="w-full bg-slate-100 rounded-full h-4 overflow-hidden">
+                    <div id="monthlyProgressBar" class="bg-blue-500 h-full rounded-full transition-all duration-1000 ease-out" style="width: 0%"></div>
+                </div>
+                
+                <p id="monthlyStatusText" class="text-sm text-slate-500 mt-5 font-medium leading-relaxed">Calculating your deposits...</p>
+            </section>
+
+            <section class="bg-white p-6 md:p-8 rounded-[24px] ios-shadow border border-slate-100 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-emerald-400"></div>
+                
+                <h2 class="text-xl font-bold text-slate-900 mb-2 mt-1 tracking-tight">Submit Payment Proof</h2>
+                <p class="text-sm text-slate-500 mb-6 font-medium">After sending your contribution via M-Pesa or Bank, submit the exact details below for Admin verification.</p>
+                
+                <form id="paymentForm" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wider">Amount (KSH)</label>
+                        <input type="number" id="payAmount" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none bg-slate-50 focus:bg-white transition-all text-sm font-medium" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wider">Ref Code</label>
+                        <input type="text" id="payCode" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none bg-slate-50 focus:bg-white transition-all text-sm uppercase font-medium" placeholder="e.g. SGH1234567" required>
+                    </div>
+                    <div class="sm:col-span-2 mt-1">
+                        <button type="submit" id="paySubmitBtn" class="w-full bg-emerald-500 text-white py-3 px-4 rounded-xl hover:bg-emerald-600 font-semibold transition-all shadow-sm text-sm">
+                            Submit for Verification
+                        </button>
+                    </div>
+                </form>
+                <div id="payStatus" class="mt-4 text-sm hidden font-medium rounded-xl p-3"></div>
+            </section>
+            
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+            
+            <div class="space-y-6 md:space-y-8 lg:col-span-1">
+                <section class="bg-white p-6 rounded-[24px] ios-shadow border border-slate-100">
+                    <h2 class="text-lg font-bold text-slate-900 mb-5 tracking-tight">Request a Loan</h2>
+                    <form id="loanForm" class="space-y-5">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Amount (KSH)</label>
-                            <input type="number" id="loanAmount" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" required>
-                            <p id="interestPreview" class="text-sm text-red-500 mt-1 hidden font-medium">Interest (15%): KSH <span id="calcInterest">0</span></p>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Amount (KSH)</label>
+                            <input type="number" id="loanAmount" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 focus:outline-none bg-slate-50 focus:bg-white transition-all text-sm" required>
+                            <p id="interestPreview" class="text-xs text-rose-500 mt-2 hidden font-medium bg-rose-50 p-2 rounded-lg">Interest (15%): KSH <span id="calcInterest" class="font-bold">0</span></p>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Duration</label>
-                            <select id="loanDuration" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm" required>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">Duration</label>
+                            <select id="loanDuration" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 focus:outline-none bg-slate-50 focus:bg-white transition-all text-sm appearance-none" required>
                                 <option value="1">1 Week</option><option value="2">2 Weeks</option>
                                 <option value="3">3 Weeks</option><option value="4">4 Weeks (Max)</option>
                             </select>
                         </div>
-                        <div id="loanError" class="text-red-500 text-sm hidden bg-red-50 p-2 rounded"></div>
-                        <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 font-bold transition shadow-sm">Submit Request</button>
+                        <div id="loanError" class="text-rose-600 text-sm hidden bg-rose-50 p-3 rounded-xl font-medium"></div>
+                        <button type="submit" class="w-full bg-slate-900 text-white py-3 rounded-xl hover:bg-slate-800 font-semibold transition-all shadow-sm text-sm">Submit Request</button>
                     </form>
                 </section>
 
-                <section class="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200">
-                    <h2 class="text-lg font-bold text-gray-800 mb-3">My Loan Requests</h2>
-                    <div id="myLoansList" class="space-y-3 max-h-64 overflow-y-auto pr-1">
-                        <div class="text-sm text-slate-500 text-center py-4">Loading your requests...</div>
+                <section class="bg-white p-6 rounded-[24px] ios-shadow border border-slate-100">
+                    <h2 class="text-lg font-bold text-slate-900 mb-4 tracking-tight">My Loan Requests</h2>
+                    <div id="myLoansList" class="space-y-3 max-h-64 overflow-y-auto pr-2">
+                        <div class="text-sm text-slate-500 text-center py-6 font-medium">Loading your requests...</div>
                     </div>
                 </section>
 
-                <section class="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200">
-                    <h2 class="text-lg font-bold text-gray-800 mb-2">Support & Grievances</h2>
-                    <p class="text-xs text-slate-500 mb-4">Submit a message directly to the executive administrators for assistance.</p>
-                    <form id="grievanceForm" class="space-y-3">
-                        <textarea id="grievanceText" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm text-sm" placeholder="Describe your issue or dispute here..." required></textarea>
-                        <button type="submit" class="w-full bg-slate-800 text-white py-2 rounded-md hover:bg-slate-900 font-bold transition shadow-sm text-sm">Send to Admins</button>
+                <section class="bg-white p-6 rounded-[24px] ios-shadow border border-slate-100">
+                    <h2 class="text-lg font-bold text-slate-900 mb-2 tracking-tight">Support & Grievances</h2>
+                    <p class="text-xs text-slate-500 mb-5 font-medium leading-relaxed">Submit a message directly to the executive administrators for assistance.</p>
+                    <form id="grievanceForm" class="space-y-4">
+                        <textarea id="grievanceText" rows="3" class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 focus:outline-none bg-slate-50 focus:bg-white transition-all text-sm resize-none" placeholder="Describe your issue or dispute here..." required></textarea>
+                        <button type="submit" class="w-full bg-white border border-slate-300 text-slate-700 py-3 rounded-xl hover:bg-slate-50 font-semibold transition-all shadow-sm text-sm">Send to Admins</button>
                     </form>
                 </section>
             </div>
 
-            <div class="space-y-6 lg:col-span-2">
-                <section class="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200">
-                    <h2 class="text-lg font-bold text-gray-800 mb-4">My Transaction History</h2>
-                    <div class="overflow-y-auto overflow-x-auto max-h-64 border rounded-md">
+            <div class="space-y-6 md:space-y-8 lg:col-span-2">
+                <section class="bg-white p-6 md:p-8 rounded-[24px] ios-shadow border border-slate-100">
+                    <h2 class="text-xl font-bold text-slate-900 mb-6 tracking-tight">My Transaction History</h2>
+                    <div class="overflow-y-auto overflow-x-auto max-h-96 border border-slate-100 rounded-[16px]">
                         <table class="min-w-full text-left text-sm whitespace-nowrap">
-                            <thead class="bg-slate-50 text-slate-600 sticky top-0 z-10">
+                            <thead class="bg-slate-50 text-slate-500 sticky top-0 z-10 text-xs uppercase tracking-wider font-semibold border-b border-slate-100">
                                 <tr>
-                                    <th class="p-3">Date</th>
-                                    <th class="p-3">Type</th>
-                                    <th class="p-3">Amount (KSH)</th>
-                                    <th class="p-3">Status</th>
+                                    <th class="p-4">Date</th>
+                                    <th class="p-4">Type</th>
+                                    <th class="p-4">Amount (KSH)</th>
+                                    <th class="p-4">Status</th>
                                 </tr>
                             </thead>
-                            <tbody id="myLedgerBody" class="divide-y bg-white"></tbody>
+                            <tbody id="myLedgerBody" class="divide-y divide-slate-50 bg-white"></tbody>
                         </table>
                     </div>
                 </section>
 
-                <section class="bg-red-50 p-4 md:p-6 rounded-lg shadow-sm border border-red-200">
-                    <div class="flex items-center gap-2 mb-2">
-                        <h2 class="text-lg font-bold text-red-800">Group Withdrawal Policy</h2>
-                        <span class="bg-red-200 text-red-800 text-xs px-2 py-0.5 rounded-full font-bold">Sec 13</span>
+                <section class="bg-rose-50 p-6 md:p-8 rounded-[24px] border border-rose-100 relative overflow-hidden">
+                    <div class="flex items-center gap-3 mb-3 relative z-10">
+                        <h2 class="text-xl font-bold text-rose-900 tracking-tight">Group Withdrawal Policy</h2>
+                        <span class="bg-rose-200 text-rose-800 text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">Sec 13</span>
                     </div>
-                    <p class="text-sm text-red-700 mb-4">All active loans must be cleared prior to a voluntary exit. Emergency withdrawals are subject to board approval.</p>
+                    <p class="text-sm text-rose-700 mb-6 font-medium leading-relaxed relative z-10">All active loans must be cleared prior to a voluntary exit. Emergency withdrawals are subject to board approval.</p>
                     
-                    <form id="exitForm" class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <form id="exitForm" class="space-y-5 relative z-10">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
-                                <label class="block text-sm font-medium text-red-800">Type of Exit</label>
-                                <select id="exitType" class="mt-1 block w-full px-3 py-2 border border-red-300 rounded-md shadow-sm bg-white" required>
+                                <label class="block text-sm font-medium text-rose-900 mb-2">Type of Exit</label>
+                                <select id="exitType" class="w-full px-4 py-3 border border-rose-200 rounded-xl focus:border-rose-400 focus:ring-4 focus:ring-rose-400/20 focus:outline-none bg-white transition-all text-sm appearance-none" required>
                                     <option value="voluntary">Voluntary Exit (Standard)</option>
                                     <option value="emergency">Emergency Withdrawal</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-red-800">Reason for Exit</label>
-                                <input type="text" id="exitReason" class="mt-1 block w-full px-3 py-2 border border-red-300 rounded-md shadow-sm bg-white" placeholder="Brief explanation..." required>
+                                <label class="block text-sm font-medium text-rose-900 mb-2">Reason for Exit</label>
+                                <input type="text" id="exitReason" class="w-full px-4 py-3 border border-rose-200 rounded-xl focus:border-rose-400 focus:ring-4 focus:ring-rose-400/20 focus:outline-none bg-white transition-all text-sm" placeholder="Brief explanation..." required>
                             </div>
                         </div>
-                        <div id="exitError" class="text-red-600 text-sm font-bold hidden bg-red-100 p-2 rounded"></div>
-                        <button type="submit" id="exitSubmitBtn" class="w-full sm:w-auto bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 font-bold transition shadow-sm text-sm">
+                        <div id="exitError" class="text-rose-700 text-sm font-bold hidden bg-rose-200/50 p-3 rounded-xl"></div>
+                        <button type="submit" id="exitSubmitBtn" class="w-full sm:w-auto bg-rose-600 text-white py-3 px-6 rounded-xl hover:bg-rose-700 font-semibold transition-all shadow-sm text-sm">
                             Submit Official Exit Request
                         </button>
                     </form>
@@ -231,11 +319,27 @@
     </main>
 
     <script>
-        // Mobile Nav Toggle
-        document.getElementById('mobileNavBtn').addEventListener('click', function() {
-            const navMenu = document.getElementById('navMenu');
-            navMenu.classList.toggle('hidden');
-            navMenu.classList.toggle('flex');
+        // Smooth Animated Mobile Nav Toggle
+        const mobileNavBtn = document.getElementById('mobileNavBtn');
+        const navMenu = document.getElementById('navMenu');
+        const mobileNavIcon = document.getElementById('mobileNavIcon');
+
+        // Hamburger / Close icon SVG paths
+        const iconHamburger = "M4 6h16M4 12h16M4 18h16";
+        const iconClose = "M6 18L18 6M6 6l12 12";
+
+        mobileNavBtn.addEventListener('click', function() {
+            const isHidden = navMenu.classList.contains('hidden');
+            
+            if (isHidden) {
+                navMenu.classList.remove('hidden');
+                navMenu.classList.add('flex');
+                mobileNavIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${iconClose}"></path>`;
+            } else {
+                navMenu.classList.add('hidden');
+                navMenu.classList.remove('flex');
+                mobileNavIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${iconHamburger}"></path>`;
+            }
         });
 
         // Notification Dropdown Toggle
@@ -267,6 +371,7 @@
             // Toggle Tailwind classes: blur the text and prevent it from being highlighted/copied
             mySavings.classList.toggle('blur-md');
             mySavings.classList.toggle('select-none');
+            mySavings.classList.toggle('opacity-50');
             
             // Toggle the display of the eye icons
             eyeOpen.classList.toggle('hidden');

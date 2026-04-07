@@ -3,306 +3,368 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>B&M Group - Admin Dashboard</title>
+    <title>B&M Group - Admin Command Center</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-50 flex h-screen overflow-hidden">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #F1F5F9; /* Slightly cooler slate background for admin */
+        }
+        /* Soft iOS style shadow for cards */
+        .ios-shadow {
+            box-shadow: 0 4px 24px -6px rgba(0, 0, 0, 0.04);
+        }
+        /* Hide scrollbar for cleaner look */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 10px;
+        }
+        
+        /* --- CREATIVE DARK POLYGON ADMIN THEME --- */
+        .admin-polygon-theme {
+            background-color: #0f172a; /* Deep Slate Base */
+            /* Custom Low-Poly Dark Blue/Slate Pattern */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cpolygon points='0,0 100,50 0,100' fill='%231e293b' opacity='0.5'/%3E%3Cpolygon points='200,0 100,50 200,100' fill='%23020617' opacity='0.5'/%3E%3Cpolygon points='100,50 200,100 100,150 0,100' fill='%231e3a8a' opacity='0.4'/%3E%3Cpolygon points='0,200 100,150 0,100' fill='%231e293b' opacity='0.5'/%3E%3Cpolygon points='200,200 100,150 200,100' fill='%23020617' opacity='0.5'/%3E%3C/svg%3E");
+            color: white;
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+        }
 
-    <header class="md:hidden bg-slate-900 text-white p-4 flex justify-between items-center w-full absolute top-0 z-30">
-        <div><img src="bm_group_logo.png" alt="B&M Logo" class="h-10 w-auto brightness-0 invert"></div>
-        <button id="mobileMenuBtn" class="focus:outline-none hover:text-blue-400 transition">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        /* Glowing effect for the active sidebar item */
+        .admin-glow {
+            box-shadow: 0 0 20px rgba(37, 99, 235, 0.4);
+            border: 1px solid rgba(96, 165, 250, 0.3);
+        }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden text-slate-800">
+
+    <header class="md:hidden admin-polygon-theme p-4 flex justify-between items-center w-full absolute top-0 z-30 shadow-lg shadow-slate-900/20">
+        <div class="flex items-center gap-3">
+            <div class="hidden w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-xs shadow-md">B&M</div>
+            <span class="font-bold text-white tracking-wide">B&M Group Admin</span>
+        </div>
+        <button id="mobileMenuBtn" class="focus:outline-none text-slate-300 hover:text-white transition bg-white/10 p-2 rounded-full backdrop-blur-sm border border-white/10">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
             </svg>
         </button>
     </header>
 
-    <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden transition-opacity"></div>
+    <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 hidden md:hidden transition-opacity"></div>
 
-    <aside id="sidebar" class="w-66 bg-slate-900 text-white flex flex-col absolute inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition duration-200 ease-in-out z-50 h-full">
-        <div class="p-6 text-2xl font-bold border-b border-slate-700 flex justify-between items-center gap-3">
-            <img src="bm_group_logo.png" alt="B&M Logo" class="h-14 w-auto brightness-200 contrast-80">
-            <span class="hidden flex-1"></span>
-            <button id="closeSidebarBtn" class="md:hidden focus:outline-none text-gray-400 hover:text-white">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
+    <aside id="sidebar" class="w-72 admin-polygon-theme flex flex-col absolute inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out z-50 h-full shadow-2xl shadow-slate-900/50">
+        
+        <div class="p-6 flex justify-between items-center gap-3 mt-4 border-b border-white/5 pb-6">
+            <div class="flex items-center gap-3">
+                <div class="hidden w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center font-bold text-sm shadow-lg shadow-blue-900/50 border border-blue-400/30">B&M</div>
+                <div>
+                    <h2 class="font-bold text-white tracking-tight leading-tight uppercase">B&MGROUP Admin</h2>
+                </div>
+            </div>
+            <button id="closeSidebarBtn" class="md:hidden focus:outline-none text-slate-400 hover:text-white bg-white/5 p-2 rounded-full border border-white/5">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
             </button>
         </div>
-        <nav id="side-nav" class="flex-1 p-4 space-y-2 overflow-y-auto">
-            <a href="#group-analytics" class="block px-4 py-2 rounded bg-blue-600 hover:bg-blue-700">Overview</a>
-            <a href="#members" class="block px-4 py-2 rounded hover:bg-slate-800">Members</a>
-            <a href="#add-members" class="block px-4 py-2 rounded hover:bg-slate-800">Add Member</a>
-            <a href="#contributions" class="block px-4 py-2 rounded hover:bg-slate-800">Contributions</a>
-            <a href="#pendingPayments" class="block px-4 py-2 rounded hover:bg-slate-800">Payment Verifications</a>
-            <a href="#pending-loans" class="block px-4 py-2 rounded hover:bg-slate-800">Loans</a>
-            <a href="#ledger" class="block px-4 py-2 rounded hover:bg-slate-800">Group Ledger</a>
-            <a href="#adminInbox" class="block px-4 py-2 rounded hover:bg-slate-800">Inbox & Exits</a>
-            <a href="member.html" class="block px-4 py-2 rounded text-blue-400 hover:bg-slate-800 hover:text-blue-300 font-semibold mt-4">
-              Go to My Member Portal
-            </a>
+        
+        <nav id="side-nav" class="flex-1 px-4 py-2 space-y-1.0 overflow-y-auto font-medium text-sm">
+            <p class="px-4 text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-2">Main Menu</p>
+            
+            <a href="#group-analytics" class="block px-4 py-3 rounded-xl bg-blue-600/90 text-white admin-glow font-semibold tracking-wide transition-all">Overview</a>
+            <a href="#members" class="block px-4 py-3 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition-colors tracking-wide">Members</a>
+            <a href="#add-members" class="block px-4 py-3 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition-colors tracking-wide">Add Member</a>
+            <a href="#contributions" class="block px-4 py-3 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition-colors tracking-wide">Contributions</a>
+            <a href="#pendingPayments" class="block px-4 py-3 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition-colors tracking-wide">Payment Verifications</a>
+            <a href="#pending-loans" class="block px-4 py-3 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition-colors tracking-wide">Loans</a>
+            <a href="#ledger" class="block px-4 py-3 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition-colors tracking-wide">Group Ledger</a>
+            <a href="#adminInbox" class="block px-4 py-3 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition-colors tracking-wide">Inbox & Exits</a>
+            
+            <div class="mt-1 pt-6 border-t border-white/5">
+                <a href="member.html" class="flex items-center gap-2 px-4 py-3 rounded-xl text-blue-300 bg-blue-900/30 hover:bg-blue-900/60 border border-blue-500/20 font-semibold transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    Switch to Member Portal
+                </a>
+            </div>
         </nav>
-        <button onclick="logout()" class="p-4 bg-red-600 hover:bg-red-700 w-full text-left mt-auto">Logout</button>
+        
+        <div class="p-4 border-t border-white/5 bg-slate-900/30">
+            <button onclick="logout()" class="flex items-center justify-center gap-2 w-full py-3 px-4 bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500 hover:text-white rounded-xl font-bold transition-all tracking-wide">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                Logout
+            </button>
+        </div>
     </aside>
 
     <script>
-        const navLinks = document.querySelectorAll('#side-nav a');
+        const navLinks = document.querySelectorAll('#side-nav a:not([href="member.html"])');
 
-    navLinks.forEach(link => {
-    link.addEventListener('click', function() {
-        // 1. Remove active classes from all links
-        navLinks.forEach(l => {
-            l.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-            l.classList.add('hover:bg-slate-800');
+        navLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                navLinks.forEach(l => {
+                    // Remove active admin classes
+                    l.classList.remove('bg-blue-600/90', 'text-white', 'admin-glow', 'font-semibold');
+                    // Add inactive admin classes
+                    l.classList.add('text-slate-300', 'hover:bg-white/10', 'hover:text-white');
+                });
+                
+                // Set clicked to active
+                this.classList.add('bg-blue-600/90', 'text-white', 'admin-glow', 'font-semibold');
+                this.classList.remove('text-slate-300', 'hover:bg-white/10', 'hover:text-white');
+            });
         });
 
-        // 2. Add active classes to the clicked link
-        this.classList.add('bg-blue-600', 'hover:bg-blue-700');
-        this.classList.remove('hover:bg-slate-800');
-    });
-    });
-
         function logout() {
-            // Clear session or token here if needed
             localStorage.clear();
             sessionStorage.clear();
             window.location.href = 'login.html';
         }
     </script>
 
-    <main class="flex-1 p-4 pt-20 md:pt-8 md:p-8 overflow-y-auto w-full">
+    <main class="flex-1 p-4 pt-24 md:pt-10 md:px-10 overflow-y-auto w-full max-w-7xl mx-auto">
         <header class="mb-8">
-            <h1 id="group-analytics"  class="text-2xl md:text-3xl font-bold text-gray-800">Group Overview</h1>
+            <h1 id="group-analytics" class="text-3xl font-bold tracking-tight text-slate-900">Group Overview</h1>
         </header>
 
-       <div class="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-8">
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 mb-8 md:mb-10">
+            <div class="bg-white p-4 md:p-6 rounded-[20px] md:rounded-[24px] ios-shadow border border-slate-200 flex flex-col justify-center relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                <div class="flex items-center gap-2 mb-1 md:mb-2 ml-2">
+                    <div class="w-6 h-6 md:w-8 md:h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+                        <svg class="w-3 h-3 md:w-4 md:h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <h3 class="text-slate-500 text-xs md:text-sm font-bold uppercase tracking-wider leading-tight">Total Capital</h3>
+                </div>
+                <p id="totalCapital" class="text-xl md:text-3xl font-bold text-slate-800 tracking-tight mt-1 ml-2">KSH 0</p>
+            </div>
 
-    <div class="bg-white p-4 md:p-6 rounded-lg shadow border-l-4 border-blue-500">
-        <h3 class="text-gray-500 text-xs md:text-sm font-medium">Total Capital</h3>
-        <p id="totalCapital" class="text-xl md:text-3xl font-bold text-gray-800">KSH 0</p>
-    </div>
+            <div class="bg-white p-4 md:p-6 rounded-[20px] md:rounded-[24px] ios-shadow border border-slate-200 flex flex-col justify-center relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1 h-full bg-rose-500"></div>
+                <div class="flex items-center gap-2 mb-1 md:mb-2 ml-2">
+                    <div class="w-6 h-6 md:w-8 md:h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+                        <svg class="w-3 h-3 md:w-4 md:h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path></svg>
+                    </div>
+                    <h3 class="text-slate-500 text-xs md:text-sm font-bold uppercase tracking-wider leading-tight">Active Loans</h3>
+                </div>
+                <p id="activeLoans" class="text-xl md:text-3xl font-bold text-slate-800 tracking-tight mt-1 ml-2">KSH 0</p>
+                <p class="text-[10px] text-slate-400 font-medium ml-2 mt-1">(Max 70%)</p>
+            </div>
 
-    <div class="bg-white p-4 md:p-6 rounded-lg shadow border-l-4 border-red-500">
-        <h3 class="text-gray-500 text-xs md:text-sm font-medium">Active Loans (Max 70%)</h3>
-        <p id="activeLoans" class="text-xl md:text-3xl font-bold text-gray-800">KSH 0</p>
-    </div>
-
-    <div class="bg-white p-4 md:p-6 rounded-lg shadow border-l-4 border-green-500">
-        <h3 class="text-gray-500 text-xs md:text-sm font-medium">Liquidity Reserve (Min 30%)</h3>
-        <p id="liquidityReserve" class="text-xl md:text-3xl font-bold text-gray-800">KSH 0</p>
-    </div>
-
-</div>
-
-        <section id="members" class="bg-white rounded-lg shadow p-4 md:p-6 mb-8 mt-8">
-            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
-                <h2 class="text-xl font-bold text-gray-800">Member Management</h2>
-                <div class="text-sm text-gray-500">
-                    * Group closed to new members until Jan 2027
+            <div class="col-span-2 md:col-span-1 bg-white p-4 md:p-6 rounded-[20px] md:rounded-[24px] ios-shadow border border-slate-200 flex flex-col justify-center relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
+                <div class="flex items-center gap-2 mb-1 md:mb-2 ml-2">
+                    <div class="w-6 h-6 md:w-8 md:h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
+                        <svg class="w-3 h-3 md:w-4 md:h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <h3 class="text-slate-500 text-xs md:text-sm font-bold uppercase tracking-wider leading-tight">Liquidity Reserve</h3>
+                </div>
+                <p id="liquidityReserve" class="text-xl md:text-3xl font-bold text-slate-800 tracking-tight mt-1 ml-2">KSH 0</p>
+                <p class="text-[10px] text-slate-400 font-medium ml-2 mt-1">(Min 30%)</p>
+            </div>
+        </div>
+        
+        <section id="members" class="bg-white rounded-[24px] ios-shadow border border-slate-200 p-6 mb-10 overflow-hidden">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-2 border-b border-slate-100 pb-4">
+                <h2 class="text-xl font-bold tracking-tight text-slate-900">Member Management</h2>
+                <div class="text-[10px] uppercase tracking-wider font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
+                    Closed to new members until Jan 2027
                 </div>
             </div>
             
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto -mx-6 px-6">
                 <table class="min-w-full text-left text-sm whitespace-nowrap">
-                    <thead class="bg-gray-100 text-gray-600">
+                    <thead class="text-xs text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-100 bg-slate-50/50">
                         <tr>
-                            <th class="p-3">Member Info</th>
-                            <th class="p-3">Financials</th>
-                            <th class="p-3">Verification</th>
-                            <th class="p-3">Status</th>
-                            <th class="p-3">Actions</th>
+                            <th class="py-3 px-2 font-bold">Member Info</th>
+                            <th class="py-3 px-2 font-bold">Financials</th>
+                            <th class="py-3 px-2 font-bold">Verification</th>
+                            <th class="py-3 px-2 font-bold">Status</th>
+                            <th class="py-3 px-2 font-bold text-right">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="membersTableBody" class="divide-y">
+                    <tbody id="membersTableBody" class="divide-y divide-slate-100">
                         </tbody>
                 </table>
             </div>
         </section>
 
-        <section id="contributions" class="bg-white rounded-lg shadow p-4 md:p-6 mb-8 mt-8 border-l-4 border-blue-900">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+        <section id="contributions" class="bg-white rounded-[24px] ios-shadow border border-slate-200 p-6 mb-10 overflow-hidden relative">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 to-indigo-800"></div>
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 mt-2 border-b border-slate-100 pb-4">
                 <div>
-                    <h2 class="text-xl font-bold text-gray-800">Monthly Contribution Tracker</h2>
-                    <p id="monthTargetText" class="text-sm font-medium text-blue-600 mt-1">
+                    <h2 class="text-xl font-bold tracking-tight text-slate-900">Monthly Contribution Tracker</h2>
+                    <p id="monthTargetText" class="text-sm font-bold text-blue-600 mt-1">
                         Calculating target...
                     </p>
                 </div>
             </div>
             
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto -mx-6 px-6">
                 <table class="min-w-full text-left text-sm whitespace-nowrap">
-                    <thead class="bg-slate-100 text-slate-600">
+                    <thead class="text-xs text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-100 bg-slate-50/50">
                         <tr>
-                            <th class="p-3">Member</th>
-                            <th class="p-3">Arrears / Past Status</th> 
-                            <th class="p-3">Total Savings</th>
-                            <th class="p-3">Record New Payment</th>
+                            <th class="py-3 px-2 font-bold">Member</th>
+                            <th class="py-3 px-2 font-bold">Arrears / Status</th> 
+                            <th class="py-3 px-2 font-bold">Total Savings</th>
+                            <th class="py-3 px-2 font-bold">Record Payment</th>
                         </tr>
                     </thead>
-                    <tbody id="contributionsTableBody" class="divide-y">
-                        </tbody>
+                    <tbody id="contributionsTableBody" class="divide-y divide-slate-100">
+                    </tbody>
                 </table>
             </div>
         </section>
 
-        <section id="pendingPayments" class="bg-white rounded-lg shadow border border-gray-200 p-4 md:p-6 mb-8 mt-8 border-l-4 border-l-green-500">
-            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
-                <h2 class="text-xl font-bold text-gray-800">Pending Payment Verifications</h2>
-                <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-bold w-fit">Action Required</span>
+        <section id="pendingPayments" class="bg-white rounded-[24px] ios-shadow border border-slate-200 p-6 mb-10 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-amber-400"></div>
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 mt-2 gap-2 border-b border-slate-100 pb-4">
+                <h2 class="text-xl font-bold tracking-tight text-slate-900">Pending Verifications</h2>
+                <span class="bg-amber-100 text-amber-700 border border-amber-200 text-[10px] uppercase px-3 py-1.5 rounded-full font-bold tracking-wider shadow-sm">Action Required</span>
             </div>
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto -mx-6 px-6">
                 <table class="min-w-full text-left text-sm whitespace-nowrap">
-                    <thead class="bg-slate-50 text-slate-600">
+                    <thead class="text-xs text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-100 bg-slate-50/50">
                         <tr>
-                            <th class="p-3">Member</th>
-                            <th class="p-3">M-Pesa Code</th>
-                            <th class="p-3">Claimed Amount</th>
-                            <th class="p-3">Action</th>
+                            <th class="py-3 px-2 font-bold">Member</th>
+                            <th class="py-3 px-2 font-bold">M-Pesa Code</th>
+                            <th class="py-3 px-2 font-bold">Claimed Amount</th>
+                            <th class="py-3 px-2 font-bold">Action</th>
                         </tr>
                     </thead>
-                    <tbody id="pendingPaymentsTable" class="divide-y">
-                        </tbody>
+                    <tbody id="pendingPaymentsTable" class="divide-y divide-slate-100">
+                    </tbody>
                 </table>
             </div>
         </section>
 
-        <section id="pending-loans" class="bg-white rounded-lg shadow p-4 md:p-6 mb-8">
-            <h2 class="text-xl font-bold text-gray-800 mb-4">Pending Loan Requests</h2>
-            <div class="overflow-x-auto">
+        <section id="active-loans" class="bg-white rounded-[24px] ios-shadow border border-slate-200 p-6 mb-10 overflow-hidden relative">
+            <div class="absolute top-0 left-0 w-full h-1 bg-purple-500"></div>
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 mt-2 gap-2 border-b border-slate-100 pb-4">
+                <h2 class="text-xl font-bold tracking-tight text-slate-900">Active Loans & Repayments</h2>
+                <span class="bg-purple-100 text-purple-700 border border-purple-200 text-[10px] uppercase px-3 py-1.5 rounded-full font-bold tracking-wider shadow-sm">Awaiting Payment</span>
+            </div>
+            <div class="overflow-x-auto -mx-6 px-6">
                 <table class="min-w-full text-left text-sm whitespace-nowrap">
-                    <thead class="bg-gray-100 text-gray-600">
+                    <thead class="text-xs text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-100 bg-slate-50/50">
                         <tr>
-                            <th class="p-3">Member</th>
-                            <th class="p-3">Amount</th>
-                            <th class="p-3">Interest (15%)</th>
-                            <th class="p-3">Duration</th>
-                            <th class="p-3">Action</th>
+                            <th class="py-3 px-2 font-bold">Borrower</th>
+                            <th class="py-3 px-2 font-bold">Principal Issued</th>
+                            <th class="py-3 px-2 font-bold">Interest (15%)</th>
+                            <th class="py-3 px-2 font-bold">Total Due</th>
+                            <th class="py-3 px-2 font-bold">Action</th>
                         </tr>
                     </thead>
-                    <tbody id="pendingLoansTable" class="divide-y">
-                        </tbody>
+                    <tbody id="activeLoansTableBody" class="divide-y divide-slate-100">
+                    </tbody>
                 </table>
             </div>
         </section>
 
-        <section id="active-loans" class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 mb-8 mt-8 border-t-4 border-t-blue-600">
-            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
-                <h2 class="text-xl font-bold text-gray-800">Active Loans & Repayments</h2>
-                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-bold w-fit">Awaiting Payment</span>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="min-w-full text-left text-sm whitespace-nowrap">
-                    <thead class="bg-slate-50 text-slate-600">
-                        <tr>
-                            <th class="p-3">Borrower</th>
-                            <th class="p-3">Principal Issued</th>
-                            <th class="p-3">Interest (15%)</th>
-                            <th class="p-3">Total Due</th>
-                            <th class="p-3">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="activeLoansTableBody" class="divide-y">
-                        </tbody>
-                </table>
-            </div>
-        </section>
-
-        <div class="hidden bg-blue-50 border border-blue-200 p-4 rounded-lg mt-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div class="hidden bg-slate-900 border border-slate-800 p-6 md:p-8 rounded-[24px] mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 shadow-xl shadow-slate-900/10 admin-polygon-theme">
             <div>
-                <h3 class="text-blue-800 font-bold">Annual Profit Distribution</h3>
-                <p class="text-sm text-blue-600">Distribute accumulated profits equally among all approved members.</p>
+                <h3 class="text-white font-bold text-lg tracking-tight">Annual Profit Distribution Engine</h3>
+                <p class="text-sm text-slate-400 mt-1">Execute the year-end dividend split algorithm for all approved members.</p>
             </div>
-            <button onclick="distributeAnnualProfit()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow whitespace-nowrap">
-                Run Distribution
+            <button onclick="distributeAnnualProfit()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-blue-900/50 transition-all whitespace-nowrap text-sm border border-blue-500/50 admin-glow">
+                Run Distribution System
             </button>
         </div>
 
-        <section id="adminInbox" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 mt-8">    
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold text-gray-800">Member Grievances</h2>
-                    <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full font-bold">Inbox</span>
+        <section id="adminInbox" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">    
+            <div class="bg-white rounded-[24px] ios-shadow border border-slate-200 p-6 flex flex-col">
+                <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+                    <h2 class="text-xl font-bold tracking-tight text-slate-900">Grievances</h2>
+                    <span class="bg-slate-100 text-slate-600 border border-slate-200 text-[10px] uppercase px-3 py-1 rounded-full font-bold tracking-wider">Inbox</span>
                 </div>
-                <div class="overflow-y-auto max-h-80 pr-2 space-y-3" id="grievancesContainer">
+                <div class="overflow-y-auto flex-1 max-h-80 pr-2 space-y-3" id="grievancesContainer">
                     </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow-sm border border-red-200 p-4 md:p-6 border-t-4 border-t-red-600">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold text-gray-800">Exit Applications</h2>
-                    <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-bold">Sec 13</span>
+            <div class="bg-white rounded-[24px] ios-shadow border border-white p-6 flex flex-col relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-white"></div>
+                <div class="flex justify-between items-center mb-6 mt-2 border-b border-slate-100 pb-4">
+                    <h2 class="text-xl font-bold tracking-tight text-slate-900">Exit Applications</h2>
+                    <span class="bg-red-50 text-red-600 border border-red-100 text-[10px] uppercase px-3 py-1 rounded-full font-bold tracking-wider">Sec 13 Check</span>
                 </div>
-                <div class="overflow-y-auto max-h-80 space-y-4" id="exitRequestsContainer">
+                <div class="overflow-y-auto flex-1 max-h-80 pr-2 space-y-4" id="exitRequestsContainer">
                     </div>
             </div>
         </section>
 
-        <div id="add-members" class="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 mb-8" data-aos="fade-up">
-             <div class="flex items-center justify-between mb-6 border-b border-slate-100 pb-4">
-        <div>
-            <h3 class="text-xl font-bold text-slate-900">Add New Member</h3>
-            <p class="text-sm text-slate-500 mt-1">*Authorized Executive Board action only.</p>
-            <span class="inline-block mt-2 bg-yellow-100 text-yellow-800 text-xs font-semibold px-3 py-1 rounded-full">Under Development</span>
-        </div>
-        <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center border border-blue-100">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
-        </div>
-    </div>
-
-    <form id="addMemberForm" class="space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-2">Full Legal Name</label>
-                <input type="text" id="newMemberName" class="w-full px-4 py-3 rounded-lg border border-slate-200 focus:border-blue-600 focus:outline-none bg-slate-50 focus:bg-white" placeholder="e.g. John Ochieng" required>
+        <div id="add-members" class="bg-white p-8 rounded-[24px] ios-shadow border border-slate-200 mb-10">
+            <div class="flex items-start justify-between mb-8 pb-6 border-b border-slate-100">
+                <div>
+                    <h3 class="text-2xl font-bold tracking-tight text-slate-900">Add New Member</h3>
+                    <p class="text-sm text-slate-500 mt-1 font-medium">Authorized Executive Board action only.</p>
+                </div>
+                <div class="w-12 h-12 bg-slate-900 text-white rounded-[16px] flex items-center justify-center shadow-lg shadow-slate-900/20">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+                </div>
             </div>
-            <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-2">Member ID Assignment</label>
-                <input type="text" id="newMemberId" class="w-full px-4 py-3 rounded-lg border border-slate-200 focus:border-blue-600 focus:outline-none bg-slate-50 focus:bg-white uppercase" placeholder="e.g. BMG-015" required>
-            </div>
+
+            <form id="addMemberForm" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">Full Legal Name</label>
+                        <input type="text" id="newMemberName" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 focus:outline-none bg-slate-50 focus:bg-white transition-all text-sm font-medium" placeholder="e.g. John Ochieng" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">Member ID Assignment</label>
+                        <input type="text" id="newMemberId" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 focus:outline-none bg-slate-50 focus:bg-white transition-all text-sm uppercase font-bold" placeholder="e.g. BMG-015" required>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">Registered Email</label>
+                        <input type="email" id="newMemberEmail" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 focus:outline-none bg-slate-50 focus:bg-white transition-all text-sm font-medium" placeholder="john@example.com" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">Temporary Password</label>
+                        <input type="text" id="newMemberPassword" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 focus:outline-none bg-slate-50 focus:bg-white transition-all text-sm font-medium text-blue-600" value="BMGroup2026!" required>
+                        <p class="text-[10px] text-slate-400 mt-2 uppercase tracking-wide font-bold">Must be at least 6 characters.</p>
+                    </div>
+                </div>
+
+                <button type="submit" id="btnMintUser" class="w-full flex justify-center py-4 px-4 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-600/20 focus:outline-none transition-all mt-4 tracking-wide uppercase">
+                    Initialize Member Account
+                </button>
+                
+                <div id="mintStatus" class="hidden text-sm font-medium text-center mt-4 p-3 rounded-xl"></div>
+            </form>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-2">Registered Email</label>
-                <input type="email" id="newMemberEmail" class="w-full px-4 py-3 rounded-lg border border-slate-200 focus:border-blue-600 focus:outline-none bg-slate-50 focus:bg-white" placeholder="john@example.com" required>
-            </div>
-            <div>
-                <label class="block text-sm font-semibold text-slate-700 mb-2">Temporary Password</label>
-                <input type="text" id="newMemberPassword" class="w-full px-4 py-3 rounded-lg border border-slate-200 focus:border-blue-600 focus:outline-none bg-slate-50 focus:bg-white" value="BMGroup2026!" required>
-                <p class="text-xs text-slate-400 mt-1">Must be at least 6 characters.</p>
-            </div>
-        </div>
-
-        <button type="submit" id="btnMintUser" class="w-full flex justify-center py-4 px-4 border border-transparent rounded-lg shadow-md text-sm font-bold text-white bg-blue-700 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 transition-all">
-            Create Member Account
-        </button>
-        
-        <div id="mintStatus" class="hidden text-sm font-semibold text-center mt-4 p-3 rounded-lg"></div>
-    </form>
-</div>
-
-        <section id="ledger" class="bg-white rounded-lg shadow p-4 md:p-6 mb-8 mt-8">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
-                <h2 class="text-xl font-bold text-gray-800">Group Ledger</h2>
-                <button onclick="exportLedgerCSV()" class="bg-blue-100 text-blue-700 px-4 py-2 rounded font-medium hover:bg-blue-200 text-sm flex items-center gap-2">
+        <section id="ledger" class="bg-white rounded-[24px] ios-shadow border border-slate-200 p-6 md:p-8 mb-12">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-slate-100 pb-4">
+                <h2 class="text-xl font-bold tracking-tight text-slate-900">Group Ledger</h2>
+                <button onclick="exportLedgerCSV()" class="bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-slate-800 transition-colors text-xs uppercase tracking-wider flex items-center gap-2 shadow-md shadow-slate-900/20">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                    Export to CSV
+                    Export System CSV
                 </button>
             </div>
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto -mx-6 px-6">
                 <table class="min-w-full text-left text-sm whitespace-nowrap">
-                    <thead class="bg-gray-100 text-gray-600">
+                    <thead class="text-xs text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-100 bg-slate-50/50">
                         <tr>
-                            <th class="p-3">Date</th>
-                            <th class="p-3">Member</th>
-                            <th class="p-3">Type</th>
-                            <th class="p-3">Amount</th>
-                            <th class="p-3">Status</th>
+                            <th class="py-3 px-2 font-bold">Date</th>
+                            <th class="py-3 px-2 font-bold">Member</th>
+                            <th class="py-3 px-2 font-bold">Type</th>
+                            <th class="py-3 px-2 font-bold">Amount</th>
+                            <th class="py-3 px-2 font-bold">Status</th>
                         </tr>
                     </thead>
-                    <tbody id="ledgerTableBody" class="divide-y">
-                        </tbody>
+                    <tbody id="ledgerTableBody" class="divide-y divide-slate-100">
+                    </tbody>
                 </table>
             </div>
         </section>

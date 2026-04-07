@@ -254,37 +254,7 @@ async function loadUserData(uid) {
             document.getElementById('adminReturnBtn').classList.remove('hidden');
         }
 
-        // ==========================================
-        // SMART LOAN LIMIT (THE TRUST LADDER)
-        // ==========================================
-        const savings = currentUserData.savings || 0;
-        const loansRepaid = currentUserData.loansRepaidCount || 0; 
         
-        let limit = 0;
-        let limitStatus = "Min. KSH 500 savings required to unlock credit.";
-        let helperClass = "text-xs text-gray-400 mt-1"; 
-
-        if (savings >= 500) {
-            if (loansRepaid === 0) {
-                limit = 600;
-                limitStatus = "Probation: Repay 1st loan to unlock 2x limit.";
-                helperClass = "text-xs text-amber-500 mt-1 font-semibold";
-            } else {
-                limit = savings * 2;
-                limitStatus = "Trust Earned: Limit is 2x your savings.";
-                helperClass = "text-xs text-green-500 mt-1 font-semibold";
-            }
-        }
-
-        document.getElementById('myLoanLimit').textContent = `KSH ${limit}`;
-        const limitHelper = document.getElementById('myLoanLimit').nextElementSibling;
-        if(limitHelper) {
-            limitHelper.textContent = limitStatus;
-            limitHelper.className = helperClass;
-        }
-
-        currentUserData.calculatedLimit = limit;
-
         // 2. Fetch Admin Announcements
         try {
             const statsRef = doc(db, "groupStats", "main");
@@ -306,7 +276,7 @@ async function loadUserData(uid) {
         await loadMyLedger(uid);
         await loadMyLoans(uid);
 
-        // 3. Load Monthly Progress (Waterfall Algorithm)
+    // 3. Load Monthly Progress (Waterfall Algorithm)
         const now = new Date();
         const currentYear = now.getFullYear();
         const currentMonth = now.getMonth();
@@ -317,11 +287,12 @@ async function loadUserData(uid) {
         
         let currentMonthAllocated = 0;
         let currentMonthTarget = 0;
+        let activeTargetMonthFound = false; // NEW: Tracks if we found the month to focus on
 
         for (let i = 0; i <= currentMonth; i++) {
             const daysInMonth = new Date(currentYear, i + 1, 0).getDate(); 
             const target = (Math.floor(daysInMonth / 7) * 70) + ((daysInMonth % 7) * 10);
-            const monthName = new Date(currentYear, i, 1).toLocaleString('default', { month: 'short' });
+            const monthName = new Date(currentYear, i, 1).toLocaleString('default', { month: 'long' });
             
             let statusBadge = '';
             let allocated = 0;
@@ -350,7 +321,20 @@ async function loadUserData(uid) {
                 </div>
             `;
 
-            if (i === currentMonth) {
+            // NEW LOGIC: Determine if THIS month should be the one featured on the main progress bar
+            // It becomes the focus if it's the first uncleared month, OR if we reach the current calendar month and all previous were cleared.
+            let isFocusMonth = false;
+            
+            if (allocated < target && !activeTargetMonthFound) {
+                isFocusMonth = true;
+                activeTargetMonthFound = true;
+            } else if (i === currentMonth && !activeTargetMonthFound) {
+                isFocusMonth = true;
+                activeTargetMonthFound = true;
+            }
+
+            // Update the Progress Bar UI for the focus month
+            if (isFocusMonth) {
                 currentMonthAllocated = allocated;
                 currentMonthTarget = target;
                 
@@ -361,23 +345,110 @@ async function loadUserData(uid) {
                 const progressBar = document.getElementById('monthlyProgressBar');
                 progressBar.style.width = `${progressPercentage}%`;
                 
-                if (progressPercentage === 100) progressBar.classList.replace('bg-blue-500', 'bg-green-500');
-                if (progressPercentage === 0) progressBar.classList.replace('bg-blue-500', 'bg-slate-300');
+                // Reset classes cleanly before applying new ones
+                progressBar.className = "h-full rounded-full transition-all duration-1000 ease-out";
+                
+                if (progressPercentage === 100) {
+                    progressBar.classList.add('bg-green-500');
+                } else if (progressPercentage === 0) {
+                    progressBar.classList.add('bg-slate-300');
+                } else {
+                    progressBar.classList.add('bg-blue-500');
+                }
 
                 document.getElementById('monthlyText').textContent = `${allocated} / ${target} KSH`;
                 
                 const statusText = document.getElementById('monthlyStatusText');
                 if (allocated >= target) {
-                    statusText.innerHTML = "✅ <strong>Awesome!</strong> You have successfully met your contribution target for this month.";
-                    statusText.classList.replace('text-slate-500', 'text-green-600');
+                    statusText.innerHTML = "✅ <strong>Awesome!</strong> You have successfully met your contribution target.";
+                    statusText.className = "text-xs md:text-sm text-green-600 mt-4 font-medium";
                 } else {
                     const diff = target - allocated;
-                    statusText.innerHTML = `You need <strong>KSH ${diff}</strong> more to hit the target. Remember, discipline before access.`;
+                    // Updated message to specify the month name they are behind on
+                    statusText.innerHTML = `You need <strong>KSH ${diff}</strong> more to clear ${monthName}. Consistent contributions will help you unlock more benefits.`;
+                    statusText.className = "text-xs md:text-sm text-slate-500 mt-4 font-medium";
                 }
             }
         }
 
         document.getElementById('clearanceTimeline').innerHTML = timelineHTML;
+
+        // ==========================================
+        // DYNAMIC ALGORITHMIC LOAN LIMIT & AVAILABLE BALANCE
+        // ==========================================
+        const savings = currentUserData.savings || 0;
+        const loansRepaid = currentUserData.loansRepaidCount || 0; 
+        
+        const monthsActive = currentUserData.monthsActive || 1; 
+        const consistencyScore = currentUserData.consistencyScore || 50; 
+        const hasArrears = unclearedPastMonths.length - 1 > 0; 
+        
+        let limit = 0;
+        let limitStatus = "Min. KSH 500 savings required to unlock credit.";
+        let helperClass = "text-[10px] md:text-xs text-slate-400 mt-2 font-medium"; 
+
+        if (savings >= 500) {
+            if (hasArrears || currentUserData.status === 'restricted') {
+                limit = 0;
+                limitStatus = "Credit locked due to active arrears or account restrictions.";
+                helperClass = "text-[10px] md:text-xs text-rose-500 mt-2 font-bold";
+            } 
+            else if (loansRepaid === 0) {
+                limit = 600;
+                limitStatus = "Repay 1st loan to unlock more credit.";
+                helperClass = "text-[10px] md:text-xs text-amber-500 mt-2 font-semibold";
+            } 
+            else {
+                let multiplier = 1.0;
+                multiplier += Math.min(loansRepaid * 0.2, 0.6);
+                multiplier += (consistencyScore / 100) * 0.4;
+                multiplier += Math.min(monthsActive * 0.05, 0.5);
+                multiplier = Math.min(multiplier, 2.5);
+
+                limit = Math.floor(savings * multiplier);
+
+                if (multiplier >= 2.0) {
+                    limitStatus = `Excellent credit standing! Your responsible behavior has earned you a higher credit limit.`;
+                    helperClass = "text-[10px] md:text-xs text-emerald-500 mt-2 font-bold";
+                } else {
+                    limitStatus = `Consistent contributions and timely repayments will increase your limit.`;
+                    helperClass = "text-[10px] md:text-xs text-blue-500 mt-2 font-semibold";
+                }
+            }
+        }
+
+        // --- NEW: Calculate Active Loans to find Available Balance ---
+        let activeLoansTotal = 0;
+        try {
+            const activeLoansQuery = query(
+                collection(db, "loans"),
+                where("userId", "==", uid),
+                where("status", "in", ["pending", "approved"])
+            );
+            const activeLoansSnap = await getDocs(activeLoansQuery);
+            activeLoansSnap.forEach(docSnap => {
+                activeLoansTotal += Number(docSnap.data().amount);
+            });
+        } catch (error) {
+            console.error("Error fetching active loans for limit calc:", error);
+        }
+
+        // Calculate available limit (Math.max prevents negative numbers just in case)
+        const availableLimit = Math.max(0, limit - activeLoansTotal);
+
+        // Update the UI
+        document.getElementById('availableLoanLimit').textContent = `KSH ${availableLimit}`;
+        document.getElementById('totalLoanLimit').textContent = limit;
+        
+        const limitHelper = document.getElementById('limitHelperText');
+        if(limitHelper) {
+            limitHelper.textContent = limitStatus;
+            limitHelper.className = helperClass;
+        }
+
+        // Save both to the global user data so the loan form can check it
+        currentUserData.calculatedLimit = limit;
+        currentUserData.availableLimit = availableLimit;
 
         // 4. The Smart Warning Engine
         const alertsList = document.getElementById('alertsList');
@@ -455,8 +526,8 @@ document.getElementById('loanForm').addEventListener('submit', async (e) => {
         return;
     }
 
-    if (amount > currentUserData.calculatedLimit) {
-        errorDiv.textContent = `Limit Exceeded: Based on your current trust tier, your max is KSH ${currentUserData.calculatedLimit}.`;
+    if (amount > currentUserData.availableLimit) {
+        errorDiv.textContent = `Limit Exceeded: Based on your current credit status, your max is KSH ${currentUserData.availableLimit}.`;
         errorDiv.classList.remove('hidden');
         return;
     }
@@ -491,6 +562,7 @@ document.getElementById('loanForm').addEventListener('submit', async (e) => {
         
     } catch (error) {
         errorDiv.textContent = "Error submitting request. Please try again.";
+        console.error("Firebase Error: ", error);
         errorDiv.classList.remove('hidden');
     } finally {
         submitBtn.disabled = false;
