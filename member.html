@@ -116,7 +116,7 @@
                 </button>
             </div>
 
-            <div id="navMenu" class="hidden md:flex absolute md:static top-full left-0 w-full md:w-auto nav-polygon-theme drawer-polygon md:bg-transparent md:backdrop-blur-none border-b border-blue-200/50 md:border-none shadow-2xl shadow-blue-900/10 md:shadow-none flex-col md:flex-row md:items-center p-6 md:p-0 mt-0 gap-6 transition-all duration-300 transform origin-top">
+            <div id="navMenu" class="hidden md:flex absolute md:static top-full left-0 w-full md:w-auto nav-polygon-theme drawer-polygon bg-blue-50 md:bg-transparent md:backdrop-blur-none border-b border-blue-200/50 md:border-none shadow-2xl shadow-blue-900/10 md:shadow-none flex-col md:flex-row md:items-center p-6 md:p-0 mt-0 gap-6 transition-all duration-300 transform origin-top">
                 
                 <div class="flex items-center gap-3 bg-white/80 backdrop-blur-md border border-blue-200/80 px-4 py-2 rounded-2xl md:rounded-full shadow-sm">
                     <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-sm">
@@ -125,7 +125,7 @@
                     <span id="memberName" class="text-sm font-bold text-blue-900 tracking-tight pr-2">Loading...</span>
                 </div>
 
-                <a href="guidelines.html" class="block text-slate-600 hover:text-blue-700 font-bold transition-colors text-sm px-2">Guidelines</a>
+                <a href="guidelines.html" class="block text-blue-600 hover:text-blue-700 font-bold transition-colors text-sm px-2 underline">Guidelines</a>
                 
                 <div class="flex flex-col md:flex-row gap-3 pt-4 md:pt-0 border-t border-blue-200/50 md:border-none w-full md:w-auto">
                     <a href="admin.html" id="adminReturnBtn" class="hidden w-full md:w-auto text-center bg-blue-900 text-white px-6 py-2.5 rounded-full text-sm hover:bg-blue-800 shadow-md shadow-blue-900/20 transition-all font-semibold tracking-tight">Admin Dashboard</a>
@@ -137,19 +137,8 @@
 
     <main class="max-w-7xl mx-auto p-4 md:p-8 mt-2 space-y-6 md:space-y-8">
 
-        <div class="bg-white p-6 md:p-8 rounded-[24px] ios-shadow border border-slate-100">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-2">
-                <h3 class="text-slate-900 text-lg font-bold tracking-tight">2026 Clearance History</h3>
-                <span class="text-xs text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1.5 rounded-full font-medium">Auto-allocated based on savings</span>
-            </div>
-            
-            <div id="clearanceTimeline" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                <div class="text-sm text-slate-500 font-medium">Loading history...</div>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-6">
-            <div class="bg-white p-5 md:p-8 rounded-[20px] md:rounded-[24px] ios-shadow border border-slate-100 flex flex-col justify-center">
+                <div class="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-6">
+            <div class="bg-white p-5 md:p-8 rounded-[4px] md:rounded-[4px] ios-shadow border border-slate-100 flex flex-col justify-center">
                 <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center gap-2">
                         <div class="w-6 h-6 md:w-8 md:h-8 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
@@ -167,10 +156,10 @@
                         </svg>
                     </button>
                 </div>
-                <p id="mySavings" class="text-2xl md:text-4xl font-bold text-slate-800 tracking-tight mt-1 transition-all duration-300">KSH 0</p>
+                <p id="mySavings" class="text-2xl md:text-4xl font-bold text-green-600 tracking-tight mt-1 transition-all duration-300">KSH 0</p>
             </div>
             
-            <div class="bg-white p-5 md:p-8 rounded-[20px] md:rounded-[24px] ios-shadow border border-slate-100 flex flex-col justify-center">
+            <div class="bg-white p-5 md:p-8 rounded-[4px] md:rounded-[4px] ios-shadow border border-slate-100 flex flex-col justify-center">
                 <div class="flex items-center gap-2 mb-2">
                     <div class="w-6 h-6 md:w-8 md:h-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
                         <div class="w-2 h-2 md:w-3 md:h-3 rounded-full bg-blue-500"></div>
@@ -187,9 +176,22 @@
             </div>
         </div>
 
+        <div class="bg-white p-6 md:p-8 rounded-[4px] ios-shadow border border-slate-100">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-2">
+                <h3 class="text-slate-900 text-lg font-bold tracking-tight">2026 Clearance History</h3>
+                <span class="text-xs text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1.5 rounded-[2px] font-medium">Auto-allocated based on savings</span>
+            </div>
+            
+            <div id="clearanceTimeline" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                <div class="text-sm text-slate-500 font-medium">Loading history...</div>
+            </div>
+        </div>
+
+
+
          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 mb-6 md:mb-8">
             
-            <section class="bg-white p-6 md:p-8 rounded-[24px] ios-shadow border border-slate-100 relative overflow-hidden flex flex-col justify-center">
+            <section class="bg-white p-6 md:p-8 rounded-[4px] ios-shadow border border-slate-100 relative overflow-hidden flex flex-col justify-center">
                 <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-indigo-500"></div>
                 
                 <div class="flex justify-between items-end mb-5 mt-1">
@@ -204,8 +206,8 @@
                 <p id="monthlyStatusText" class="text-sm text-slate-500 mt-5 font-medium leading-relaxed">Calculating your deposits...</p>
             </section>
 
-            <section class="bg-white p-6 md:p-8 rounded-[24px] ios-shadow border border-slate-100 relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-1 bg-emerald-400"></div>
+            <section class="bg-white p-6 md:p-8 rounded-[4px] ios-shadow border border-slate-100 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1"></div>
                 
                 <h2 class="text-xl font-bold text-slate-900 mb-2 mt-1 tracking-tight">Submit Payment Proof</h2>
                 <p class="text-sm text-slate-500 mb-6 font-medium">After sending your contribution via M-Pesa or Bank, submit the exact details below for Admin verification.</p>
@@ -232,7 +234,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
             
             <div class="space-y-6 md:space-y-8 lg:col-span-1">
-                <section class="bg-white p-6 rounded-[24px] ios-shadow border border-slate-100">
+                <section class="bg-white p-6 rounded-[4px] ios-shadow border border-slate-100">
                     <h2 class="text-lg font-bold text-slate-900 mb-5 tracking-tight">Request a Loan</h2>
                     <form id="loanForm" class="space-y-5">
                         <div>
@@ -252,14 +254,14 @@
                     </form>
                 </section>
 
-                <section class="bg-white p-6 rounded-[24px] ios-shadow border border-slate-100">
+                <section class="bg-white p-6 rounded-[4px] ios-shadow border border-slate-100">
                     <h2 class="text-lg font-bold text-slate-900 mb-4 tracking-tight">My Loan Requests</h2>
                     <div id="myLoansList" class="space-y-3 max-h-64 overflow-y-auto pr-2">
                         <div class="text-sm text-slate-500 text-center py-6 font-medium">Loading your requests...</div>
                     </div>
                 </section>
 
-                <section class="bg-white p-6 rounded-[24px] ios-shadow border border-slate-100">
+                <section class="bg-white p-6 rounded-[4px] ios-shadow border border-slate-100">
                     <h2 class="text-lg font-bold text-slate-900 mb-2 tracking-tight">Support & Grievances</h2>
                     <p class="text-xs text-slate-500 mb-5 font-medium leading-relaxed">Submit a message directly to the executive administrators for assistance.</p>
                     <form id="grievanceForm" class="space-y-4">
@@ -270,7 +272,7 @@
             </div>
 
             <div class="space-y-6 md:space-y-8 lg:col-span-2">
-                <section class="bg-white p-6 md:p-8 rounded-[24px] ios-shadow border border-slate-100">
+                <section class="bg-white p-6 md:p-8 rounded-[4px] ios-shadow border border-slate-100">
                     <h2 class="text-xl font-bold text-slate-900 mb-6 tracking-tight">My Transaction History</h2>
                     <div class="overflow-y-auto overflow-x-auto max-h-96 border border-slate-100 rounded-[16px]">
                         <table class="min-w-full text-left text-sm whitespace-nowrap">
@@ -287,7 +289,7 @@
                     </div>
                 </section>
 
-                <section class="bg-rose-50 p-6 md:p-8 rounded-[24px] border border-rose-100 relative overflow-hidden">
+                <section class="bg-rose-50 p-6 md:p-8 rounded-[4px] border border-rose-100 relative overflow-hidden">
                     <div class="flex items-center gap-3 mb-3 relative z-10">
                         <h2 class="text-xl font-bold text-rose-900 tracking-tight">Group Withdrawal Policy</h2>
                         <span class="bg-rose-200 text-rose-800 text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">Sec 13</span>
