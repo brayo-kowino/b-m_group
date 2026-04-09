@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadMasterLedger();
     loadActiveLoans();
     loadPendingPayments();
+    loadVisualAnalytics();
 });
 
 const addMemberForm = document.getElementById('addMemberForm');
@@ -221,6 +222,112 @@ window.handleStatusChange = async function(userId, newStatus) {
         }
     }
 };
+
+// ==========================================
+// VISUAL ANALYTICS DASHBOARD (Chart.js)
+// ==========================================
+
+// We store the chart instances globally so we can destroy and redraw them 
+// when data updates, preventing the "hover glitch" in Chart.js
+let doughnutChartInstance = null;
+let barChartInstance = null;
+
+export async function loadVisualAnalytics() {
+    try {
+        const statsRef = doc(db, "groupStats", "main");
+        const statsSnap = await getDoc(statsRef);
+        
+        if (!statsSnap.exists()) {
+            console.warn("Analytics: groupStats document not found.");
+            return;
+        }
+
+        const data = statsSnap.data();
+        
+        // Ensure we have numbers to work with (fallback to 0 if undefined)
+        const capital = data.capital || 0;
+        const liquidity = data.liquidityReserve || 0;
+        const activeLoans = data.totalLoans || 0;
+        const profit = data.totalProfit || 0;
+
+        // -----------------------------------------------------
+        // CHART 1: DOUGHNUT CHART (Where is the money?)
+        // -----------------------------------------------------
+        const ctxDoughnut = document.getElementById('capitalDoughnutChart');
+        if (ctxDoughnut) {
+            // Destroy existing chart if it exists to prevent overlapping
+            if (doughnutChartInstance) doughnutChartInstance.destroy();
+
+            doughnutChartInstance = new Chart(ctxDoughnut, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Liquidity Reserve (Cash)', 'Active Loans (Debt)'],
+                    datasets: [{
+                        data: [liquidity, activeLoans],
+                        backgroundColor: [
+                            '#10b981', // emerald-500 (Safe Cash)
+                            '#ef4444'  // red-500 (Lent out)
+                        ],
+                        hoverOffset: 4,
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    },
+                    cutout: '70%' // Makes it a thinner, modern ring
+                }
+            });
+        }
+
+        // -----------------------------------------------------
+        // CHART 2: BAR CHART (Wealth Overview)
+        // -----------------------------------------------------
+        const ctxBar = document.getElementById('wealthBarChart');
+        if (ctxBar) {
+            // Destroy existing chart if it exists
+            if (barChartInstance) barChartInstance.destroy();
+
+            barChartInstance = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: ['Total Capital', 'Total Profit'],
+                    datasets: [{
+                        label: 'KSH',
+                        data: [capital, profit],
+                        backgroundColor: [
+                            '#3b82f6', // blue-500
+                            '#8b5cf6'  // violet-500
+                        ],
+                        borderRadius: 6 // Modern rounded bar corners
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false } // Hide legend since labels explain it
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { borderDash: [5, 5] } // Cool dashed gridlines
+                        },
+                        x: {
+                            grid: { display: false } // Clean X axis
+                        }
+                    }
+                }
+            });
+        }
+
+    } catch (error) {
+        console.error("Error loading visual analytics:", error);
+    }
+}
 
 async function distributeAnnualProfit() {
     if (!confirm("Are you sure you want to distribute the annual profit? This action cannot be undone.")) {
@@ -506,6 +613,21 @@ window.approveLoan = async function(loanId) {
         });
 
         alert("Loan officially approved and disbursed!");
+
+        // --- TRIGGER THE PRINT TEMPLATE ---
+        if(confirm("Would you like to print the official disbursement letter for this loan?")) {
+            const today = new Date().toLocaleDateString('en-GB'); // DD/MM/YYYY
+            const refNumber = `BM-LN-${loanId.substring(0, 6).toUpperCase()}`;
+            
+            generateOfficialLetter({
+                userName: userName, 
+                amount: loanAmount,
+                transactionType: "Loan Disbursement",
+                reference: refNumber,
+                date: today,
+                notes: `Approved for ${loanData.durationWeeks} weeks at KSH ${loanData.interest} interest.`
+            });
+        }
         
         // Refresh the UI to show the new balances
         loadPendingLoans();
@@ -1214,3 +1336,181 @@ window.verifyPayment = async function(claimId, userId, amount, mpesaCode, userNa
         alert("Transaction failed. Check console.");
     }
 };
+
+// ==========================================
+// OFFICIAL PRINTABLE LETTER GENERATOR
+// ==========================================
+
+export function generateOfficialLetter({
+    userName,
+    amount,
+    transactionType, // e.g., "Loan Disbursement", "Exit Payout"
+    reference,
+    date,
+    notes
+}) {
+    // Generate a unique digital signature/hash for authenticity
+    const digitalSignature = btoa(`${reference}-${amount}-${date}`).substring(0, 15).toUpperCase();
+
+    // Create an iframe to hold the print document
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = 'none';
+    document.body.appendChild(iframe);
+
+    // The HTML content for the official letter
+    const htmlContent = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Official Disbursement - ${reference}</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            @media print {
+                body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                @page { margin: 0; }
+            }
+            .watermark {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%) rotate(-45deg);
+                font-size: 8rem;
+                color: rgba(0, 0, 0, 0.03);
+                font-weight: bold;
+                white-space: nowrap;
+                z-index: -1;
+                pointer-events: none;
+            }
+            .seal {
+                position: absolute;
+                bottom: 50px;
+                right: 50px;
+                width: 100px;
+                height: 100px;
+                border: 4px solid #1e3a8a; /* blue-900 */
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                color: #1e3a8a;
+                font-size: 10px;
+                font-weight: bold;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                transform: rotate(-15deg);
+                opacity: 0.8;
+            }
+            .seal::after {
+                content: "AUTHENTIC";
+                position: absolute;
+                font-size: 14px;
+                color: rgba(220, 38, 38, 0.7); /* red-600 */
+                transform: rotate(30deg);
+                letter-spacing: 4px;
+            }
+        </style>
+    </head>
+    <body class="bg-white text-slate-800 p-10 font-sans relative h-screen">
+        
+        <div class="watermark">B&M GROUP</div>
+
+        <div class="flex justify-between items-start border-b-4 border-blue-900 pb-6 mb-8">
+            <div class="flex items-start flex-col">
+                <img src="bm_group_logo.png" alt="B&M Group Logo" class="h-12 w-auto mb-1 ml-[-2px] object-contain">
+                <p class="text-sm font-semibold text-slate-500 uppercase tracking-widest mt-1">Private Savings & Credit Investment</p>
+            </div>
+            <div class="text-right text-sm text-slate-600">
+                <p class="font-bold text-slate-800">Headquarters</p>
+                <p>Juja, Kiambu County</p>
+                <p>Kenya</p>
+            </div>
+        </div>
+        </div>
+        <div class="flex justify-between mb-10 bg-slate-50 p-4 rounded-lg border border-slate-200">
+            <div>
+                <p class="text-xs text-slate-500 uppercase">Document Ref</p>
+                <p class="font-bold text-slate-800 font-mono">${reference}</p>
+            </div>
+            <div>
+                <p class="text-xs text-slate-500 uppercase">Date of Issue</p>
+                <p class="font-bold text-slate-800">${date}</p>
+            </div>
+            <div class="text-right">
+                <p class="text-xs text-slate-500 uppercase">Transaction Type</p>
+                <p class="font-bold text-blue-700 uppercase">${transactionType}</p>
+            </div>
+        </div>
+
+        <div class="mb-10 min-h-[300px]">
+            <h2 class="text-xl font-bold mb-4">Official Notification of Disbursement</h2>
+            <p class="mb-4 text-slate-700 leading-relaxed">
+                This document serves as official confirmation that a transaction has been successfully processed and approved by the B&M Group administration. The details of the disbursement are as follows:
+            </p>
+            
+            <div class="bg-white border-2 border-slate-200 rounded-lg p-6 mb-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="text-sm text-slate-500">Beneficiary Name:</div>
+                    <div class="font-bold text-lg">${userName}</div>
+                    
+                    <div class="text-sm text-slate-500">Approved Amount:</div>
+                    <div class="font-extrabold text-2xl text-green-700">KSH ${amount.toLocaleString()}</div>
+                    
+                    <div class="text-sm text-slate-500">Remarks/Notes:</div>
+                    <div class="text-slate-800 font-medium">${notes || 'Standard clearance applied.'}</div>
+                </div>
+            </div>
+
+            <p class="text-sm text-slate-600 italic">
+                By accepting these funds, the beneficiary agrees to the terms and conditions outlined in the B&M Group governance charter.
+            </p>
+        </div>
+
+        <div class="mt-16 flex justify-between items-end border-t border-slate-300 pt-8">
+            <div class="w-1/3 text-center">
+                <div class="border-b border-slate-400 h-10 mb-2"></div>
+                <p class="font-bold text-sm">Brian Odhiambo</p>
+                <p class="text-xs text-slate-500">System Administrator / Co-Founder</p>
+            </div>
+            
+            <div class="w-1/3 text-center">
+                <div class="border-b border-slate-400 h-10 mb-2"></div>
+                <p class="font-bold text-sm">Beneficiary Signature</p>
+                <p class="text-xs text-slate-500">Acknowledge Receipt</p>
+            </div>
+        </div>
+
+        <div class="seal">
+            B&M<br>Verified<br>Secure
+        </div>
+        
+        <div class="absolute bottom-10 left-10 text-xs text-slate-400 font-mono">
+            Cryptographic Hash: ${digitalSignature}
+        </div>
+    </body>
+    </html>
+    `;
+
+    // Write to the iframe and print
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(htmlContent);
+    doc.close();
+
+    // Wait a brief moment for Tailwind to apply styles, then print
+    setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        
+        // Clean up the DOM after printing
+        setTimeout(() => {
+            document.body.removeChild(iframe);
+        }, 1000);
+    }, 800); 
+}

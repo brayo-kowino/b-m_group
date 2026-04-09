@@ -7,6 +7,7 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
         body {
@@ -176,6 +177,24 @@
                 <p class="text-[10px] text-slate-400 font-medium ml-2 mt-1">(Min 30%)</p>
             </div>
         </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 mt-8">
+    
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                <h3 class="text-sm font-bold text-slate-700 uppercase mb-4 tracking-wider">Capital Distribution</h3>
+                <div class="relative h-64 w-full flex justify-center">
+                    <canvas id="capitalDoughnutChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+                <h3 class="text-sm font-bold text-slate-700 uppercase mb-4 tracking-wider">Group Wealth Overview</h3>
+                <div class="relative h-64 w-full flex justify-center">
+                    <canvas id="wealthBarChart"></canvas>
+                </div>
+            </div>
+
+            </div>
         
         <section id="members" class="bg-white rounded-[4px] ios-shadow border border-slate-200 p-6 mb-10 overflow-hidden">
             <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-2 border-b border-slate-100 pb-4">
@@ -184,6 +203,8 @@
                     Closed to new members until Jan 2027
                 </div>
             </div>
+
+            
             
             <div class="overflow-x-auto -mx-6 px-6">
                 <table class="min-w-full text-left text-sm whitespace-nowrap">
