@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=0.9">
     <title>B&M Group - Admin Command Center</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -208,13 +208,12 @@
             
             <div class="overflow-x-auto -mx-6 px-6">
                 <table class="min-w-full text-left text-sm whitespace-nowrap">
-                    <thead class="text-xs text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-100 bg-slate-50/50">
+                   <thead class="text-xs text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-100 bg-slate-50/50">
                         <tr>
-                            <th class="py-3 px-2 font-bold">Member Info</th>
-                            <th class="py-3 px-2 font-bold">Financials</th>
-                            <th class="py-3 px-2 font-bold">Verification</th>
-                            <th class="py-3 px-2 font-bold">Status</th>
-                            <th class="py-3 px-2 font-bold text-right">Actions</th>
+                            <th class="py-3 px-4 font-bold">Member Details</th>
+                            <th class="py-3 px-4 font-bold">Financial Standing</th>
+                            <th class="py-3 px-4 font-bold">Account Status</th>
+                            <th class="py-3 px-4 font-bold">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="membersTableBody" class="divide-y divide-slate-100">
@@ -291,6 +290,25 @@
                     </thead>
                     <tbody id="activeLoansTableBody" class="divide-y divide-slate-100">
                     </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-8">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 tracking-tight">Pending Loan Requests</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-left text-sm whitespace-nowrap">
+                    <thead class="bg-slate-50 border-b border-slate-100 text-slate-500 text-xs uppercase tracking-wider font-semibold">
+                        <tr>
+                            <th class="p-3">Member Details</th>
+                            <th class="p-3">Requested</th>
+                            <th class="p-3">System Limit</th> <th class="p-3">Interest (15%)</th>
+                            <th class="p-3">Duration</th>
+                            <th class="p-3">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pendingLoansTable" class="divide-y divide-slate-100">
+                        </tbody>
                 </table>
             </div>
         </section>

@@ -276,10 +276,15 @@ async function loadUserData(uid) {
         await loadMyLedger(uid);
         await loadMyLoans(uid);
 
-    // 3. Load Monthly Progress (Waterfall Algorithm)
+// 3. Load Monthly Progress & Calculate Consistency
         const now = new Date();
         const currentYear = now.getFullYear();
         const currentMonth = now.getMonth();
+        
+        // Calculate Months Active on the fly
+        const joinDateObj = currentUserData.createdAt ? currentUserData.createdAt.toDate() : new Date();
+        const diffInMonths = (currentYear - joinDateObj.getFullYear()) * 12 + (currentMonth - joinDateObj.getMonth());
+        const monthsActive = Math.max(1, diffInMonths);
         
         let remaining = currentUserData.savings || 0;
         let unclearedPastMonths = [];
@@ -287,13 +292,17 @@ async function loadUserData(uid) {
         
         let currentMonthAllocated = 0;
         let currentMonthTarget = 0;
-        let activeTargetMonthFound = false; // NEW: Tracks if we found the month to focus on
+        let activeTargetMonthFound = false;
+        
+        let expectedTotalSoFar = 0; // Track for Consistency Score
 
         for (let i = 0; i <= currentMonth; i++) {
             const daysInMonth = new Date(currentYear, i + 1, 0).getDate(); 
             const target = (Math.floor(daysInMonth / 7) * 70) + ((daysInMonth % 7) * 10);
             const monthName = new Date(currentYear, i, 1).toLocaleString('default', { month: 'long' });
             
+            expectedTotalSoFar += target; // Add to expected total
+
             let statusBadge = '';
             let allocated = 0;
 
@@ -321,10 +330,8 @@ async function loadUserData(uid) {
                 </div>
             `;
 
-            // NEW LOGIC: Determine if THIS month should be the one featured on the main progress bar
-            // It becomes the focus if it's the first uncleared month, OR if we reach the current calendar month and all previous were cleared.
+            // Setup Main Progress Bar UI focus
             let isFocusMonth = false;
-            
             if (allocated < target && !activeTargetMonthFound) {
                 isFocusMonth = true;
                 activeTargetMonthFound = true;
@@ -333,7 +340,6 @@ async function loadUserData(uid) {
                 activeTargetMonthFound = true;
             }
 
-            // Update the Progress Bar UI for the focus month
             if (isFocusMonth) {
                 currentMonthAllocated = allocated;
                 currentMonthTarget = target;
@@ -344,8 +350,6 @@ async function loadUserData(uid) {
 
                 const progressBar = document.getElementById('monthlyProgressBar');
                 progressBar.style.width = `${progressPercentage}%`;
-                
-                // Reset classes cleanly before applying new ones
                 progressBar.className = "h-full rounded-full transition-all duration-1000 ease-out";
                 
                 if (progressPercentage === 100) {
@@ -364,7 +368,6 @@ async function loadUserData(uid) {
                     statusText.className = "text-xs md:text-sm text-green-600 mt-4 font-medium";
                 } else {
                     const diff = target - allocated;
-                    // Updated message to specify the month name they are behind on
                     statusText.innerHTML = `You need <strong>KSH ${diff}</strong> more to clear ${monthName}. Consistent contributions will help you unlock more benefits.`;
                     statusText.className = "text-xs md:text-sm text-slate-500 mt-4 font-medium";
                 }
@@ -373,14 +376,15 @@ async function loadUserData(uid) {
 
         document.getElementById('clearanceTimeline').innerHTML = timelineHTML;
 
+        // Auto-Calculate Consistency Score (Actual Savings vs Expected Minimums)
+        const actualSaved = currentUserData.savings || 0;
+        const consistencyScore = expectedTotalSoFar > 0 ? Math.min(100, Math.round((actualSaved / expectedTotalSoFar) * 100)) : 50;
+
         // ==========================================
         // DYNAMIC ALGORITHMIC LOAN LIMIT & AVAILABLE BALANCE
         // ==========================================
         const savings = currentUserData.savings || 0;
         const loansRepaid = currentUserData.loansRepaidCount || 0; 
-        
-        const monthsActive = currentUserData.monthsActive || 1; 
-        const consistencyScore = currentUserData.consistencyScore || 50; 
         const hasArrears = unclearedPastMonths.length - 1 > 0; 
         
         let limit = 0;

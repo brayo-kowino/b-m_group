@@ -77,7 +77,7 @@ async function loadGroupStats() {
 
 export async function loadMembers() {
     const tableBody = document.getElementById('membersTableBody');
-    tableBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">Loading members...</td></tr>';
+    tableBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">Loading members...</td></tr>';
 
     try {
         const querySnapshot = await getDocs(collection(db, "users"));
@@ -87,39 +87,73 @@ export async function loadMembers() {
             const user = userDoc.data();
             const userId = userDoc.id;
 
+            // --- 1. CALCULATE TIME CONTEXT ---
+            const joinDateObj = user.createdAt ? user.createdAt.toDate() : new Date();
+            const joinDateString = joinDateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+            
+            // --- 2. CALCULATE FINANCIAL CONTEXT ---
+            const waterfall = typeof calculateWaterfall === 'function' ? calculateWaterfall(user.savings || 0) : { consistencyScore: 50, arrearsTotal: 0 };
+            const consistencyScore = waterfall.consistencyScore;
+            const arrearsTotal = waterfall.arrearsTotal;
+            const repaidCount = user.loansRepaidCount || 0;
+
+            // --- 3. BADGES & UI ELEMENTS ---
             let statusBadge = '';
             switch(user.status) {
-                case 'approved': statusBadge = '<span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">Approved</span>'; break;
-                case 'pending': statusBadge = '<span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold">Pending</span>'; break;
-                case 'suspended': statusBadge = '<span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold">Suspended</span>'; break;
-                case 'restricted': statusBadge = '<span class="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-semibold">Restricted</span>'; break;
-                default: statusBadge = `<span class="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-semibold">${user.status}</span>`;
+                case 'approved': statusBadge = '<span class="px-2 py-0.5 bg-emerald-100 text-emerald-700 border border-emerald-200 rounded text-[10px] uppercase tracking-wide font-bold">Approved</span>'; break;
+                case 'pending': statusBadge = '<span class="px-2 py-0.5 bg-amber-100 text-amber-700 border border-amber-200 rounded text-[10px] uppercase tracking-wide font-bold">Pending</span>'; break;
+                case 'suspended': statusBadge = '<span class="px-2 py-0.5 bg-rose-100 text-rose-700 border border-rose-200 rounded text-[10px] uppercase tracking-wide font-bold">Suspended</span>'; break;
+                case 'restricted': statusBadge = '<span class="px-2 py-0.5 bg-orange-100 text-orange-700 border border-orange-200 rounded text-[10px] uppercase tracking-wide font-bold">Restricted</span>'; break;
+                default: statusBadge = `<span class="px-2 py-0.5 bg-slate-100 text-slate-700 border border-slate-200 rounded text-[10px] uppercase tracking-wide font-bold">${user.status}</span>`;
             }
 
             const verifiedBadge = user.verified 
-                ? '<span class="text-blue-500 font-bold" title="Verified">✓</span>' 
-                : `<button onclick="verifyMember('${userId}')" class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100">Verify Now</button>`;
+                ? '<span class="text-[10px] uppercase tracking-wider font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">Verified ID</span>' 
+                : `<button onclick="verifyMember('${userId}')" class="text-[10px] uppercase tracking-wider font-bold text-slate-500 bg-white border border-slate-300 px-2 py-0.5 rounded hover:bg-slate-50 transition shadow-sm">Verify Now</button>`;
 
-            // --- CRITICAL FIX: Sanitize strings for inline HTML injection ---
+            // Sanitize strings for inline HTML injection
             const safeName = (user.name || '').replace(/'/g, "\\'").replace(/"/g, "&quot;");
             const safeWarning = (user.warningMessage || '').replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/(\r\n|\n|\r)/gm, "\\n");
             const safeInfo = (user.infoMessage || '').replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/(\r\n|\n|\r)/gm, "\\n");
 
+            // --- 4. BUILD THE ROW ---
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td class="p-3">
-                    <div class="font-bold text-gray-800">${user.name}</div>
-                    <div class="text-xs text-gray-500">${user.email}</div>
-                    <div class="text-xs text-gray-400 uppercase mt-1">${user.role}</div>
+                <td class="p-4 align-top">
+                    <div class="font-bold text-slate-800 text-base">${user.name}</div>
+                    <div class="text-xs text-slate-500 mt-0.5">${user.email}</div>
+                    <div class="flex items-center gap-2 mt-2">
+                        <span class="text-[9px] uppercase tracking-wider font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">${user.role || 'Member'}</span>
+                        <span class="text-[10px] text-slate-400 font-semibold tracking-wide">Joined: ${joinDateString}</span>
+                    </div>
                 </td>
-                <td class="p-3">
-                    <div class="text-sm">Savings: <span class="font-semibold text-green-600">KSH ${user.savings || 0}</span></div>
-                    <div class="text-sm">Active Loans: <span class="font-semibold text-red-500">KSH ${user.loansActive || 0}</span></div>
+                <td class="p-4 align-top">
+                    <div class="flex gap-6 mb-2.5">
+                        <div>
+                            <div class="text-[9px] text-slate-400 uppercase font-bold tracking-widest mb-0.5">Savings</div>
+                            <div class="text-sm font-bold text-emerald-600">KSH ${user.savings || 0}</div>
+                        </div>
+                        <div>
+                            <div class="text-[9px] text-slate-400 uppercase font-bold tracking-widest mb-0.5">Active Debt</div>
+                            <div class="text-sm font-bold ${user.loansActive > 0 ? 'text-rose-600' : 'text-slate-400'}">KSH ${user.loansActive || 0}</div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <span class="bg-blue-50 text-blue-600 border border-blue-100 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">Score: ${consistencyScore}%</span>
+                        <span class="bg-purple-50 text-purple-600 border border-purple-100 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">Repaid: ${repaidCount}</span>
+                    </div>
                 </td>
-                <td class="p-3 text-center">${verifiedBadge}</td>
-                <td class="p-3">${statusBadge}</td>
-                <td class="p-3">
-                    <select onchange="handleStatusChange('${userId}', this.value)" class="text-xs border-gray-300 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500 p-1 mb-1 block w-full">
+                <td class="p-4 align-top">
+                    <div class="flex flex-col gap-1.5 items-start">
+                        ${statusBadge}
+                        ${verifiedBadge}
+                        ${arrearsTotal > 0 
+                            ? `<span class="bg-rose-50 text-rose-600 border border-rose-200 text-[9px] px-2 py-0.5 rounded font-bold uppercase tracking-wide mt-1">Owes: KSH ${arrearsTotal}</span>` 
+                            : `<span class="bg-emerald-50 text-emerald-600 border border-emerald-200 text-[9px] px-2 py-0.5 rounded font-bold uppercase tracking-wide mt-1">No Arrears</span>`}
+                    </div>
+                </td>
+                <td class="p-4 align-top w-48">
+                    <select onchange="handleStatusChange('${userId}', this.value)" class="text-xs border border-slate-200 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500 p-1.5 mb-2 block w-full bg-slate-50 font-medium text-slate-700">
                         <option value="" disabled selected>Change Status...</option>
                         <option value="approved">Approve</option>
                         <option value="pending">Set Pending</option>
@@ -127,11 +161,11 @@ export async function loadMembers() {
                         <option value="suspended">Suspend</option>
                     </select>
                     
-                    <button onclick="issueWarning('${userId}', '${safeName}', '${safeWarning}')" class="text-xs bg-red-50 text-red-600 border border-red-200 px-2 py-1 rounded hover:bg-red-100 font-medium transition block w-full text-left mt-1">
-                        ${user.warningMessage ? 'Update Warning' : 'Issue Warning'}
+                    <button onclick="issueWarning('${userId}', '${safeName}', '${safeWarning}')" class="text-xs bg-rose-50 text-rose-600 border border-rose-200 px-2 py-1.5 rounded hover:bg-rose-100 font-bold transition block w-full text-left mt-1 shadow-sm">
+                        ${user.warningMessage ? 'Edit Warning' : 'Issue Warning'}
                     </button>
                     
-                    <button onclick="issueUpdate('${userId}', '${safeName}', '${safeInfo}')" class="text-xs bg-green-50 text-green-600 border border-green-200 px-2 py-1 rounded hover:bg-green-100 font-medium transition block w-full text-left mt-1">
+                    <button onclick="issueUpdate('${userId}', '${safeName}', '${safeInfo}')" class="text-xs bg-emerald-50 text-emerald-600 border border-emerald-200 px-2 py-1.5 rounded hover:bg-emerald-100 font-bold transition block w-full text-left mt-1 shadow-sm">
                         ${user.infoMessage ? 'Edit Update' : 'Send Update'}
                     </button>
                 </td>
@@ -140,7 +174,7 @@ export async function loadMembers() {
         });
     } catch (error) {
         console.error("Error loading members:", error);
-        tableBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-red-500">Failed to load members.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-rose-500 font-bold">Failed to load members. Check console.</td></tr>';
     }
 }
 
@@ -454,6 +488,39 @@ window.handleDeposit = async function(userId) {
     }
 };
 
+window.fixDataIntegrity = async function() {
+    if(!confirm("Initialize data integrity fields for all members?")) return;
+    
+    try {
+        const usersSnap = await getDocs(collection(db, "users"));
+        const batch = writeBatch(db);
+        let updated = 0;
+        
+        usersSnap.forEach(u => {
+            const data = u.data();
+            const updates = {};
+            
+            if (!data.createdAt) updates.createdAt = serverTimestamp();
+            if (data.loansRepaidCount === undefined) updates.loansRepaidCount = 0;
+            
+            if (Object.keys(updates).length > 0) {
+                batch.update(u.ref, updates);
+                updated++;
+            }
+        });
+        
+        if(updated > 0) {
+            await batch.commit();
+            alert(`Boom. ${updated} member profiles successfully initialized!`);
+        } else {
+            alert("Everyone is already up to date.");
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Failed. Check console.");
+    }
+};
+
 async function loadPendingLoans() {
     const tableBody = document.getElementById('pendingLoansTable');
     tableBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500">Fetching requests...</td></tr>'; 
@@ -481,12 +548,24 @@ async function loadPendingLoans() {
             const activeDebt = user ? (user.loansActive || 0) : 0;
 
             // 2. THE LIE DETECTOR: Recalculate the True Limit
+            const joinDate = user ? user.createdAt : null;
+            const monthsActive = getMonthsActive(joinDate);
+            const waterfall = calculateWaterfall(savings);
+            const consistencyScore = waterfall.consistencyScore;
+            
             let trueLimit = 0;
             if (savings >= 500) {
                 if (repaidCount === 0) {
                     trueLimit = 600; // Tier 1: Probation
                 } else {
-                    trueLimit = savings * 2; // Tier 2: Trusted
+                    // Replicate the Advanced Multiplier Algorithm
+                    let multiplier = 1.0;
+                    multiplier += Math.min(repaidCount * 0.2, 0.6);
+                    multiplier += (consistencyScore / 100) * 0.4;
+                    multiplier += Math.min(monthsActive * 0.05, 0.5);
+                    multiplier = Math.min(multiplier, 2.5);
+                    
+                    trueLimit = Math.floor(savings * multiplier);
                 }
             }
 
@@ -502,30 +581,55 @@ async function loadPendingLoans() {
                 warningHTML += `<span class="bg-orange-100 text-orange-700 text-[10px] px-2 py-0.5 rounded font-bold block mb-1">⚠️ HAS ACTIVE DEBT: KSH ${activeDebt}</span>`;
             }
 
+            // Build the table row with the new System Limit column
+ // 4. GENERATE SMART BADGES FOR DECISION MAKING
+            const arrearsBadge = waterfall.arrearsTotal > 0 
+                ? `<span class="bg-rose-100 text-rose-700 border border-rose-200 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">Arrears: KSH ${waterfall.arrearsTotal}</span>`
+                : `<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">Savings Cleared</span>`;
+                
+            const ageBadge = `<span class="bg-slate-100 text-slate-600 border border-slate-200 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">${monthsActive} Mos. Active</span>`;
+            
+            const adminNote = user.warningMessage 
+                ? `<div class="mt-1.5 text-[10px] text-amber-700 bg-amber-50 p-1.5 rounded border border-amber-200 font-medium leading-tight"><strong>Admin Note:</strong> ${user.warningMessage}</div>`
+                : '';
+
+            // Build the table row with the new Behavioral Context
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td class="p-3">
-                    <div class="font-bold text-slate-800">${userName}</div>
-                    <div class="text-xs text-slate-500 font-medium">Savings: KSH ${savings} | Repaid: ${repaidCount}</div>
+                    <div class="font-bold text-slate-800 text-sm">${userName}</div>
+                    <div class="flex gap-1.5 mt-1 mb-1">
+                        ${ageBadge}
+                        ${arrearsBadge}
+                    </div>
+                    <div class="text-[10px] text-slate-500 font-medium">Savings: KSH ${savings} | Repaid: ${repaidCount}</div>
+                    ${adminNote}
                 </td>
                 <td class="p-3 font-semibold ${isFraudulent ? 'text-red-600' : 'text-blue-600'}">
                     KSH ${loan.amount}
                     <div class="mt-1">${warningHTML}</div>
                 </td>
-                <td class="p-3 text-red-500">KSH ${loan.interest}</td>
-                <td class="p-3">${loan.durationWeeks} Weeks</td>
+                <td class="p-3 bg-slate-50/50">
+                    <div class="font-bold ${trueLimit >= loan.amount ? 'text-emerald-600' : 'text-red-500'}">KSH ${trueLimit}</div>
+                    <div class="text-[10px] text-slate-400 font-bold tracking-wide mt-0.5 uppercase">
+                        Score: ${consistencyScore}%
+                    </div>
+                </td>
+                <td class="p-3 text-red-500 font-medium text-sm">KSH ${loan.interest}</td>
+                <td class="p-3 text-slate-600 font-medium text-sm">${loan.durationWeeks} Weeks</td>
                 <td class="p-3 flex gap-2">
                     <button onclick="approveLoan('${loanDoc.id}')" 
-                        class="px-3 py-1 rounded text-xs transition shadow-sm font-bold ${isFraudulent || hasActiveLoan ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-green-500 text-white hover:bg-green-600'}"
+                        class="px-3 py-1.5 rounded text-xs transition shadow-sm font-bold ${isFraudulent || hasActiveLoan ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-emerald-500 text-white hover:bg-emerald-600'}"
                         ${isFraudulent || hasActiveLoan ? 'disabled' : ''}>
                         Approve
                     </button>
-                    <button onclick="rejectLoan('${loanDoc.id}')" class="bg-red-100 text-red-700 px-3 py-1 rounded hover:bg-red-200 text-xs font-bold transition shadow-sm">
+                    <button onclick="rejectLoan('${loanDoc.id}')" class="bg-white border border-rose-200 text-rose-600 px-3 py-1.5 rounded hover:bg-rose-50 text-xs font-bold transition shadow-sm">
                         Reject
                     </button>
                 </td>
             `;
             tableBody.appendChild(row);
+            
         }
     } catch (error) {
         console.error("Error loading pending loans:", error);
@@ -667,8 +771,7 @@ function calculateTargetForMonth(year, monthIndex) {
     const extraDays = daysInMonth % 7;
     return (fullWeeks * 70) + (extraDays * 10);
 }
-
-// Helper: Run the Waterfall Algorithm to determine cleared months
+// Helper: Run the Waterfall Algorithm to determine cleared months & Consistency
 function calculateWaterfall(totalSavings) {
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -679,32 +782,38 @@ function calculateWaterfall(totalSavings) {
     let unclearedMonths = [];
     let currentMonthAllocated = 0;
     let currentMonthTarget = calculateTargetForMonth(currentYear, currentMonth);
+    
+    let expectedTotalSoFar = 0; // NEW: Track total expected savings
 
     // Loop from January (0) to Current Month
     for (let i = 0; i <= currentMonth; i++) {
         const target = calculateTargetForMonth(currentYear, i);
+        expectedTotalSoFar += target; // Add to expected total
         const monthName = new Date(currentYear, i, 1).toLocaleString('default', { month: 'short' });
 
         if (remaining >= target) {
-            // Month is fully cleared
             remaining -= target;
             if (i === currentMonth) currentMonthAllocated = target;
         } else {
-            // Month is partially cleared or empty
             if (i === currentMonth) {
                 currentMonthAllocated = remaining;
             } else {
-                // It's a PAST month that is uncleared!
                 unclearedMonths.push(monthName);
                 arrearsTotal += (target - remaining);
             }
-            remaining = 0; // Pool is empty
+            remaining = 0; 
         }
     }
     
-    return { unclearedMonths, arrearsTotal, currentMonthAllocated, currentMonthTarget };
-}
+    // NEW: Calculate dynamic consistency score (Capped at 100%)
+    const actualSaved = totalSavings || 0;
+    let consistencyScore = 0;
+    if (expectedTotalSoFar > 0) {
+        consistencyScore = Math.min(100, Math.round((actualSaved / expectedTotalSoFar) * 100));
+    }
 
+    return { unclearedMonths, arrearsTotal, currentMonthAllocated, currentMonthTarget, consistencyScore };
+}
 export async function loadContributionTracker() {
     const now = new Date();
     const currentTarget = calculateTargetForMonth(now.getFullYear(), now.getMonth());
@@ -1513,4 +1622,13 @@ export function generateOfficialLetter({
             document.body.removeChild(iframe);
         }, 1000);
     }, 800); 
+}
+
+// Helper: Calculate Months Active
+function getMonthsActive(timestamp) {
+    if (!timestamp) return 1; // Fallback for old accounts
+    const join = timestamp.toDate();
+    const now = new Date();
+    const diff = (now.getFullYear() - join.getFullYear()) * 12 + (now.getMonth() - join.getMonth());
+    return Math.max(1, diff); // Minimum 1 month
 }
