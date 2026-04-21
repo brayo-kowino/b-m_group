@@ -376,7 +376,7 @@ async function loadUserData(uid) {
                 
                 const statusText = document.getElementById('monthlyStatusText');
                 if (allocated >= target) {
-                    statusText.innerHTML = "✅ <strong>Awesome!</strong> You have successfully met your contribution target.";
+                    statusText.innerHTML = "<strong>Awesome!</strong> You have successfully met your contribution target.";
                     statusText.className = "text-xs md:text-sm text-green-600 mt-4 font-medium";
                 } else {
                     const diff = target - allocated;
@@ -459,7 +459,7 @@ async function loadUserData(uid) {
         
         // Override helper text if global liquidity is the bottleneck
         if (globalRemainingLiquidity < personalAvailableLimit && globalRemainingLiquidity > 0) {
-            limitStatus = `Note: Your personal limit is KSH ${personalAvailableLimit}, but group vault liquidity caps it at KSH ${Math.floor(globalRemainingLiquidity)}.`;
+            limitStatus = `Note: Your personal limit is KSH ${personalAvailableLimit}, but group's available reserve limits it to KSH ${Math.floor(globalRemainingLiquidity)}.`;
             helperClass = "text-[10px] md:text-xs text-amber-600 mt-2 font-bold italic";
         } else if (globalRemainingLiquidity <= 0 && personalAvailableLimit > 0) {
             limitStatus = "Loan facility paused: Group vault liquidity has reached the 30% reserve limit.";
