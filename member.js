@@ -391,47 +391,18 @@ async function loadUserData(uid) {
         const actualSaved = currentUserData.savings || 0;
         const consistencyScore = expectedTotalSoFar > 0 ? Math.min(100, Math.round((actualSaved / expectedTotalSoFar) * 100)) : 50;
 
-        // ==========================================
+// ==========================================
         // DYNAMIC ALGORITHMIC LOAN LIMIT & AVAILABLE BALANCE
+        // (V3: Equity-Weighted Fairness Model)
         // ==========================================
         const savings = currentUserData.savings || 0;
         const loansRepaid = currentUserData.loansRepaidCount || 0; 
         const hasArrears = unclearedPastMonths.length - 1 > 0; 
         
-        let limit = 0;
         let limitStatus = "Min. KSH 500 savings required to unlock credit.";
         let helperClass = "text-[10px] md:text-xs text-slate-400 mt-2 font-medium"; 
-
-        if (savings >= 500) {
-            if (hasArrears || currentUserData.status === 'restricted') {
-                limit = 0;
-                limitStatus = "Credit locked due to active arrears or account restrictions.";
-                helperClass = "text-[10px] md:text-xs text-rose-500 mt-2 font-bold";
-            } 
-            else if (loansRepaid === 0) {
-                limit = 600;
-                limitStatus = "Repay 1st loan to unlock more credit.";
-                helperClass = "text-[10px] md:text-xs text-amber-500 mt-2 font-semibold";
-            } 
-            else {
-                let multiplier = 1.0;
-                multiplier += Math.min(loansRepaid * 0.2, 0.6);
-                multiplier += (consistencyScore / 100) * 0.4;
-                multiplier += Math.min(monthsActive * 0.05, 0.5);
-                multiplier = Math.min(multiplier, 1.5);
-
-                limit = Math.floor(savings * multiplier);
-
-                if (multiplier >= 2.0) {
-                    limitStatus = `Excellent credit standing! Your responsible behavior has earned you a higher credit limit.`;
-                    helperClass = "text-[10px] md:text-xs text-emerald-500 mt-2 font-bold";
-                } else {
-                    limitStatus = `Consistent contributions and timely repayments will increase your limit.`;
-                    helperClass = "text-[10px] md:text-xs text-blue-500 mt-2 font-semibold";
-                }
-            }
-        }
-
+        
+        // 1. Calculate Active Loans First
         let activeLoansTotal = 0;
         try {
             const activeLoansQuery = query(
@@ -444,25 +415,93 @@ async function loadUserData(uid) {
                 activeLoansTotal += Number(docSnap.data().amount);
             });
         } catch (error) {
-            console.error("Error fetching active loans for limit calc:", error);
+            console.error("Error fetching active loans:", error);
         }
 
-        // User's personal available limit
-        let personalAvailableLimit = Math.max(0, limit - activeLoansTotal);
+        let personalAvailableLimit = 0;
+        let baseLimit = 0;
 
-        // --- NEW: SMART GLOBAL FILTER ---
-        // Pick whichever is lower: the user's limit, or what the vault can afford
-        const finalSmartLimit = Math.floor(Math.min(personalAvailableLimit, globalRemainingLiquidity));
+        if (savings >= 500) {
+            if (hasArrears || currentUserData.status === 'restricted') {
+                limitStatus = "Credit locked due to active arrears or account restrictions.";
+                helperClass = "text-[10px] md:text-xs text-rose-500 mt-2 font-bold";
+            } 
+            else if (loansRepaid === 0) {
+                baseLimit = 600;
+                limitStatus = "Repay 1st loan to unlock trust multipliers.";
+                helperClass = "text-[10px] md:text-xs text-amber-500 mt-2 font-semibold";
+            } 
+            else {
+                // --- NEW: THE EQUITY SHARE ---
+                // What percentage of the group's total money belongs to this user?
+                const equityShare = totalGroupCapital > 0 ? (savings / totalGroupCapital) : 0;
 
-        document.getElementById('availableLoanLimit').textContent = `KSH ${finalSmartLimit}`;
-        document.getElementById('totalLoanLimit').textContent = limit;
+                // Calculate their earned Base Multiplier
+                let earnedMultiplier = 1.0;
+                earnedMultiplier += Math.min(loansRepaid * 0.2, 0.6);
+                earnedMultiplier += (consistencyScore / 100) * 0.4;
+                earnedMultiplier += Math.min(monthsActive * 0.05, 0.5);
+                earnedMultiplier = Math.min(earnedMultiplier, 1.5); // Max 1.5x
+
+                // --- NEW: EQUITY-PROTECTED MULTIPLIER ---
+                // Calculate vault health (1.0 = healthy 70% available, 0.0 = empty)
+                const vaultHealthRatio = totalGroupCapital > 0 ? (globalRemainingLiquidity / (totalGroupCapital * 0.70)) : 0;
+                
+                // Whales resist the liquidity penalty. If you own 60% of the group, you don't get penalized as hard.
+                const penaltyResistance = Math.min(1.0, equityShare * 1.5); 
+                const scaledHealth = vaultHealthRatio + ((1 - vaultHealthRatio) * penaltyResistance);
+                
+                // Dynamic Multiplier that respects high savers
+                const dynamicMultiplier = Math.max(0.8, earnedMultiplier * scaledHealth);
+                baseLimit = Math.floor(savings * dynamicMultiplier);
+
+                if (equityShare >= 0.20) { // Owns more than 20% of the group
+                    limitStatus = `Priority Access: Your high savings volume grants you protected multiplier scaling.`;
+                    helperClass = "text-[10px] md:text-xs text-purple-600 mt-2 font-bold";
+                } else if (dynamicMultiplier >= 1.2) {
+                    limitStatus = `Excellent credit! Multiplier is healthy based on group reserves.`;
+                    helperClass = "text-[10px] md:text-xs text-emerald-500 mt-2 font-bold";
+                } else {
+                    limitStatus = `Note: Multipliers are scaled slightly to protect group reserves.`;
+                    helperClass = "text-[10px] md:text-xs text-blue-500 mt-2 font-semibold italic";
+                }
+            }
+        }
+
+        let calculatedLimitBeforeVault = Math.max(0, baseLimit - activeLoansTotal);
+
+        // --- NEW: EQUITY-BASED EXPOSURE CAP ---
+        const equityShare = totalGroupCapital > 0 ? (savings / totalGroupCapital) : 0;
         
-        // Override helper text if global liquidity is the bottleneck
-        if (globalRemainingLiquidity < personalAvailableLimit && globalRemainingLiquidity > 0) {
-            limitStatus = `Note: Your personal limit is KSH ${personalAvailableLimit}, but group's available reserve limits it to KSH ${Math.floor(globalRemainingLiquidity)}.`;
-            helperClass = "text-[10px] md:text-xs text-amber-600 mt-2 font-bold italic";
-        } else if (globalRemainingLiquidity <= 0 && personalAvailableLimit > 0) {
-            limitStatus = "Loan facility paused: Group vault liquidity has reached the 30% reserve limit.";
+        // Base allowance is 30% of the remaining vault. Plus whatever equity you hold.
+        // A 50% owner can access 80% of the remaining vault. A 5% owner accesses 35%. Max cap is 95%.
+        const allowedExposureRatio = Math.min(0.95, 0.30 + equityShare);
+        let maxSingleExposure = globalRemainingLiquidity * allowedExposureRatio;
+
+        // "OWN MONEY" OVERRIDE:
+        // You are ALWAYS allowed to access an amount equal to your own savings,
+        // ignoring the exposure ratio, as long as the physical cash exists in the vault.
+        maxSingleExposure = Math.max(maxSingleExposure, savings);
+
+        // The final limit is whichever is lowest: 
+        // Their personal limit, the remaining physical vault, or their equity-weighted cap.
+        const finalSmartLimit = Math.floor(Math.min(calculatedLimitBeforeVault, globalRemainingLiquidity, maxSingleExposure));
+
+        // Update UI
+        document.getElementById('availableLoanLimit').textContent = `KSH ${finalSmartLimit}`;
+        document.getElementById('totalLoanLimit').textContent = baseLimit; 
+        
+        // Dynamic messaging for the bottlenecks
+        if (finalSmartLimit < calculatedLimitBeforeVault && finalSmartLimit > 0) {
+            if (finalSmartLimit === Math.floor(maxSingleExposure)) {
+                limitStatus = `Limit adjusted to KSH ${finalSmartLimit} to ensure fair distribution for lower-equity members.`;
+                helperClass = "text-[10px] md:text-xs text-amber-600 mt-2 font-bold italic";
+            } else {
+                limitStatus = `Limit adjusted to KSH ${finalSmartLimit} because the group vault is currently low.`;
+                helperClass = "text-[10px] md:text-xs text-orange-600 mt-2 font-bold italic";
+            }
+        } else if (globalRemainingLiquidity <= 0 && calculatedLimitBeforeVault > 0) {
+            limitStatus = "Loan facility temporarily paused: Group vault has reached its 30% reserve limit.";
             helperClass = "text-[10px] md:text-xs text-rose-600 mt-2 font-black";
         }
 
@@ -472,8 +511,8 @@ async function loadUserData(uid) {
             limitHelper.className = helperClass;
         }
 
-        currentUserData.calculatedLimit = limit;
-        currentUserData.availableLimit = finalSmartLimit; // System now uses the smart limit
+        currentUserData.calculatedLimit = baseLimit;
+        currentUserData.availableLimit = finalSmartLimit;
 
         // 4. The Smart Warning Engine
         const alertsList = document.getElementById('alertsList');
