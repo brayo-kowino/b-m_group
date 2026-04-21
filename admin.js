@@ -936,7 +936,7 @@ export async function loadContributionTracker() {
     }
 }
 // ==========================================
-// NEW FEATURE: INBOX, GRIEVANCES & EXITS
+// INBOX, GRIEVANCES & EXITS
 // ==========================================
 
 // --- 1. Load Grievances ---
@@ -1206,7 +1206,6 @@ export async function loadMasterLedger() {
 
 // --- CSV Export Logic ---
 window.exportLedgerCSV = function() {
-    // Grab the table HTML element
     const table = document.querySelector("#ledger table");
     if (!table) return;
 
@@ -1245,7 +1244,7 @@ window.exportLedgerCSV = function() {
 export function generateOfficialLetter({
     userName,
     amount,
-    transactionType, // e.g., "Loan Disbursement", "Exit Payout"
+    transactionType, 
     reference,
     date,
     notes
@@ -1629,7 +1628,7 @@ export async function loadActiveLoans() {
     }
 }
 
-window.processRepayment = async function(loanId, userId, principal, interest, userName) {
+    window.processRepayment = async function(loanId, userId, principal, interest, userName) {
     const totalRepayment = principal + interest;
     
     if (!confirm(`Confirm that ${userName} has fully paid KSH ${totalRepayment} (Principal + Interest)?`)) return;
@@ -1702,11 +1701,11 @@ window.processRepayment = async function(loanId, userId, principal, interest, us
             const savings = userData.savings || 0;
             const joinDate = userData.createdAt;
             
-            // Note: We use the NEW repaid count (current + 1) because the transaction just updated it
+            // We use the NEW repaid count (current + 1) because the transaction just updated it
             const currentRepaidCount = userData.loansRepaidCount || 0; 
             const newRepaidCount = currentRepaidCount + 1; 
 
-// 2. Run the Advanced Multiplier Algorithm to find their True Limit
+            // 2. Run the Advanced Multiplier Algorithm to find their True Limit
             const monthsActive = getMonthsActive(joinDate);
             const waterfall = calculateWaterfall(savings);
             
@@ -1818,7 +1817,7 @@ window.rejectPayment = async function(claimId, userId, mpesaCode) {
         });
 
         alert("Payment rejected! The member has been automatically notified on their portal.");
-        loadPendingPayments(); // Refresh the table
+        loadPendingPayments(); 
         
     } catch (error) {
         console.error("Error rejecting payment:", error);
@@ -1858,7 +1857,6 @@ window.verifyPayment = async function(claimId, userId, amount, mpesaCode, userNa
                 resolvedAt: serverTimestamp()
             });
 
-            // 4. Log to Master Ledger
             transaction.set(newTransactionRef, {
                 userId: userId,
                 type: "deposit",
@@ -1883,33 +1881,10 @@ window.verifyPayment = async function(claimId, userId, amount, mpesaCode, userNa
     }
 };
 
-
-
-// Helper: Calculate Months Active
 function getMonthsActive(timestamp) {
-    if (!timestamp) return 1; // Fallback for old accounts
+    if (!timestamp) return 1; 
     const join = timestamp.toDate();
     const now = new Date();
     const diff = (now.getFullYear() - join.getFullYear()) * 12 + (now.getMonth() - join.getMonth());
-    return Math.max(1, diff); // Minimum 1 month
+    return Math.max(1, diff); 
 }
-
-// ==========================================
-// DEV TOOLS: SAFE LETTER TESTING
-// ==========================================
-
-window.testRepaymentLetter = function() {
-    console.log("Generating mock repayment letter...");
-    
-    // 1. Create realistic dummy data
-    const today = new Date().toLocaleDateString('en-GB'); 
-    
-    // 2. Call the generator directly without touching Firebase
-    generateRepaymentLetter({
-        userName: "Brian Odhiambo", // A familiar test name!
-        amount: 8500,
-        reference: "BM-REP-DEVTEST",
-        date: today,
-        newLimit: 15400 // Fake calculated limit
-    });
-};
