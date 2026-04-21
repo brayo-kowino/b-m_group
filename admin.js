@@ -525,7 +525,7 @@ async function loadPendingLoans() {
     const tableBody = document.getElementById('pendingLoansTable');
     tableBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500">Fetching requests...</td></tr>'; 
 
-    try {
+try {
         const q = query(collection(db, "loans"), where("status", "==", "pending"));
         const querySnapshot = await getDocs(q);
         tableBody.innerHTML = '';
@@ -535,10 +535,13 @@ async function loadPendingLoans() {
             return;
         }
 
+        // --- NEW: Fetch Global Stats ONCE for the table ---
+        const statsSnap = await getDoc(doc(db, "groupStats", "main"));
+        const statsData = statsSnap.exists() ? statsSnap.data() : { capital: 0, totalLoans: 0 };
+
         for (const loanDoc of querySnapshot.docs) {
             const loan = loanDoc.data();
             
-            // 1. FETCH RAW USER DATA (Do not trust the loan request's math)
             const userSnap = await getDoc(doc(db, "users", loan.userId));
             const user = userSnap.exists() ? userSnap.data() : null;
             
@@ -552,46 +555,38 @@ async function loadPendingLoans() {
             const waterfall = calculateWaterfall(savings);
             const consistencyScore = waterfall.consistencyScore;
             
+            // --- NEW: USE THE SMART CALCULATOR ---
             let trueLimit = 0;
-            if (savings >= 500) {
-                if (repaidCount === 0) {
-                    trueLimit = 600; 
-                } else {
-                    let multiplier = 1.0;
-                    multiplier += Math.min(repaidCount * 0.2, 0.6);
-                    multiplier += (consistencyScore / 100) * 0.4;
-                    multiplier += Math.min(monthsActive * 0.05, 0.5);
-                    multiplier = Math.min(multiplier, 2.0);
-                    
-                    trueLimit = Math.floor(savings * multiplier);
-                }
+            if (user) {
+                const limits = calculateSmartLimit(user, statsData, activeDebt, consistencyScore, monthsActive, waterfall.arrearsTotal);
+                trueLimit = limits.finalLimit;
             }
 
             // 3. FLAG VIOLATIONS
+            // We changed the word from "Fraudulent" to "Exceeds Limit" because if the vault drops while the request is pending, it's not the user's fault, it's just bad timing!
             const isFraudulent = loan.amount > trueLimit;
             const hasActiveLoan = activeDebt > 0;
 
             let warningHTML = '';
             if (isFraudulent) {
-                warningHTML += `<span class="bg-red-100 text-red-700 text-[10px] px-2 py-0.5 rounded font-bold block mb-1">⚠️ TAMPERING: EXCEEDS KSH ${trueLimit} LIMIT</span>`;
+                warningHTML += `<span class="bg-red-100 text-red-700 text-[10px] px-2 py-0.5 rounded font-bold block mb-1">⚠️ EXCEEDS SYSTEM LIMIT: KSH ${trueLimit}</span>`;
             }
             if (hasActiveLoan) {
                 warningHTML += `<span class="bg-orange-100 text-orange-700 text-[10px] px-2 py-0.5 rounded font-bold block mb-1">⚠️ HAS ACTIVE DEBT: KSH ${activeDebt}</span>`;
             }
 
-            // Build the table row with the new System Limit column
- // 4. GENERATE SMART BADGES FOR DECISION MAKING
+            // ... (The rest of your HTML building for the row stays exactly the same!)
+            // 4. GENERATE SMART BADGES FOR DECISION MAKING
             const arrearsBadge = waterfall.arrearsTotal > 0 
                 ? `<span class="bg-rose-100 text-rose-700 border border-rose-200 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">Arrears: KSH ${waterfall.arrearsTotal}</span>`
                 : `<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">Savings Cleared</span>`;
                 
             const ageBadge = `<span class="bg-slate-100 text-slate-600 border border-slate-200 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">${monthsActive} Mos. Active</span>`;
             
-            const adminNote = user.warningMessage 
+            const adminNote = user && user.warningMessage 
                 ? `<div class="mt-1.5 text-[10px] text-amber-700 bg-amber-50 p-1.5 rounded border border-amber-200 font-medium leading-tight"><strong>Admin Note:</strong> ${user.warningMessage}</div>`
                 : '';
 
-            // Build the table row with the new Behavioral Context
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td class="p-3">
@@ -666,13 +661,16 @@ window.approveLoan = async function(loanId) {
                 throw new Error("Approval Blocked: This member currently has an active loan.");
             }
 
-            let trueLimit = 0;
-            if (savings >= 500) {
-                trueLimit = repaidCount === 0 ? 600 : savings * 2;
-            }
+            // --- NEW: REAL-TIME LIMIT VERIFICATION ---
+            const waterfall = calculateWaterfall(savings);
+            const monthsActive = getMonthsActive(userData.createdAt);
+            
+            // Re-calculate their exact limit right at the moment of approval
+            const limits = calculateSmartLimit(userData, statsDoc.data(), activeDebt, waterfall.consistencyScore, monthsActive, waterfall.arrearsTotal);
+            const trueLimit = limits.finalLimit;
 
             if (loanAmount > trueLimit) {
-                throw new Error(`Fraud Prevention: Member limit is KSH ${trueLimit}, but requested KSH ${loanAmount}. Transaction aborted.`);
+                throw new Error(`Transaction Blocked: Due to current vault liquidity and equity rules, the max allowed is KSH ${trueLimit}, but requested is KSH ${loanAmount}.`);
             }
 
             // ==========================================
@@ -811,6 +809,58 @@ function calculateWaterfall(totalSavings) {
     }
 
     return { unclearedMonths, arrearsTotal, currentMonthAllocated, currentMonthTarget, consistencyScore };
+}
+
+// ==========================================
+// NEW: V3 EQUITY-WEIGHTED SMART LIMIT CALCULATOR
+// ==========================================
+function calculateSmartLimit(user, statsData, activeDebt, consistencyScore, monthsActive, arrearsTotal) {
+    const savings = user.savings || 0;
+    const repaidCount = user.loansRepaidCount || 0;
+    
+    // Global Vault Stats
+    const totalGroupCapital = statsData.capital || 0;
+    const totalLentOut = statsData.totalLoans || 0; 
+    const maxGroupLoanable = totalGroupCapital * 0.70;
+    const globalRemainingLiquidity = Math.max(0, maxGroupLoanable - totalLentOut);
+
+    // Hard Locks
+    if (savings < 500 || arrearsTotal > 0 || user.status === 'restricted') {
+        return { baseLimit: 0, finalLimit: 0 };
+    }
+
+    let baseLimit = 0;
+
+    if (repaidCount === 0) {
+        baseLimit = 600;
+    } else {
+        const equityShare = totalGroupCapital > 0 ? (savings / totalGroupCapital) : 0;
+        
+        let earnedMultiplier = 1.0;
+        earnedMultiplier += Math.min(repaidCount * 0.2, 0.6);
+        earnedMultiplier += (consistencyScore / 100) * 0.4;
+        earnedMultiplier += Math.min(monthsActive * 0.05, 0.5);
+        earnedMultiplier = Math.min(earnedMultiplier, 1.5);
+
+        const vaultHealthRatio = totalGroupCapital > 0 ? (globalRemainingLiquidity / maxGroupLoanable) : 0;
+        const penaltyResistance = Math.min(1.0, equityShare * 1.5);
+        const scaledHealth = vaultHealthRatio + ((1 - vaultHealthRatio) * penaltyResistance);
+        
+        const dynamicMultiplier = Math.max(0.8, earnedMultiplier * scaledHealth);
+        baseLimit = Math.floor(savings * dynamicMultiplier);
+    }
+
+    let calculatedLimitBeforeVault = Math.max(0, baseLimit - activeDebt);
+    
+    // Equity-Based Exposure Cap
+    const equityShare = totalGroupCapital > 0 ? (savings / totalGroupCapital) : 0;
+    const allowedExposureRatio = Math.min(0.95, 0.30 + equityShare);
+    let maxSingleExposure = globalRemainingLiquidity * allowedExposureRatio;
+    maxSingleExposure = Math.max(maxSingleExposure, savings); // Own money override
+
+    const finalSmartLimit = Math.floor(Math.min(calculatedLimitBeforeVault, globalRemainingLiquidity, maxSingleExposure));
+
+    return { baseLimit, finalLimit: finalSmartLimit };
 }
 export async function loadContributionTracker() {
     const now = new Date();
@@ -1656,21 +1706,25 @@ window.processRepayment = async function(loanId, userId, principal, interest, us
             const currentRepaidCount = userData.loansRepaidCount || 0; 
             const newRepaidCount = currentRepaidCount + 1; 
 
-            // 2. Run the Advanced Multiplier Algorithm to find their True Limit
+// 2. Run the Advanced Multiplier Algorithm to find their True Limit
             const monthsActive = getMonthsActive(joinDate);
             const waterfall = calculateWaterfall(savings);
-            const consistencyScore = waterfall.consistencyScore;
+            
+            // --- NEW: SIMULATE THE FUTURE VAULT ---
+            // We need to calculate what the limit will be AFTER this transaction finishes
+            const futureStats = {
+                capital: statsDoc.data().capital + interest,
+                totalLoans: statsDoc.data().totalLoans - principal
+            };
+            
+            const futureUser = {
+                ...userData,
+                loansActive: newDebt,
+                loansRepaidCount: newRepaidCount
+            };
 
-            let newLimit = 0;
-            if (savings >= 500) {
-                let multiplier = 1.0;
-                multiplier += Math.min(newRepaidCount * 0.2, 0.6); // Max 0.6 from repays
-                multiplier += (consistencyScore / 100) * 0.4;      // Max 0.4 from consistency
-                multiplier += Math.min(monthsActive * 0.05, 0.5);  // Max 0.5 from age
-                multiplier = Math.min(multiplier, 2.0);            // Absolute max multiplier of 2.0x
-                
-                newLimit = Math.floor(savings * multiplier);
-            }
+            const limits = calculateSmartLimit(futureUser, futureStats, newDebt, waterfall.consistencyScore, monthsActive, waterfall.arrearsTotal);
+            const newLimit = limits.finalLimit; 
 
             // 3. Generate the letter with the mathematically accurate limit
             generateRepaymentLetter({
