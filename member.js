@@ -407,7 +407,7 @@ async function loadUserData(uid) {
                 multiplier += Math.min(loansRepaid * 0.2, 0.6);
                 multiplier += (consistencyScore / 100) * 0.4;
                 multiplier += Math.min(monthsActive * 0.05, 0.5);
-                multiplier = Math.min(multiplier, 2.0);
+                multiplier = Math.min(multiplier, 1.5);
 
                 limit = Math.floor(savings * multiplier);
 

@@ -556,9 +556,8 @@ async function loadPendingLoans() {
             let trueLimit = 0;
             if (savings >= 500) {
                 if (repaidCount === 0) {
-                    trueLimit = 600; // Tier 1: Probation
+                    trueLimit = 600; 
                 } else {
-                    // Replicate the Advanced Multiplier Algorithm
                     let multiplier = 1.0;
                     multiplier += Math.min(repaidCount * 0.2, 0.6);
                     multiplier += (consistencyScore / 100) * 0.4;
