@@ -254,16 +254,29 @@ async function loadUserData(uid) {
             document.getElementById('adminReturnBtn').classList.remove('hidden');
         }
 
-        
-        // 2. Fetch Admin Announcements
+        // --- NEW: Fetch Global Stats for Liquidity ---
+        let maxGroupLoanable = 0;
+        let totalLentOut = 0;
+        let globalRemainingLiquidity = 0;
+
         try {
             const statsRef = doc(db, "groupStats", "main");
             const statsSnap = await getDoc(statsRef);
-            if (statsSnap.exists() && statsSnap.data().announcement) {
-                document.getElementById('alertMessage').textContent = statsSnap.data().announcement;
-                document.getElementById('systemAlert').classList.remove('hidden');
+            if (statsSnap.exists()) {
+                const globalData = statsSnap.data();
+                
+                // Calculate vault math (30% reserve means 70% is loanable)
+                const totalGroupCapital = globalData.totalCapital || 0;
+                totalLentOut = globalData.totalLentOut || 0;
+                maxGroupLoanable = totalGroupCapital * 0.70; 
+                globalRemainingLiquidity = Math.max(0, maxGroupLoanable - totalLentOut);
+
+                if (globalData.announcement) {
+                    document.getElementById('alertMessage').textContent = globalData.announcement;
+                    document.getElementById('systemAlert').classList.remove('hidden');
+                }
             }
-        } catch(e) { console.error("Could not load announcements", e); }
+        } catch(e) { console.error("Could not load global stats", e); }
 
         const personalInfoBanner = document.getElementById('personalInfoBanner');
         if (currentUserData.infoMessage) {
@@ -276,7 +289,7 @@ async function loadUserData(uid) {
         await loadMyLedger(uid);
         await loadMyLoans(uid);
 
-// 3. Load Monthly Progress & Calculate Consistency
+        // 3. Load Monthly Progress & Calculate Consistency
         const now = new Date();
         const currentYear = now.getFullYear();
         const currentMonth = now.getMonth();
@@ -294,14 +307,14 @@ async function loadUserData(uid) {
         let currentMonthTarget = 0;
         let activeTargetMonthFound = false;
         
-        let expectedTotalSoFar = 0; // Track for Consistency Score
+        let expectedTotalSoFar = 0; 
 
         for (let i = 0; i <= currentMonth; i++) {
             const daysInMonth = new Date(currentYear, i + 1, 0).getDate(); 
             const target = (Math.floor(daysInMonth / 7) * 70) + ((daysInMonth % 7) * 10);
             const monthName = new Date(currentYear, i, 1).toLocaleString('default', { month: 'long' });
             
-            expectedTotalSoFar += target; // Add to expected total
+            expectedTotalSoFar += target; 
 
             let statusBadge = '';
             let allocated = 0;
@@ -330,7 +343,6 @@ async function loadUserData(uid) {
                 </div>
             `;
 
-            // Setup Main Progress Bar UI focus
             let isFocusMonth = false;
             if (allocated < target && !activeTargetMonthFound) {
                 isFocusMonth = true;
@@ -376,7 +388,6 @@ async function loadUserData(uid) {
 
         document.getElementById('clearanceTimeline').innerHTML = timelineHTML;
 
-        // Auto-Calculate Consistency Score (Actual Savings vs Expected Minimums)
         const actualSaved = currentUserData.savings || 0;
         const consistencyScore = expectedTotalSoFar > 0 ? Math.min(100, Math.round((actualSaved / expectedTotalSoFar) * 100)) : 50;
 
@@ -421,7 +432,6 @@ async function loadUserData(uid) {
             }
         }
 
-        // --- NEW: Calculate Active Loans to find Available Balance ---
         let activeLoansTotal = 0;
         try {
             const activeLoansQuery = query(
@@ -437,22 +447,33 @@ async function loadUserData(uid) {
             console.error("Error fetching active loans for limit calc:", error);
         }
 
-        // Calculate available limit (Math.max prevents negative numbers just in case)
-        const availableLimit = Math.max(0, limit - activeLoansTotal);
+        // User's personal available limit
+        let personalAvailableLimit = Math.max(0, limit - activeLoansTotal);
 
-        // Update the UI
-        document.getElementById('availableLoanLimit').textContent = `KSH ${availableLimit}`;
+        // --- NEW: SMART GLOBAL FILTER ---
+        // Pick whichever is lower: the user's limit, or what the vault can afford
+        const finalSmartLimit = Math.floor(Math.min(personalAvailableLimit, globalRemainingLiquidity));
+
+        document.getElementById('availableLoanLimit').textContent = `KSH ${finalSmartLimit}`;
         document.getElementById('totalLoanLimit').textContent = limit;
         
+        // Override helper text if global liquidity is the bottleneck
+        if (globalRemainingLiquidity < personalAvailableLimit && globalRemainingLiquidity > 0) {
+            limitStatus = `Note: Your personal limit is KSH ${personalAvailableLimit}, but group vault liquidity caps it at KSH ${Math.floor(globalRemainingLiquidity)}.`;
+            helperClass = "text-[10px] md:text-xs text-amber-600 mt-2 font-bold italic";
+        } else if (globalRemainingLiquidity <= 0 && personalAvailableLimit > 0) {
+            limitStatus = "Loan facility paused: Group vault liquidity has reached the 30% reserve limit.";
+            helperClass = "text-[10px] md:text-xs text-rose-600 mt-2 font-black";
+        }
+
         const limitHelper = document.getElementById('limitHelperText');
         if(limitHelper) {
             limitHelper.textContent = limitStatus;
             limitHelper.className = helperClass;
         }
 
-        // Save both to the global user data so the loan form can check it
         currentUserData.calculatedLimit = limit;
-        currentUserData.availableLimit = availableLimit;
+        currentUserData.availableLimit = finalSmartLimit; // System now uses the smart limit
 
         // 4. The Smart Warning Engine
         const alertsList = document.getElementById('alertsList');
