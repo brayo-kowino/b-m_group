@@ -547,7 +547,6 @@ async function loadPendingLoans() {
             const repaidCount = user ? (user.loansRepaidCount || 0) : 0;
             const activeDebt = user ? (user.loansActive || 0) : 0;
 
-            // 2. THE LIE DETECTOR: Recalculate the True Limit
             const joinDate = user ? user.createdAt : null;
             const monthsActive = getMonthsActive(joinDate);
             const waterfall = calculateWaterfall(savings);
