@@ -563,7 +563,7 @@ async function loadPendingLoans() {
                     multiplier += Math.min(repaidCount * 0.2, 0.6);
                     multiplier += (consistencyScore / 100) * 0.4;
                     multiplier += Math.min(monthsActive * 0.05, 0.5);
-                    multiplier = Math.min(multiplier, 2.5);
+                    multiplier = Math.min(multiplier, 2.0);
                     
                     trueLimit = Math.floor(savings * multiplier);
                 }
@@ -1189,262 +1189,6 @@ window.exportLedgerCSV = function() {
     document.body.removeChild(link);
 };
 
-// ==========================================
-// ACTIVE LOANS & REPAYMENT PROCESSING
-// ==========================================
-
-export async function loadActiveLoans() {
-    const tableBody = document.getElementById('activeLoansTableBody');
-    if (!tableBody) return;
-    
-    tableBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500">Loading active loans...</td></tr>';
-
-    try {
-        // Query loans that are currently "approved" (meaning disbursed but not yet repaid)
-        const q = query(collection(db, "loans"), where("status", "==", "approved"));
-        const snapshot = await getDocs(q);
-        tableBody.innerHTML = '';
-
-        if (snapshot.empty) {
-            tableBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500 italic">No active loans outstanding.</td></tr>';
-            return;
-        }
-
-        for (const loanDoc of snapshot.docs) {
-            const loan = loanDoc.data();
-            
-            // Fetch the user's name
-            const userSnap = await getDoc(doc(db, "users", loan.userId));
-            const userName = userSnap.exists() ? userSnap.data().name : 'Unknown User';
-
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td class="p-3 font-bold text-slate-800">${userName}</td>
-                <td class="p-3 text-slate-600">KSH ${loan.amount}</td>
-                <td class="p-3 text-red-500 font-medium">+ KSH ${loan.interest}</td>
-                <td class="p-3 font-bold text-purple-700">KSH ${loan.repayment}</td>
-                <td class="p-3">
-                    <button onclick="processRepayment('${loanDoc.id}', '${loan.userId}', ${loan.amount}, ${loan.interest}, '${userName}')" class="bg-purple-600 text-white px-3 py-1.5 rounded hover:bg-purple-700 text-xs font-bold shadow-sm transition">
-                        Confirm Repayment
-                    </button>
-                </td>
-            `;
-            tableBody.appendChild(row);
-        }
-    } catch (error) {
-        console.error("Error loading active loans:", error);
-        tableBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-red-500">Error loading loans. Check console.</td></tr>';
-    }
-}
-
-window.processRepayment = async function(loanId, userId, principal, interest, userName) {
-    const totalRepayment = principal + interest;
-    
-    if (!confirm(`Confirm that ${userName} has fully paid KSH ${totalRepayment} (Principal + Interest)?`)) return;
-
-    const loanRef = doc(db, "loans", loanId);
-    const userRef = doc(db, "users", userId);
-    const statsRef = doc(db, "groupStats", "main");
-    const transactionRef = doc(collection(db, "transactions"));
-
-    try {
-        await runTransaction(db, async (transaction) => {
-            const statsDoc = await transaction.get(statsRef);
-            const userDoc = await transaction.get(userRef);
-            
-            // 1. Calculate new Master Stats
-            const currentLiquidity = statsDoc.data().liquidityReserve || 0;
-            const currentCapital = statsDoc.data().capital || 0;
-            const currentTotalLoans = statsDoc.data().totalLoans || 0;
-            const currentProfit = statsDoc.data().totalProfit || 0;
-
-            transaction.update(statsRef, {
-                liquidityReserve: currentLiquidity + totalRepayment, // Cash comes back
-                capital: currentCapital + interest, // Net worth increases by profit only
-                totalLoans: currentTotalLoans - principal, // Outstanding debt shrinks
-                totalProfit: currentProfit + interest // Add to the year-end dividend pool
-            });
-
-            // 2. Clear User's Debt & UPDATE TRUST SCORE
-            const currentUserDebt = userDoc.data().loansActive || 0;
-            let newDebt = currentUserDebt - totalRepayment;
-            if (newDebt < 0) newDebt = 0; 
-
-            // Get current count of repaid loans, default to 0 if it doesn't exist
-            const currentRepaidCount = userDoc.data().loansRepaidCount || 0;
-            
-            transaction.update(userRef, {
-                loansActive: newDebt,
-                loansRepaidCount: currentRepaidCount + 1 // INCREMENT THE TRUST TIER
-            });
-
-            // 3. Mark Loan as Repaid
-            transaction.update(loanRef, {
-                status: "repaid",
-                repaidAt: serverTimestamp()
-            });
-
-            // 4. Log to Master Ledger
-            transaction.set(transactionRef, {
-                userId: userId,
-                type: "repayment",
-                amount: totalRepayment,
-                principal: principal,
-                interest: interest,
-                status: "completed",
-                description: "Full loan repayment including 15% interest",
-                createdAt: serverTimestamp()
-            });
-        });
-
-        alert(`Success! KSH ${totalRepayment} recorded. ${userName}'s trust score has increased. Group capital grew by KSH ${interest}.`);
-        
-        // Refresh all Admin UI components to reflect the new wealth
-        loadActiveLoans();
-        if(typeof loadGroupStats === 'function') loadGroupStats();
-        if(typeof loadMembers === 'function') loadMembers();
-        if(typeof loadMasterLedger === 'function') loadMasterLedger();
-
-    } catch (error) {
-        console.error("Repayment failed:", error);
-        alert("CRITICAL ERROR: Failed to process repayment. Database preserved.");
-    }
-};
-
-// ==========================================
-// PENDING PAYMENT VERIFICATIONS (M-PESA)
-// ==========================================
-
-export async function loadPendingPayments() {
-    const tableBody = document.getElementById('pendingPaymentsTable');
-    if (!tableBody) return;
-    
-    tableBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">Loading pending payments...</td></tr>';
-
-    try {
-        const q = query(collection(db, "paymentClaims"), where("status", "==", "pending"), orderBy("createdAt", "asc"));
-        const snapshot = await getDocs(q);
-        tableBody.innerHTML = '';
-
-        if (snapshot.empty) {
-            tableBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500 italic">No pending payments to verify.</td></tr>';
-            return;
-        }
-
-        for (const docSnap of snapshot.docs) {
-            const claim = docSnap.data();
-            const userSnap = await getDoc(doc(db, "users", claim.userId));
-            const userName = userSnap.exists() ? userSnap.data().name : 'Unknown';
-
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td class="p-3 font-bold text-slate-800">${userName}</td>
-                <td class="p-3 font-mono text-xs bg-slate-100 rounded px-2">${claim.mpesaCode}</td>
-                <td class="p-3 font-bold text-green-600">KSH ${claim.amount}</td>
-                <td class="p-3 flex gap-2">
-                    <button onclick="verifyPayment('${docSnap.id}', '${claim.userId}', ${claim.amount}, '${claim.mpesaCode}', '${userName}')" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-xs font-bold transition">
-                        Verify & Credit
-                    </button>
-                    <button onclick="rejectPayment('${docSnap.id}', '${claim.userId}', '${claim.mpesaCode}')" class="bg-white border border-red-300 text-red-600 px-3 py-1 rounded hover:bg-red-50 text-xs font-bold transition">
-                        Reject
-                    </button>
-                </td>
-            `;
-            tableBody.appendChild(row);
-        }
-    } catch (error) {
-        console.error("Error loading pending payments:", error);
-        tableBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-red-500">Error loading data. Check console.</td></tr>';
-    }
-}
-
-window.rejectPayment = async function(claimId, userId, mpesaCode) {
-    // 1. Ask the Admin for a reason so the member isn't left guessing
-    const reason = prompt(`You are rejecting payment Ref: ${mpesaCode}.\nEnter a brief reason for the member (e.g., "Code already used", "Invalid code", "Amount mismatch"):`);
-    
-    // If the admin clicks "Cancel" on the prompt, abort the process
-    if (reason === null) return; 
-
-    try {
-        // 2. Mark the claim as rejected in the database
-        await updateDoc(doc(db, "paymentClaims", claimId), { 
-            status: "rejected", 
-            resolvedAt: serverTimestamp(),
-            rejectReason: reason 
-        });
-
-        // 3. Automatically trigger a Red Warning Banner on the Member's Portal
-        const warningText = `PAYMENT REJECTED: Your submission for M-Pesa Ref [${mpesaCode}] was declined by the Admin. ${reason ? 'Reason: ' + reason : 'Please verify your code and submit again.'}`;
-        
-        await updateDoc(doc(db, "users", userId), { 
-            warningMessage: warningText 
-        });
-
-        alert("Payment rejected! The member has been automatically notified on their portal.");
-        loadPendingPayments(); // Refresh the table
-        
-    } catch (error) {
-        console.error("Error rejecting payment:", error);
-        alert("Failed to reject payment.");
-    }
-};
-
-window.verifyPayment = async function(claimId, userId, amount, mpesaCode, userName) {
-    if (!confirm(`Are you absolutely sure you received KSH ${amount} (Ref: ${mpesaCode}) from ${userName}?`)) return;
-
-    const claimRef = doc(db, "paymentClaims", claimId);
-    const userRef = doc(db, "users", userId);
-    const statsRef = doc(db, "groupStats", "main");
-    const newTransactionRef = doc(collection(db, "transactions"));
-
-    try {
-        await runTransaction(db, async (transaction) => {
-            const userDoc = await transaction.get(userRef);
-            const statsDoc = await transaction.get(statsRef);
-
-            const newSavings = (userDoc.data().savings || 0) + amount;
-            const newCapital = (statsDoc.data().capital || 0) + amount;
-            const newLiquidity = (statsDoc.data().liquidityReserve || 0) + amount; 
-
-            // 1. Update User Savings
-            transaction.update(userRef, { savings: newSavings });
-
-            // 2. Update Group Capital
-            transaction.update(statsRef, { 
-                capital: newCapital,
-                liquidityReserve: newLiquidity
-            });
-
-            // 3. Mark the claim as verified
-            transaction.update(claimRef, {
-                status: "verified",
-                resolvedAt: serverTimestamp()
-            });
-
-            // 4. Log to Master Ledger
-            transaction.set(newTransactionRef, {
-                userId: userId,
-                type: "deposit",
-                amount: amount,
-                status: "completed",
-                createdAt: serverTimestamp(),
-                description: `Verified M-Pesa Deposit (Ref: ${mpesaCode})`
-            });
-        });
-
-        alert("Payment verified and credited successfully!");
-        
-        // Refresh all UIs
-        loadPendingPayments();
-        loadContributionTracker(); 
-        loadGroupStats(); 
-        loadMasterLedger();
-
-    } catch (error) {
-        console.error("Payment verification failed: ", error);
-        alert("Transaction failed. Check console.");
-    }
-};
 
 // ==========================================
 // OFFICIAL PRINTABLE LETTER GENERATOR
@@ -1624,6 +1368,471 @@ export function generateOfficialLetter({
     }, 800); 
 }
 
+export function generateRepaymentLetter({
+    userName,
+    amount,
+    reference,
+    date,
+    newLimit
+}) {
+    const digitalSignature = btoa(`${reference}-${amount}-${date}`).substring(0, 15).toUpperCase();
+
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = 'none';
+    document.body.appendChild(iframe);
+
+    const htmlContent = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Repayment Clearance - ${reference}</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            @media print {
+                body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                @page { margin: 0; }
+            }
+            .watermark {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%) rotate(-45deg);
+                font-size: 8rem;
+                color: rgba(0, 0, 0, 0.03);
+                font-weight: bold;
+                white-space: nowrap;
+                z-index: -1;
+                pointer-events: none;
+            }
+            .seal {
+                position: absolute;
+                bottom: 50px;
+                right: 50px;
+                width: 100px;
+                height: 100px;
+                border: 4px solid #16a34a; /* green-600 */
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                color: #16a34a;
+                font-size: 10px;
+                font-weight: bold;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                transform: rotate(-15deg);
+                opacity: 0.8;
+            }
+            .seal::after {
+                content: "CLEARED";
+                position: absolute;
+                font-size: 14px;
+                color: rgba(220, 38, 38, 0.7);
+                transform: rotate(30deg);
+                letter-spacing: 4px;
+            }
+        </style>
+    </head>
+    <body class="bg-white text-slate-800 p-10 font-sans relative h-screen">
+        
+        <div class="watermark">B&M GROUP</div>
+
+        <div class="flex justify-between items-start border-b-4 border-green-700 pb-6 mb-8">
+            <div class="flex items-start flex-col">
+                <img src="bm_group_logo.png" alt="B&M Group Logo" class="h-12 w-auto mb-1 ml-[-2px] object-contain">
+                <p class="text-sm font-semibold text-slate-500 uppercase tracking-widest mt-1">Private Savings & Credit Investment</p>
+            </div>
+            <div class="text-right text-sm text-slate-600">
+                <p class="font-bold text-slate-800">Headquarters</p>
+                <p>Juja, Kiambu County</p>
+                <p>Kenya</p>
+            </div>
+        </div>
+
+        <div class="flex justify-between mb-10 bg-slate-50 p-4 rounded-lg border border-slate-200">
+            <div>
+                <p class="text-xs text-slate-500 uppercase">Clearance Ref</p>
+                <p class="font-bold text-slate-800 font-mono">${reference}</p>
+            </div>
+            <div>
+                <p class="text-xs text-slate-500 uppercase">Date of Clearance</p>
+                <p class="font-bold text-slate-800">${date}</p>
+            </div>
+            <div class="text-right">
+                <p class="text-xs text-slate-500 uppercase">Transaction Status</p>
+                <p class="font-bold text-green-700 uppercase">Fully Repaid</p>
+            </div>
+        </div>
+
+        <div class="mb-10 min-h-[300px]">
+            <h2 class="text-2xl font-bold mb-4 text-green-800">Congratulations! Loan Cleared.</h2>
+            <p class="mb-4 text-slate-700 leading-relaxed">
+                Dear <strong>${userName}</strong>,<br><br>
+                This document serves as official confirmation that your loan repayment has been successfully processed and verified by the B&M Group administration. Your outstanding debt for this facility has been entirely cleared. 
+            </p>
+            
+            <div class="bg-white border-2 border-green-100 rounded-lg p-6 mb-6 shadow-sm">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="text-sm text-slate-500">Amount Received:</div>
+                    <div class="font-bold text-lg">KSH ${amount.toLocaleString()}</div>
+                    
+                    <div class="text-sm text-slate-500">Remaining Balance:</div>
+                    <div class="font-extrabold text-xl text-green-600">KSH 0.00</div>
+                    
+                    <div class="text-sm font-bold text-purple-700 mt-4 border-t border-slate-100 pt-4">New Estimated Limit:</div>
+                    <div class="font-extrabold text-2xl text-purple-700 mt-4 border-t border-slate-100 pt-4">KSH ${newLimit.toLocaleString()}</div>
+                </div>
+            </div>
+
+            <p class="text-sm text-slate-800 font-semibold p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                By clearing this loan, your credit score has increased! Please log into your member portal to view your updated dashboard, check your exact new limits, and access your improved credit features.
+            </p>
+        </div>
+
+        <div class="mt-16 flex justify-between items-end border-t border-slate-300 pt-8">
+            <div class="w-1/3 text-center">
+                <div class="border-b border-slate-400 h-10 mb-2"></div>
+                <p class="font-bold text-sm">Brian Odhiambo</p>
+                <p class="text-xs text-slate-500">System Administrator / Co-Founder</p>
+            </div>
+            
+            <div class="w-1/3 text-center">
+                <div class="border-b border-slate-400 h-10 mb-2"></div>
+                <p class="font-bold text-sm">B&M Finance Team</p>
+                <p class="text-xs text-slate-500">Official Stamp</p>
+            </div>
+        </div>
+
+        <div class="seal">
+            DEBT<br>CLEARED<br>100%
+        </div>
+        
+        <div class="absolute bottom-10 left-10 text-xs text-slate-400 font-mono">
+            Cryptographic Hash: ${digitalSignature}
+        </div>
+    </body>
+    </html>
+    `;
+
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(htmlContent);
+    doc.close();
+
+    setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        setTimeout(() => { document.body.removeChild(iframe); }, 1000);
+    }, 800); 
+}
+
+// ==========================================
+// ACTIVE LOANS & REPAYMENT PROCESSING
+// ==========================================
+
+export async function loadActiveLoans() {
+    const tableBody = document.getElementById('activeLoansTableBody');
+    if (!tableBody) return;
+    
+    tableBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500">Loading active loans...</td></tr>';
+
+    try {
+        // Query loans that are currently "approved" (meaning disbursed but not yet repaid)
+        const q = query(collection(db, "loans"), where("status", "==", "approved"));
+        const snapshot = await getDocs(q);
+        tableBody.innerHTML = '';
+
+        if (snapshot.empty) {
+            tableBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500 italic">No active loans outstanding.</td></tr>';
+            return;
+        }
+
+        for (const loanDoc of snapshot.docs) {
+            const loan = loanDoc.data();
+            
+            // Fetch the user's name
+            const userSnap = await getDoc(doc(db, "users", loan.userId));
+            const userName = userSnap.exists() ? userSnap.data().name : 'Unknown User';
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="p-3 font-bold text-slate-800">${userName}</td>
+                <td class="p-3 text-slate-600">KSH ${loan.amount}</td>
+                <td class="p-3 text-red-500 font-medium">+ KSH ${loan.interest}</td>
+                <td class="p-3 font-bold text-purple-700">KSH ${loan.repayment}</td>
+                <td class="p-3">
+                    <button onclick="processRepayment('${loanDoc.id}', '${loan.userId}', ${loan.amount}, ${loan.interest}, '${userName}')" class="bg-purple-600 text-white px-3 py-1.5 rounded hover:bg-purple-700 text-xs font-bold shadow-sm transition">
+                        Confirm Repayment
+                    </button>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        }
+    } catch (error) {
+        console.error("Error loading active loans:", error);
+        tableBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-red-500">Error loading loans. Check console.</td></tr>';
+    }
+}
+
+window.processRepayment = async function(loanId, userId, principal, interest, userName) {
+    const totalRepayment = principal + interest;
+    
+    if (!confirm(`Confirm that ${userName} has fully paid KSH ${totalRepayment} (Principal + Interest)?`)) return;
+
+    const loanRef = doc(db, "loans", loanId);
+    const userRef = doc(db, "users", userId);
+    const statsRef = doc(db, "groupStats", "main");
+    const transactionRef = doc(collection(db, "transactions"));
+
+    try {
+        await runTransaction(db, async (transaction) => {
+            const statsDoc = await transaction.get(statsRef);
+            const userDoc = await transaction.get(userRef);
+            
+            // 1. Calculate new Master Stats
+            const currentLiquidity = statsDoc.data().liquidityReserve || 0;
+            const currentCapital = statsDoc.data().capital || 0;
+            const currentTotalLoans = statsDoc.data().totalLoans || 0;
+            const currentProfit = statsDoc.data().totalProfit || 0;
+
+            transaction.update(statsRef, {
+                liquidityReserve: currentLiquidity + totalRepayment, // Cash comes back
+                capital: currentCapital + interest, // Net worth increases by profit only
+                totalLoans: currentTotalLoans - principal, // Outstanding debt shrinks
+                totalProfit: currentProfit + interest // Add to the year-end dividend pool
+            });
+
+            // 2. Clear User's Debt & UPDATE TRUST SCORE
+            const currentUserDebt = userDoc.data().loansActive || 0;
+            let newDebt = currentUserDebt - totalRepayment;
+            if (newDebt < 0) newDebt = 0; 
+
+            // Get current count of repaid loans, default to 0 if it doesn't exist
+            const currentRepaidCount = userDoc.data().loansRepaidCount || 0;
+            
+            transaction.update(userRef, {
+                loansActive: newDebt,
+                loansRepaidCount: currentRepaidCount + 1 // INCREMENT THE TRUST TIER
+            });
+
+            // 3. Mark Loan as Repaid
+            transaction.update(loanRef, {
+                status: "repaid",
+                repaidAt: serverTimestamp()
+            });
+
+            // 4. Log to Master Ledger
+            transaction.set(transactionRef, {
+                userId: userId,
+                type: "repayment",
+                amount: totalRepayment,
+                principal: principal,
+                interest: interest,
+                status: "completed",
+                description: "Full loan repayment including 15% interest",
+                createdAt: serverTimestamp()
+            });
+        });
+        
+        alert(`Success! KSH ${totalRepayment} recorded. ${userName}'s trust score has increased. Group capital grew by KSH ${interest}.`);
+        
+        // --- NEW: TRIGGER THE REPAYMENT CLEARANCE TEMPLATE ---
+        if(confirm("Would you like to print the official Repayment Clearance letter for this member?")) {
+            const today = new Date().toLocaleDateString('en-GB'); 
+            const refNumber = `BM-REP-${loanId.substring(0, 6).toUpperCase()}`;
+            
+            // 1. Fetch fresh user data for the advanced algorithm
+            const freshUserSnap = await getDoc(userRef);
+            const userData = freshUserSnap.data();
+            const savings = userData.savings || 0;
+            const joinDate = userData.createdAt;
+            
+            // Note: We use the NEW repaid count (current + 1) because the transaction just updated it
+            const currentRepaidCount = userData.loansRepaidCount || 0; 
+            const newRepaidCount = currentRepaidCount + 1; 
+
+            // 2. Run the Advanced Multiplier Algorithm to find their True Limit
+            const monthsActive = getMonthsActive(joinDate);
+            const waterfall = calculateWaterfall(savings);
+            const consistencyScore = waterfall.consistencyScore;
+
+            let newLimit = 0;
+            if (savings >= 500) {
+                let multiplier = 1.0;
+                multiplier += Math.min(newRepaidCount * 0.2, 0.6); // Max 0.6 from repays
+                multiplier += (consistencyScore / 100) * 0.4;      // Max 0.4 from consistency
+                multiplier += Math.min(monthsActive * 0.05, 0.5);  // Max 0.5 from age
+                multiplier = Math.min(multiplier, 2.0);            // Absolute max multiplier of 2.0x
+                
+                newLimit = Math.floor(savings * multiplier);
+            }
+
+            // 3. Generate the letter with the mathematically accurate limit
+            generateRepaymentLetter({
+                userName: userName, 
+                amount: totalRepayment,
+                reference: refNumber,
+                date: today,
+                newLimit: newLimit
+            });
+        }
+        
+        // Refresh all Admin UI components to reflect the new wealth
+        loadActiveLoans();
+        if(typeof loadGroupStats === 'function') loadGroupStats();
+        if(typeof loadMembers === 'function') loadMembers();
+        if(typeof loadMasterLedger === 'function') loadMasterLedger();
+
+    } catch (error) {
+        console.error("Repayment failed:", error);
+        alert("CRITICAL ERROR: Failed to process repayment. Database preserved.");
+    }
+};
+
+// ==========================================
+// PENDING PAYMENT VERIFICATIONS (M-PESA)
+// ==========================================
+
+export async function loadPendingPayments() {
+    const tableBody = document.getElementById('pendingPaymentsTable');
+    if (!tableBody) return;
+    
+    tableBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">Loading pending payments...</td></tr>';
+
+    try {
+        const q = query(collection(db, "paymentClaims"), where("status", "==", "pending"), orderBy("createdAt", "asc"));
+        const snapshot = await getDocs(q);
+        tableBody.innerHTML = '';
+
+        if (snapshot.empty) {
+            tableBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500 italic">No pending payments to verify.</td></tr>';
+            return;
+        }
+
+        for (const docSnap of snapshot.docs) {
+            const claim = docSnap.data();
+            const userSnap = await getDoc(doc(db, "users", claim.userId));
+            const userName = userSnap.exists() ? userSnap.data().name : 'Unknown';
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="p-3 font-bold text-slate-800">${userName}</td>
+                <td class="p-3 font-mono text-xs bg-slate-100 rounded px-2">${claim.mpesaCode}</td>
+                <td class="p-3 font-bold text-green-600">KSH ${claim.amount}</td>
+                <td class="p-3 flex gap-2">
+                    <button onclick="verifyPayment('${docSnap.id}', '${claim.userId}', ${claim.amount}, '${claim.mpesaCode}', '${userName}')" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-xs font-bold transition">
+                        Verify & Credit
+                    </button>
+                    <button onclick="rejectPayment('${docSnap.id}', '${claim.userId}', '${claim.mpesaCode}')" class="bg-white border border-red-300 text-red-600 px-3 py-1 rounded hover:bg-red-50 text-xs font-bold transition">
+                        Reject
+                    </button>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        }
+    } catch (error) {
+        console.error("Error loading pending payments:", error);
+        tableBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-red-500">Error loading data. Check console.</td></tr>';
+    }
+}
+
+window.rejectPayment = async function(claimId, userId, mpesaCode) {
+    // 1. Ask the Admin for a reason so the member isn't left guessing
+    const reason = prompt(`You are rejecting payment Ref: ${mpesaCode}.\nEnter a brief reason for the member (e.g., "Code already used", "Invalid code", "Amount mismatch"):`);
+    
+    // If the admin clicks "Cancel" on the prompt, abort the process
+    if (reason === null) return; 
+
+    try {
+        // 2. Mark the claim as rejected in the database
+        await updateDoc(doc(db, "paymentClaims", claimId), { 
+            status: "rejected", 
+            resolvedAt: serverTimestamp(),
+            rejectReason: reason 
+        });
+
+        // 3. Automatically trigger a Red Warning Banner on the Member's Portal
+        const warningText = `PAYMENT REJECTED: Your submission for M-Pesa Ref [${mpesaCode}] was declined by the Admin. ${reason ? 'Reason: ' + reason : 'Please verify your code and submit again.'}`;
+        
+        await updateDoc(doc(db, "users", userId), { 
+            warningMessage: warningText 
+        });
+
+        alert("Payment rejected! The member has been automatically notified on their portal.");
+        loadPendingPayments(); // Refresh the table
+        
+    } catch (error) {
+        console.error("Error rejecting payment:", error);
+        alert("Failed to reject payment.");
+    }
+};
+
+window.verifyPayment = async function(claimId, userId, amount, mpesaCode, userName) {
+    if (!confirm(`Are you absolutely sure you received KSH ${amount} (Ref: ${mpesaCode}) from ${userName}?`)) return;
+
+    const claimRef = doc(db, "paymentClaims", claimId);
+    const userRef = doc(db, "users", userId);
+    const statsRef = doc(db, "groupStats", "main");
+    const newTransactionRef = doc(collection(db, "transactions"));
+
+    try {
+        await runTransaction(db, async (transaction) => {
+            const userDoc = await transaction.get(userRef);
+            const statsDoc = await transaction.get(statsRef);
+
+            const newSavings = (userDoc.data().savings || 0) + amount;
+            const newCapital = (statsDoc.data().capital || 0) + amount;
+            const newLiquidity = (statsDoc.data().liquidityReserve || 0) + amount; 
+
+            // 1. Update User Savings
+            transaction.update(userRef, { savings: newSavings });
+
+            // 2. Update Group Capital
+            transaction.update(statsRef, { 
+                capital: newCapital,
+                liquidityReserve: newLiquidity
+            });
+
+            // 3. Mark the claim as verified
+            transaction.update(claimRef, {
+                status: "verified",
+                resolvedAt: serverTimestamp()
+            });
+
+            // 4. Log to Master Ledger
+            transaction.set(newTransactionRef, {
+                userId: userId,
+                type: "deposit",
+                amount: amount,
+                status: "completed",
+                createdAt: serverTimestamp(),
+                description: `Verified M-Pesa Deposit (Ref: ${mpesaCode})`
+            });
+        });
+
+        alert("Payment verified and credited successfully!");
+        
+        // Refresh all UIs
+        loadPendingPayments();
+        loadContributionTracker(); 
+        loadGroupStats(); 
+        loadMasterLedger();
+
+    } catch (error) {
+        console.error("Payment verification failed: ", error);
+        alert("Transaction failed. Check console.");
+    }
+};
+
+
+
 // Helper: Calculate Months Active
 function getMonthsActive(timestamp) {
     if (!timestamp) return 1; // Fallback for old accounts
@@ -1632,3 +1841,23 @@ function getMonthsActive(timestamp) {
     const diff = (now.getFullYear() - join.getFullYear()) * 12 + (now.getMonth() - join.getMonth());
     return Math.max(1, diff); // Minimum 1 month
 }
+
+// ==========================================
+// DEV TOOLS: SAFE LETTER TESTING
+// ==========================================
+
+window.testRepaymentLetter = function() {
+    console.log("Generating mock repayment letter...");
+    
+    // 1. Create realistic dummy data
+    const today = new Date().toLocaleDateString('en-GB'); 
+    
+    // 2. Call the generator directly without touching Firebase
+    generateRepaymentLetter({
+        userName: "Brian Odhiambo", // A familiar test name!
+        amount: 8500,
+        reference: "BM-REP-DEVTEST",
+        date: today,
+        newLimit: 15400 // Fake calculated limit
+    });
+};
