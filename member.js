@@ -495,7 +495,7 @@ async function loadUserData(uid) {
         // Dynamic messaging for the bottlenecks
         if (finalSmartLimit < calculatedLimitBeforeVault && finalSmartLimit > 0) {
             if (finalSmartLimit === Math.floor(maxSingleExposure)) {
-                limitStatus = `Limit adjusted to KSH ${finalSmartLimit} to ensure fair distribution for lower-equity members.`;
+                limitStatus = `Top Contributor Status: Your limit is safely capped at KSH ${finalSmartLimit} to protect group reserves.`;
                 helperClass = "text-[10px] md:text-xs text-amber-600 mt-2 font-bold italic";
             } else {
                 limitStatus = `Limit adjusted to KSH ${finalSmartLimit} because the group vault is currently low.`;
