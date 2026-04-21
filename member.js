@@ -258,6 +258,7 @@ async function loadUserData(uid) {
         let maxGroupLoanable = 0;
         let totalLentOut = 0;
         let globalRemainingLiquidity = 0;
+        let totalGroupCapital = 0;
 
         try {
             const statsRef = doc(db, "groupStats", "main");
@@ -266,7 +267,7 @@ async function loadUserData(uid) {
                 const globalData = statsSnap.data();
                 
                 // Calculate vault math (30% reserve means 70% is loanable)
-                const totalGroupCapital = globalData.capital || 0;
+                totalGroupCapital = globalData.capital || 0;
                 totalLentOut = globalData.totalLentOut || 0;
                 maxGroupLoanable = totalGroupCapital * 0.70; 
                 globalRemainingLiquidity = Math.max(0, maxGroupLoanable - totalLentOut);
