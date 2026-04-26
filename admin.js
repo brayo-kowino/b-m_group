@@ -1608,15 +1608,26 @@ export async function loadActiveLoans() {
             const userSnap = await getDoc(doc(db, "users", loan.userId));
             const userName = userSnap.exists() ? userSnap.data().name : 'Unknown User';
 
+// --- NEW: Format the approval date safely ---
+            const approvedDate = loan.approvedAt 
+                ? loan.approvedAt.toDate().toLocaleDateString('en-GB') 
+                : new Date().toLocaleDateString('en-GB');
+            
+            const safeDuration = loan.durationWeeks || '?';
+
             const row = document.createElement('tr');
+            // --- NEW: Added flex and gap-2 to the <td>, and the new Print button ---
             row.innerHTML = `
                 <td class="p-3 font-bold text-slate-800">${userName}</td>
                 <td class="p-3 text-slate-600">KSH ${loan.amount}</td>
                 <td class="p-3 text-red-500 font-medium">+ KSH ${loan.interest}</td>
                 <td class="p-3 font-bold text-purple-700">KSH ${loan.repayment}</td>
-                <td class="p-3">
+                <td class="p-3 flex gap-2">
                     <button onclick="processRepayment('${loanDoc.id}', '${loan.userId}', ${loan.amount}, ${loan.interest}, '${userName}')" class="bg-purple-600 text-white px-3 py-1.5 rounded hover:bg-purple-700 text-xs font-bold shadow-sm transition">
                         Confirm Repayment
+                    </button>
+                    <button onclick="reprintDisbursementLetter('${loanDoc.id}', '${userName}', ${loan.amount}, ${loan.interest}, '${safeDuration}', '${approvedDate}')" class="bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded hover:bg-slate-50 text-xs font-bold shadow-sm transition">
+                        🖨️ Print Letter
                     </button>
                 </td>
             `;
@@ -1627,6 +1638,21 @@ export async function loadActiveLoans() {
         tableBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-red-500">Error loading loans. Check console.</td></tr>';
     }
 }
+
+window.reprintDisbursementLetter = function(loanId, userName, amount, interest, durationWeeks, approvedDate) {
+    // Generate the exact same reference number as before
+    const refNumber = `BM-LN-${loanId.substring(0, 6).toUpperCase()}`;
+    
+    // Call your existing print template function
+    generateOfficialLetter({
+        userName: userName, 
+        amount: amount,
+        transactionType: "Loan Disbursement (Reprint)", // Marked as reprint for clarity
+        reference: refNumber,
+        date: approvedDate, // Uses the exact date it was approved, not today's date
+        notes: `Approved for ${durationWeeks} weeks at KSH ${interest} interest.`
+    });
+};
 
     window.processRepayment = async function(loanId, userId, principal, interest, userName) {
     const totalRepayment = principal + interest;
