@@ -422,6 +422,11 @@ async function loadUserData(uid) {
         let personalAvailableLimit = 0;
         let baseLimit = 0;
 
+        if (activeLoansTotal > 0) {
+            limitStatus = `Credit locked: You have an active or pending loan of KSH ${activeLoansTotal}.`;
+            helperClass = "text-[10px] md:text-xs text-rose-600 mt-2 font-bold";
+        }
+
         if (savings >= 500) {
             if (hasArrears || currentUserData.status === 'restricted') {
                 limitStatus = "Credit locked due to active arrears or account restrictions.";
