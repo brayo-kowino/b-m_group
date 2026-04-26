@@ -670,7 +670,7 @@ window.approveLoan = async function(loanId) {
             const trueLimit = limits.finalLimit;
 
             if (loanAmount > trueLimit) {
-                throw new Error(`Transaction Blocked: Due to current vault liquidity and equity rules, the max allowed is KSH ${trueLimit}, but requested is KSH ${loanAmount}.`);
+                throw new Error(`Transaction Blocked: Due to current group liquidity and equity rules, the max allowed is KSH ${trueLimit}, but requested is KSH ${loanAmount}.`);
             }
 
             // ==========================================
@@ -720,7 +720,7 @@ window.approveLoan = async function(loanId) {
             const refNumber = `BM-LN-${loanId.substring(0, 6).toUpperCase()}`;
             
             generateOfficialLetter({
-                userName: userName, 
+                userName: userData.name || 'Member', 
                 amount: loanAmount,
                 transactionType: "Loan Disbursement",
                 reference: refNumber,
