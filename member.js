@@ -268,7 +268,7 @@ async function loadUserData(uid) {
                 
                 // Calculate vault math (30% reserve means 70% is loanable)
                 totalGroupCapital = globalData.capital || 0;
-                totalLentOut = globalData.totalLentOut || 0;
+                totalLentOut = globalData.totalLoans || 0;
                 maxGroupLoanable = totalGroupCapital * 0.70; 
                 globalRemainingLiquidity = Math.max(0, maxGroupLoanable - totalLentOut);
 
