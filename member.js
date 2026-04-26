@@ -457,10 +457,10 @@ async function loadUserData(uid) {
                 baseLimit = Math.floor(savings * dynamicMultiplier);
 
                 if (equityShare >= 0.20) { // Owns more than 20% of the group
-                    limitStatus = `Priority Access: Your high savings volume grants you protected multiplier scaling.`;
+                    limitStatus = `Your credit limit is healthy based on your contribution performance.`;
                     helperClass = "text-[10px] md:text-xs text-purple-600 mt-2 font-bold";
                 } else if (dynamicMultiplier >= 1.2) {
-                    limitStatus = `Excellent credit! Multiplier is healthy based on group reserves.`;
+                    limitStatus = `Excellent credit limit is healthy based on group reserves.`;
                     helperClass = "text-[10px] md:text-xs text-emerald-500 mt-2 font-bold";
                 } else {
                     limitStatus = `Note: Multipliers are scaled slightly to protect group reserves.`;
