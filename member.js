@@ -434,7 +434,7 @@ async function loadUserData(uid) {
             } 
             else if (loansRepaid === 0) {
                 baseLimit = 600;
-                limitStatus = "Repay 1st loan to unlock trust multipliers.";
+                limitStatus = "Repay 1st loan to unlock more credit.";
                 helperClass = "text-[10px] md:text-xs text-amber-500 mt-2 font-semibold";
             } 
             else {
