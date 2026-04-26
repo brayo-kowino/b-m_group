@@ -427,7 +427,7 @@ async function loadUserData(uid) {
             helperClass = "text-[10px] md:text-xs text-rose-600 mt-2 font-bold";
         }
 
-        if (savings >= 500) {
+        else if (savings >= 500) {
             if (hasArrears || currentUserData.status === 'restricted') {
                 limitStatus = "Credit locked due to active arrears or account restrictions.";
                 helperClass = "text-[10px] md:text-xs text-rose-500 mt-2 font-bold";
