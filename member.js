@@ -489,7 +489,7 @@ let finalSmartLimit = 0;
         // --- 3. APPLY THE GAMIFIED LOCK ---
         if (activeLoansTotal > 0) {
             finalSmartLimit = 0; // Lock the borrowable cash
-            limitStatus = `🔒 Credit Locked: Clear your KSH ${activeLoansTotal} debt to unlock your new KSH ${trueFutureLimit} limit!`;
+            limitStatus = `Credit Locked: Clear your KSH ${activeLoansTotal} debt to unlock your new KSH ${trueFutureLimit} limit!`;
             helperClass = "text-[10px] md:text-xs text-rose-600 mt-2 font-bold";
         } else if (finalSmartLimit < (baseLimit - activeLoansTotal) && finalSmartLimit > 0) {
             limitStatus = `Limit adjusted to KSH ${finalSmartLimit} because the group vault is currently low.`;
