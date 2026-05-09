@@ -825,7 +825,7 @@ function calculateSmartLimit(user, statsData, activeDebt, consistencyScore, mont
     const globalRemainingLiquidity = Math.max(0, maxGroupLoanable - totalLentOut);
 
     // Hard Locks
-    if (savings < 500 || arrearsTotal > 0 || user.status === 'restricted') {
+    if (savings < 500 || arrearsTotal > 300 || user.status === 'restricted') {
         return { baseLimit: 0, finalLimit: 0 };
     }
 
