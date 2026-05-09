@@ -563,8 +563,9 @@ try {
             }
 
             // 3. FLAG VIOLATIONS
-            // We changed the word from "Fraudulent" to "Exceeds Limit" because if the vault drops while the request is pending, it's not the user's fault, it's just bad timing!
-            const isFraudulent = loan.amount > trueLimit;
+           // "Exceeds Limit" because if the vault drops while the request is pending, it's not the user's fault, it's just bad timing!
+           // const isFraudulent = loan.amount > trueLimit;
+            const isFraudulent = false; // We are removing the "fraud" label for now to avoid admin confusion. The limit violation will still be shown, but without the scary "fraud" badge.
             const hasActiveLoan = activeDebt > 0;
 
             let warningHTML = '';
@@ -575,7 +576,6 @@ try {
                 warningHTML += `<span class="bg-orange-100 text-orange-700 text-[10px] px-2 py-0.5 rounded font-bold block mb-1">⚠️ HAS ACTIVE DEBT: KSH ${activeDebt}</span>`;
             }
 
-            // ... (The rest of your HTML building for the row stays exactly the same!)
             // 4. GENERATE SMART BADGES FOR DECISION MAKING
             const arrearsBadge = waterfall.arrearsTotal > 0 
                 ? `<span class="bg-rose-100 text-rose-700 border border-rose-200 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">Arrears: KSH ${waterfall.arrearsTotal}</span>`
