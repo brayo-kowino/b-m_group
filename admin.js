@@ -794,14 +794,13 @@ function calculateWaterfall(totalSavings) {
             if (i === currentMonth) {
                 currentMonthAllocated = remaining;
             } else {
-                unclearedMonths.push(monthName);
+                unclearedMonths.push(monthName);ss
                 arrearsTotal += (target - remaining);
             }
             remaining = 0; 
         }
     }
     
-    // NEW: Calculate dynamic consistency score (Capped at 100%)
     const actualSaved = totalSavings || 0;
     let consistencyScore = 0;
     if (expectedTotalSoFar > 0) {
