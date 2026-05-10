@@ -2,7 +2,7 @@ import { auth, db } from './firebase.js';
 import { doc, setDoc, getDoc, collection, serverTimestamp, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-import { signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+//import { signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
 let currentUserData = null;
 
