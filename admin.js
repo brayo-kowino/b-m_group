@@ -1,5 +1,7 @@
 import { auth, db } from './firebase.js';
-import { collection, query, where, orderBy, getDocs, doc, updateDoc, getDoc, runTransaction, serverTimestamp, writeBatch, Timestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { collection, query, where, orderBy, limit, getDocs, doc, updateDoc, addDoc, getDoc, runTransaction, serverTimestamp, writeBatch, Timestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+//import { collection, query, orderBy, limit, getDocs, doc, updateDoc, getDoc, addDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
 import { httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js";
 //import { functions } from './firebase.js';
 
@@ -14,6 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
     loadActiveLoans();
     loadPendingPayments();
     loadVisualAnalytics();
+    checkSystemStatus();
+    loadSystemLogs();
 });
 
 const addMemberForm = document.getElementById('addMemberForm');
@@ -182,6 +186,7 @@ window.verifyMember = async function(userId) {
     if(confirm("Mark this user as verified?")) {
         try {
             await updateDoc(doc(db, "users", userId), { verified: true });
+            await logAdminAction(auth.currentUser.email, `Manually verified ID for member: ${userId}`, "INFO");
             loadMembers(); 
         } catch (error) {
             console.error("Error verifying member:", error);
@@ -191,25 +196,23 @@ window.verifyMember = async function(userId) {
 };
 
 window.issueWarning = async function(userId, userName, currentWarning) {
-    // Prompt the admin to type a message
     const message = prompt(`Issue a warning/note to ${userName}:\n(Leave blank and click OK to clear existing warning)`, currentWarning);
-    
-    // If user clicked cancel, message will be null
     if (message === null) return; 
 
     try {
-        // Update the specific user's document in Firestore
         await updateDoc(doc(db, "users", userId), { 
             warningMessage: message.trim() 
         });
         
         if (message.trim() === "") {
+            await logAdminAction(auth.currentUser.email, `Cleared warning for member: ${userId}`, "INFO");
             alert(`Warning cleared for ${userName}.`);
         } else {
+            await logAdminAction(auth.currentUser.email, `Issued warning to member: ${userId} | Warning: ${message.trim()}`, "WARN");
             alert(`Warning successfully sent to ${userName}. They will see this on their portal immediately.`);
         }
         
-        loadMembers(); // Refresh the table so the button text updates
+        loadMembers(); 
         
     } catch (error) {
         console.error("Error issuing warning:", error);
@@ -218,10 +221,7 @@ window.issueWarning = async function(userId, userName, currentWarning) {
 };
 
 window.issueUpdate = async function(userId, userName, currentInfo) {
-    // Prompt the admin to type a positive message
     const message = prompt(`Send a positive update/note to ${userName} (e.g., "Payment recorded", "Issue resolved"):\n(Leave blank and click OK to clear existing message)`, currentInfo);
-    
-    // If user clicked cancel
     if (message === null) return; 
 
     try {
@@ -230,12 +230,14 @@ window.issueUpdate = async function(userId, userName, currentInfo) {
         });
         
         if (message.trim() === "") {
+            await logAdminAction(auth.currentUser.email, `Cleared update for member: ${userId}`, "INFO");
             alert(`Update cleared for ${userName}.`);
         } else {
+            await logAdminAction(auth.currentUser.email, `Sent update to member: ${userId} | Update: ${message.trim()}`, "INFO");
             alert(`Update successfully sent to ${userName}.`);
         }
         
-        loadMembers(); // Refresh the table
+        loadMembers(); 
         
     } catch (error) {
         console.error("Error issuing update:", error);
@@ -249,6 +251,7 @@ window.handleStatusChange = async function(userId, newStatus) {
     if(confirm(`Are you sure you want to change this member's status to ${newStatus.toUpperCase()}?`)) {
         try {
             await updateDoc(doc(db, "users", userId), { status: newStatus });
+            await logAdminAction(auth.currentUser.email, `Changed status for member: ${userId} | New Status: ${newStatus}`, "INFO");
             loadMembers(); 
         } catch (error) {
             console.error("Error updating status:", error);
@@ -258,11 +261,139 @@ window.handleStatusChange = async function(userId, newStatus) {
 };
 
 // ==========================================
+// SYSTEM HEALTH & SECURITY (KILL SWITCH)
+// ==========================================
+
+// 1. Check current system status on load
+export async function checkSystemStatus() {
+    const badge = document.getElementById('systemStatusBadge');
+    const btn = document.getElementById('toggleMaintenanceBtn');
+    if (!badge || !btn) return;
+
+    try {
+        const statsRef = doc(db, "groupStats", "main");
+        
+        // Use onSnapshot for real-time updates so if another admin clicks it, this UI updates instantly
+        onSnapshot(statsRef, (doc) => {
+            if (doc.exists()) {
+                const isLocked = doc.data().maintenanceMode || false;
+                
+                if (isLocked) {
+                    badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span> LOCKED DOWN`;
+                    badge.className = "bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[10px] uppercase px-2 py-1 rounded font-bold tracking-wider flex items-center gap-2";
+                    
+                    btn.innerText = "RESTORE SYSTEM ACCESS";
+                    btn.className = "w-full bg-emerald-600/20 border border-emerald-500 text-emerald-500 hover:bg-emerald-600 hover:text-white py-3 rounded-lg font-bold text-sm transition-all uppercase tracking-wider shadow-[0_0_15px_rgba(16,185,129,0.15)] hover:shadow-[0_0_20px_rgba(16,185,129,0.4)]";
+                } else {
+                    badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> ONLINE`;
+                    badge.className = "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] uppercase px-2 py-1 rounded font-bold tracking-wider flex items-center gap-2";
+                    
+                    btn.innerText = "LOCKDOWN SYSTEM";
+                    btn.className = "w-full bg-rose-600/20 border border-rose-500 text-rose-500 hover:bg-rose-600 hover:text-white py-3 rounded-lg font-bold text-sm transition-all uppercase tracking-wider shadow-[0_0_15px_rgba(225,29,72,0.15)] hover:shadow-[0_0_20px_rgba(225,29,72,0.4)]";
+                }
+            }
+        });
+    } catch (error) {
+        console.error("Error checking system status:", error);
+    }
+}
+
+// 2. Toggle the Kill Switch
+window.toggleSystemMaintenance = async function() {
+    const statsRef = doc(db, "groupStats", "main");
+    
+    try {
+        const docSnap = await getDoc(statsRef);
+        const currentlyLocked = docSnap.data().maintenanceMode || false;
+        
+        if (!currentlyLocked) {
+            if(!confirm("CRITICAL WARNING: Engaging lockdown will instantly kick all members offline and prevent logins, payments, and loan requests. Proceed?")) return;
+        } else {
+            if(!confirm("Are you sure you want to bring the system back online and restore member access?")) return;
+        }
+
+        await updateDoc(statsRef, {
+            maintenanceMode: !currentlyLocked
+        });
+
+        // Log this critical action
+        await logAdminAction("SYSTEM_ADMIN", `System ${!currentlyLocked ? 'LOCKED DOWN' : 'RESTORED ONLINE'}`, "CRIT");
+        
+    } catch (error) {
+        console.error("Failed to toggle system status:", error);
+        alert("Error connecting to server. Cannot toggle status.");
+    }
+};
+
+// ==========================================
+// SYSTEM AUDIT LOGS (FLIGHT RECORDER)
+// ==========================================
+
+export async function logAdminAction(adminName, actionTrace, severity = "INFO") {
+    try {
+        await addDoc(collection(db, "systemLogs"), {
+            timestamp: serverTimestamp(),
+            adminName: adminName,
+            actionTrace: actionTrace,
+            severity: severity 
+        });
+    } catch (error) {
+        console.error("Failed to write to audit log", error);
+    }
+}
+
+// 2. Fetch and display logs in the terminal UI
+export async function loadSystemLogs() {
+    const tbody = document.getElementById('systemLogsBody');
+    if (!tbody) return;
+
+    try {
+        // Fetch the 20 most recent logs
+        const q = query(collection(db, "systemLogs"), orderBy("timestamp", "desc"), limit(20));
+        
+        // Real-time listener so the terminal updates live
+        onSnapshot(q, (snapshot) => {
+            tbody.innerHTML = '';
+            
+            if (snapshot.empty) {
+                tbody.innerHTML = '<tr><td colspan="4" class="py-3 px-2 text-slate-500 text-center italic">No system logs found.</td></tr>';
+                return;
+            }
+
+            snapshot.forEach((docSnap) => {
+                const log = docSnap.data();
+                const timeStr = log.timestamp ? log.timestamp.toDate().toLocaleString('en-GB') : 'Just now';
+                
+                // Color formatting based on severity
+                let severityBadge = '';
+                if (log.severity === 'INFO') {
+                    severityBadge = `<span class="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded text-[9px] font-bold">INFO</span>`;
+                } else if (log.severity === 'WARN') {
+                    severityBadge = `<span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded text-[9px] font-bold">WARN</span>`;
+                } else if (log.severity === 'CRIT') {
+                    severityBadge = `<span class="bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2 py-0.5 rounded text-[9px] font-bold">CRIT</span>`;
+                }
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="py-3 px-2 text-slate-500">${timeStr}</td>
+                    <td class="py-3 px-2 text-blue-400 font-bold">${log.adminName}</td>
+                    <td class="py-3 px-2">${log.actionTrace}</td>
+                    <td class="py-3 px-2">${severityBadge}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        });
+    } catch (error) {
+        console.error("Error loading system logs:", error);
+        tbody.innerHTML = '<tr><td colspan="4" class="py-3 px-2 text-rose-500">Log retrieval failed.</td></tr>';
+    }
+}
+
+// ==========================================
 // VISUAL ANALYTICS DASHBOARD (Chart.js)
 // ==========================================
 
-// We store the chart instances globally so we can destroy and redraw them 
-// when data updates, preventing the "hover glitch" in Chart.js
 let doughnutChartInstance = null;
 let barChartInstance = null;
 
@@ -278,18 +409,13 @@ export async function loadVisualAnalytics() {
 
         const data = statsSnap.data();
         
-        // Ensure we have numbers to work with (fallback to 0 if undefined)
         const capital = data.capital || 0;
         const liquidity = data.liquidityReserve || 0;
         const activeLoans = data.totalLoans || 0;
         const profit = data.totalProfit || 0;
 
-        // -----------------------------------------------------
-        // CHART 1: DOUGHNUT CHART (Where is the money?)
-        // -----------------------------------------------------
         const ctxDoughnut = document.getElementById('capitalDoughnutChart');
         if (ctxDoughnut) {
-            // Destroy existing chart if it exists to prevent overlapping
             if (doughnutChartInstance) doughnutChartInstance.destroy();
 
             doughnutChartInstance = new Chart(ctxDoughnut, {
@@ -298,10 +424,7 @@ export async function loadVisualAnalytics() {
                     labels: ['Liquidity Reserve (Cash)', 'Active Loans (Debt)'],
                     datasets: [{
                         data: [liquidity, activeLoans],
-                        backgroundColor: [
-                            '#10b981', // emerald-500 (Safe Cash)
-                            '#ef4444'  // red-500 (Lent out)
-                        ],
+                        backgroundColor: ['#10b981', '#ef4444'],
                         hoverOffset: 4,
                         borderWidth: 0
                     }]
@@ -309,20 +432,14 @@ export async function loadVisualAnalytics() {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom' }
-                    },
-                    cutout: '70%' // Makes it a thinner, modern ring
+                    plugins: { legend: { position: 'bottom' } },
+                    cutout: '70%'
                 }
             });
         }
 
-        // -----------------------------------------------------
-        // CHART 2: BAR CHART (Wealth Overview)
-        // -----------------------------------------------------
         const ctxBar = document.getElementById('wealthBarChart');
         if (ctxBar) {
-            // Destroy existing chart if it exists
             if (barChartInstance) barChartInstance.destroy();
 
             barChartInstance = new Chart(ctxBar, {
@@ -332,27 +449,17 @@ export async function loadVisualAnalytics() {
                     datasets: [{
                         label: 'KSH',
                         data: [capital, profit],
-                        backgroundColor: [
-                            '#3b82f6', // blue-500
-                            '#8b5cf6'  // violet-500
-                        ],
-                        borderRadius: 6 // Modern rounded bar corners
+                        backgroundColor: ['#3b82f6', '#8b5cf6'],
+                        borderRadius: 6
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false } // Hide legend since labels explain it
-                    },
+                    plugins: { legend: { display: false } },
                     scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: { borderDash: [5, 5] } // Cool dashed gridlines
-                        },
-                        x: {
-                            grid: { display: false } // Clean X axis
-                        }
+                        y: { beginAtZero: true, grid: { borderDash: [5, 5] } },
+                        x: { grid: { display: false } }
                     }
                 }
             });
@@ -372,9 +479,7 @@ async function distributeAnnualProfit() {
         const statsRef = doc(db, "groupStats", "main");
         const statsSnap = await getDoc(statsRef);
         
-        if (!statsSnap.exists()) {
-            throw new Error("Group stats not found.");
-        }
+        if (!statsSnap.exists()) throw new Error("Group stats not found.");
 
         const currentProfit = statsSnap.data().totalProfit || 0;
 
@@ -421,6 +526,8 @@ async function distributeAnnualProfit() {
         });
 
         await batch.commit();
+
+        await logAdminAction(auth.currentUser.email, `Distributed annual profit | Amount: KSH ${currentProfit.toFixed(2)} | Members: ${memberCount}`, "INFO");
 
         alert(`Success! KSH ${profitPerMember.toFixed(2)} has been distributed to ${memberCount} members.`);
         
@@ -478,6 +585,7 @@ window.handleDeposit = async function(userId) {
 
         inputField.value = '';
         alert("Deposit successfully recorded!");
+        await logAdminAction(auth.currentUser.email, `Recorded deposit for member: ${userId} | Amount: KSH ${amount}`, "INFO");
         
         loadContributionTracker(); 
         loadGroupStats(); 
@@ -535,7 +643,6 @@ try {
             return;
         }
 
-        // --- NEW: Fetch Global Stats ONCE for the table ---
         const statsSnap = await getDoc(doc(db, "groupStats", "main"));
         const statsData = statsSnap.exists() ? statsSnap.data() : { capital: 0, totalLoans: 0 };
 
@@ -555,17 +662,13 @@ try {
             const waterfall = calculateWaterfall(savings);
             const consistencyScore = waterfall.consistencyScore;
             
-            // --- NEW: USE THE SMART CALCULATOR ---
             let trueLimit = 0;
             if (user) {
                 const limits = calculateSmartLimit(user, statsData, activeDebt, consistencyScore, monthsActive, waterfall.arrearsTotal);
                 trueLimit = limits.finalLimit;
             }
 
-            // 3. FLAG VIOLATIONS
-           // "Exceeds Limit" because if the vault drops while the request is pending, it's not the user's fault, it's just bad timing!
-           // const isFraudulent = loan.amount > trueLimit;
-            const isFraudulent = false; // We are removing the "fraud" label for now to avoid admin confusion. The limit violation will still be shown, but without the scary "fraud" badge.
+            const isFraudulent = false; // Kept as requested by user originally
             const hasActiveLoan = activeDebt > 0;
 
             let warningHTML = '';
@@ -576,7 +679,6 @@ try {
                 warningHTML += `<span class="bg-orange-100 text-orange-700 text-[10px] px-2 py-0.5 rounded font-bold block mb-1">⚠️ HAS ACTIVE DEBT: KSH ${activeDebt}</span>`;
             }
 
-            // 4. GENERATE SMART BADGES FOR DECISION MAKING
             const arrearsBadge = waterfall.arrearsTotal > 0 
                 ? `<span class="bg-rose-100 text-rose-700 border border-rose-200 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">Arrears: KSH ${waterfall.arrearsTotal}</span>`
                 : `<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">Savings Cleared</span>`;
@@ -588,6 +690,7 @@ try {
                 : '';
 
             const row = document.createElement('tr');
+            // FIX APPLIED: pass "this" in onclick
             row.innerHTML = `
                 <td class="p-3">
                     <div class="font-bold text-slate-800 text-sm">${userName}</div>
@@ -611,7 +714,7 @@ try {
                 <td class="p-3 text-red-500 font-medium text-sm">KSH ${loan.interest}</td>
                 <td class="p-3 text-slate-600 font-medium text-sm">${loan.durationWeeks} Weeks</td>
                 <td class="p-3 flex gap-2">
-                    <button onclick="approveLoan('${loanDoc.id}')" 
+                    <button onclick="approveLoan('${loanDoc.id}', this)" 
                         class="px-3 py-1.5 rounded text-xs transition shadow-sm font-bold ${isFraudulent || hasActiveLoan ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-emerald-500 text-white hover:bg-emerald-600'}"
                         ${isFraudulent || hasActiveLoan ? 'disabled' : ''}>
                         Approve
@@ -630,11 +733,26 @@ try {
     }
 }
 
-window.approveLoan = async function(loanId) {
+// ==========================================
+// FIX APPLIED: SCOPE FIX & BUTTON LOCKING
+// ==========================================
+window.approveLoan = async function(loanId, btn) {
     if (!confirm("Approve this loan and disburse the funds?")) return;
+
+    if (btn) {
+        btn.disabled = true;
+        btn.classList.add("opacity-50", "cursor-not-allowed");
+        btn.innerText = "Processing...";
+    }
 
     const loanRef = doc(db, "loans", loanId);
     const statsRef = doc(db, "groupStats", "main");
+
+    // Declare these outside the transaction so the letter generator can use them
+    let approvedLoanAmount = 0;
+    let approvedInterest = 0;
+    let approvedDuration = 0;
+    let approvedUserName = 'Member';
 
     try {
         await runTransaction(db, async (transaction) => {
@@ -651,21 +769,18 @@ window.approveLoan = async function(loanId) {
 
             const userData = userDoc.data();
             const savings = userData.savings || 0;
-            const repaidCount = userData.loansRepaidCount || 0;
             const activeDebt = userData.loansActive || 0;
 
-            // ==========================================
-            // BACKEND SHIELD: Final Trust Verification
-            // ==========================================
-            if (activeDebt > 0) {
-                throw new Error("Approval Blocked: This member currently has an active loan.");
-            }
+            approvedLoanAmount = loanAmount;
+            approvedInterest = loanData.interest;
+            approvedDuration = loanData.durationWeeks;
+            approvedUserName = userData.name || 'Member';
 
-            // --- NEW: REAL-TIME LIMIT VERIFICATION ---
+            if (activeDebt > 0) throw new Error("Approval Blocked: This member currently has an active loan.");
+
             const waterfall = calculateWaterfall(savings);
             const monthsActive = getMonthsActive(userData.createdAt);
             
-            // Re-calculate their exact limit right at the moment of approval
             const limits = calculateSmartLimit(userData, statsDoc.data(), activeDebt, waterfall.consistencyScore, monthsActive, waterfall.arrearsTotal);
             const trueLimit = limits.finalLimit;
 
@@ -673,9 +788,6 @@ window.approveLoan = async function(loanId) {
                 throw new Error(`Transaction Blocked: Due to current group liquidity and equity rules, the max allowed is KSH ${trueLimit}, but requested is KSH ${loanAmount}.`);
             }
 
-            // ==========================================
-            // RULE ENFORCEMENT: 30% Liquidity Minimum
-            // ==========================================
             const minimumRequiredLiquidity = currentCapital * 0.30;
             const projectedLiquidity = currentLiquidity - loanAmount;
 
@@ -683,24 +795,20 @@ window.approveLoan = async function(loanId) {
                 throw new Error(`Approval Blocked: Disbursing drops liquidity to KSH ${projectedLiquidity}. Minimum required is KSH ${minimumRequiredLiquidity}.`);
             }
 
-            // 1. Deduct from Liquidity & Add to Active Group Loans
             transaction.update(statsRef, {
                 liquidityReserve: currentLiquidity - loanAmount,
                 totalLoans: (statsDoc.data().totalLoans || 0) + loanAmount
             });
 
-            // 2. Add the debt to the specific user's profile
             transaction.update(userRef, {
                 loansActive: activeDebt + loanData.repayment
             });
 
-            // 3. Mark the loan document as approved
             transaction.update(loanRef, {
                 status: "approved",
                 approvedAt: serverTimestamp()
             });
 
-            // 4. Log the disbursement in the Master Ledger
             const newTransactionRef = doc(collection(db, "transactions"));
             transaction.set(newTransactionRef, {
                 userId: loanData.userId,
@@ -713,23 +821,22 @@ window.approveLoan = async function(loanId) {
         });
 
         alert("Loan officially approved and disbursed!");
+        await logAdminAction(auth.currentUser.email, `Approved and disbursed loan for member: ${loanData.userId} | Amount: KSH ${loanAmount}`, "INFO");
 
-        // --- TRIGGER THE PRINT TEMPLATE ---
         if(confirm("Would you like to print the official disbursement letter for this loan?")) {
-            const today = new Date().toLocaleDateString('en-GB'); // DD/MM/YYYY
+            const today = new Date().toLocaleDateString('en-GB'); 
             const refNumber = `BM-LN-${loanId.substring(0, 6).toUpperCase()}`;
             
             generateOfficialLetter({
-                userName: userData.name || 'Member', 
-                amount: loanAmount,
+                userName: approvedUserName, 
+                amount: approvedLoanAmount,
                 transactionType: "Loan Disbursement",
                 reference: refNumber,
                 date: today,
-                notes: `Approved for ${loanData.durationWeeks} weeks at KSH ${loanData.interest} interest.`
+                notes: `Approved for ${approvedDuration} weeks at KSH ${approvedInterest} interest.`
             });
         }
         
-        // Refresh the UI to show the new balances
         loadPendingLoans();
         if(typeof loadGroupStats === 'function') loadGroupStats();
         if(typeof loadMembers === 'function') loadMembers();
@@ -737,14 +844,19 @@ window.approveLoan = async function(loanId) {
 
     } catch (error) {
         console.error("Loan Approval Failed:", error);
-        // This alerts the admin exactly why it failed (Liquidity, Active Debt, or Fraud)
         alert(error.message || "Failed to process loan. Check console.");
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.classList.remove("opacity-50", "cursor-not-allowed");
+            btn.innerText = "Approve";
+        }
     }
 };
 
 window.rejectLoan = async function(loanId) {
     const reason = prompt("Enter a reason for rejecting this loan (Member will see this):");
-    if (reason === null) return; // Admin cancelled the prompt
+    if (reason === null) return; 
 
     try {
         await updateDoc(doc(db, "loans", loanId), { 
@@ -753,6 +865,7 @@ window.rejectLoan = async function(loanId) {
             rejectedAt: serverTimestamp()
         });
         alert("Loan request rejected successfully.");
+        await logAdminAction(auth.currentUser.email, `Rejected loan request: ${loanId} | Reason: ${reason}`, "INFO");
         loadPendingLoans(); 
     } catch (error) {
         console.error("Error rejecting loan:", error);
@@ -760,14 +873,13 @@ window.rejectLoan = async function(loanId) {
     }
 };
 
-// Helper: Calculate mathematically exact target for ANY month
 function calculateTargetForMonth(year, monthIndex) {
     const daysInMonth = new Date(year, monthIndex + 1, 0).getDate(); 
     const fullWeeks = Math.floor(daysInMonth / 7);
     const extraDays = daysInMonth % 7;
     return (fullWeeks * 70) + (extraDays * 10);
 }
-// Helper: Run the Waterfall Algorithm to determine cleared months & Consistency
+
 function calculateWaterfall(totalSavings) {
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -779,12 +891,11 @@ function calculateWaterfall(totalSavings) {
     let currentMonthAllocated = 0;
     let currentMonthTarget = calculateTargetForMonth(currentYear, currentMonth);
     
-    let expectedTotalSoFar = 0; // NEW: Track total expected savings
+    let expectedTotalSoFar = 0;
 
-    // Loop from January (0) to Current Month
     for (let i = 0; i <= currentMonth; i++) {
         const target = calculateTargetForMonth(currentYear, i);
-        expectedTotalSoFar += target; // Add to expected total
+        expectedTotalSoFar += target;
         const monthName = new Date(currentYear, i, 1).toLocaleString('default', { month: 'short' });
 
         if (remaining >= target) {
@@ -794,7 +905,7 @@ function calculateWaterfall(totalSavings) {
             if (i === currentMonth) {
                 currentMonthAllocated = remaining;
             } else {
-                unclearedMonths.push(monthName);ss
+                unclearedMonths.push(monthName);
                 arrearsTotal += (target - remaining);
             }
             remaining = 0; 
@@ -810,20 +921,15 @@ function calculateWaterfall(totalSavings) {
     return { unclearedMonths, arrearsTotal, currentMonthAllocated, currentMonthTarget, consistencyScore };
 }
 
-// ==========================================
-// NEW: V3 EQUITY-WEIGHTED SMART LIMIT CALCULATOR
-// ==========================================
 function calculateSmartLimit(user, statsData, activeDebt, consistencyScore, monthsActive, arrearsTotal) {
     const savings = user.savings || 0;
     const repaidCount = user.loansRepaidCount || 0;
     
-    // Global Vault Stats
     const totalGroupCapital = statsData.capital || 0;
     const totalLentOut = statsData.totalLoans || 0; 
     const maxGroupLoanable = totalGroupCapital * 0.70;
     const globalRemainingLiquidity = Math.max(0, maxGroupLoanable - totalLentOut);
 
-    // Hard Locks
     if (savings < 500 || arrearsTotal > 300 || user.status === 'restricted') {
         return { baseLimit: 0, finalLimit: 0 };
     }
@@ -851,16 +957,16 @@ function calculateSmartLimit(user, statsData, activeDebt, consistencyScore, mont
 
     let calculatedLimitBeforeVault = Math.max(0, baseLimit - activeDebt);
     
-    // Equity-Based Exposure Cap
     const equityShare = totalGroupCapital > 0 ? (savings / totalGroupCapital) : 0;
     const allowedExposureRatio = Math.min(0.95, 0.30 + equityShare);
     let maxSingleExposure = globalRemainingLiquidity * allowedExposureRatio;
-    maxSingleExposure = Math.max(maxSingleExposure, savings); // Own money override
+    maxSingleExposure = Math.max(maxSingleExposure, savings); 
 
     const finalSmartLimit = Math.floor(Math.min(calculatedLimitBeforeVault, globalRemainingLiquidity, maxSingleExposure));
 
     return { baseLimit, finalLimit: finalSmartLimit };
 }
+
 export async function loadContributionTracker() {
     const now = new Date();
     const currentTarget = calculateTargetForMonth(now.getFullYear(), now.getMonth());
@@ -881,10 +987,8 @@ export async function loadContributionTracker() {
             const user = userDoc.data();
             const userId = userDoc.id;
 
-            // Run our new algorithm!
             const waterfall = calculateWaterfall(user.savings);
 
-            // Calculate progress bar for CURRENT month based on remaining waterfall allocation
             let progressPercentage = (waterfall.currentMonthAllocated / waterfall.currentMonthTarget) * 100;
             if (progressPercentage > 100) progressPercentage = 100;
 
@@ -892,7 +996,6 @@ export async function loadContributionTracker() {
             if (progressPercentage === 100) barColor = 'bg-green-500';
             if (progressPercentage === 0) barColor = 'bg-slate-300';
 
-            // Arrears UI
             let arrearsHTML = `<span class="text-green-600 font-bold text-xs bg-green-50 px-2 py-1 rounded">All Past Months Cleared</span>`;
             if (waterfall.unclearedMonths.length > 0) {
                 arrearsHTML = `
@@ -934,11 +1037,11 @@ export async function loadContributionTracker() {
         tableBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-red-500">Failed to load tracker.</td></tr>';
     }
 }
+
 // ==========================================
 // INBOX, GRIEVANCES & EXITS
 // ==========================================
 
-// --- 1. Load Grievances ---
 export async function loadGrievances() {
     const container = document.getElementById('grievancesContainer');
     container.innerHTML = '<p class="text-sm text-slate-500">Loading messages...</p>';
@@ -948,7 +1051,7 @@ export async function loadGrievances() {
             collection(db, "messages"), 
             where("type", "==", "grievance"),
             where("status", "==", "unread"),
-            orderBy("createdAt", "asc") // Oldest unresolved first
+            orderBy("createdAt", "asc")
         );
         const snapshot = await getDocs(q);
 
@@ -957,7 +1060,6 @@ export async function loadGrievances() {
             return;
         }
 
-        // Build the HTML string first (much better for browser performance than appending inside the loop)
         let htmlContent = '';
 
         for (const docSnap of snapshot.docs) {
@@ -966,13 +1068,11 @@ export async function loadGrievances() {
             const userName = userSnap.exists() ? userSnap.data().name : 'Unknown User';
             const dateStr = data.createdAt ? data.createdAt.toDate().toLocaleDateString() : 'Just now';
 
-            // Sanitize the message: escape HTML tags to prevent broken layouts, and convert enters/returns to <br> tags
             const safeMessage = (data.message || '')
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;")
                 .replace(/\n/g, "<br>");
 
-            // docSnap.id and data.userId are Firebase IDs (alphanumeric), so they are naturally safe inside the onclick
             htmlContent += `
                 <div class="bg-slate-50 p-4 rounded border border-slate-200 mb-3">
                     <div class="flex justify-between items-start mb-2">
@@ -986,8 +1086,6 @@ export async function loadGrievances() {
                 </div>
             `;
         }
-
-        // Inject everything at once
         container.innerHTML = htmlContent;
 
     } catch (error) {
@@ -995,21 +1093,21 @@ export async function loadGrievances() {
         container.innerHTML = '<p class="text-sm text-red-500">Error loading messages. Check index.</p>';
     }
 }
+
 window.resolveGrievance = async function(messageId, userId) {
     if (!confirm("Mark this grievance as resolved and notify the member?")) return;
 
     try {
-        // 1. Mark the message as resolved
         await updateDoc(doc(db, "messages", messageId), { status: "resolved" });
         
-        // 2. Automatically send a Green Update to the user
         await updateDoc(doc(db, "users", userId), {
             infoMessage: "Your recent support ticket/grievance has been reviewed and resolved by the Admins."
         });
 
         alert("Grievance resolved! The member has been notified on their portal.");
-        loadGrievances(); // Refresh inbox
-        loadMembers();    // Refresh members table to show the new active update
+        await logAdminAction(auth.currentUser.email, `Resolved grievance for member: ${userId}`, "INFO");
+        loadGrievances(); 
+        loadMembers();    
         
     } catch (error) {
         console.error(error);
@@ -1017,7 +1115,6 @@ window.resolveGrievance = async function(messageId, userId) {
     }
 };
 
-// --- 2. Load Exit Requests ---
 export async function loadExitRequests() {
     const container = document.getElementById('exitRequestsContainer');
     container.innerHTML = '<p class="text-sm text-slate-500">Loading exit requests...</p>';
@@ -1044,7 +1141,6 @@ export async function loadExitRequests() {
             if (!userSnap.exists()) continue;
             const user = userSnap.data();
             
-            // Check for active loans just to be absolutely sure
             const loansQuery = query(collection(db, "loans"), where("userId", "==", request.userId), where("status", "in", ["pending", "approved"]));
             const loansSnap = await getDocs(loansQuery);
             let activeLoansTotal = 0;
@@ -1081,10 +1177,10 @@ export async function loadExitRequests() {
     }
 }
 
-// --- 3. Process the Exit Payout (Batched Transaction) ---
 window.rejectExit = async function(requestId) {
     if(!confirm("Are you sure you want to reject this exit application?")) return;
     await updateDoc(doc(db, "exitRequests", requestId), { status: "rejected" });
+    await logAdminAction(auth.currentUser.email, `Rejected exit request: ${requestId}`, "INFO");
     loadExitRequests();
 };
 
@@ -1100,7 +1196,6 @@ window.processExit = async function(requestId, userId, payoutAmount, userName) {
         await runTransaction(db, async (transaction) => {
             const statsDoc = await transaction.get(statsRef);
             
-            // 1. Deduct payout from Master Capital and Liquidity Reserve
             const currentCapital = statsDoc.data().capital || 0;
             const currentLiquidity = statsDoc.data().liquidityReserve || 0;
             
@@ -1109,20 +1204,17 @@ window.processExit = async function(requestId, userId, payoutAmount, userName) {
                 liquidityReserve: currentLiquidity - payoutAmount
             });
 
-            // 2. Set user status to 'exited' and zero their savings
             transaction.update(userRef, {
                 status: "exited",
                 savings: 0
             });
 
-            // 3. Mark request as approved
             transaction.update(requestRef, {
                 status: "approved_paid",
                 payoutAmount: payoutAmount,
                 resolvedAt: serverTimestamp()
             });
 
-            // 4. Log the payout in the master ledger
             transaction.set(transactionRef, {
                 userId: userId,
                 type: "exit_payout",
@@ -1134,8 +1226,7 @@ window.processExit = async function(requestId, userId, payoutAmount, userName) {
         });
 
         alert(`Exit processed successfully. KSH ${payoutAmount} has been deducted from group capital. Please transfer the funds to ${userName}.`);
-        
-        // Refresh all relevant UI components
+        await logAdminAction(auth.currentUser.email, `Processed exit payout for member: ${userId} | Amount: KSH ${payoutAmount}`, "INFO");
         loadExitRequests();
         loadGroupStats();
         loadMembers();
@@ -1152,19 +1243,17 @@ window.processExit = async function(requestId, userId, payoutAmount, userName) {
 
 export async function loadMasterLedger() {
     const tableBody = document.getElementById('ledgerTableBody');
-    if (!tableBody) return; // Safety check
+    if (!tableBody) return; 
     
     tableBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500">Loading master ledger...</td></tr>';
 
     try {
-        // 1. Fetch all users once to map their IDs to their Names efficiently
         const usersSnap = await getDocs(collection(db, "users"));
         const userMap = {};
         usersSnap.forEach(doc => { 
             userMap[doc.id] = doc.data().name; 
         });
 
-        // 2. Fetch all transactions, newest first
         const q = query(collection(db, "transactions"), orderBy("createdAt", "desc"));
         const snapshot = await getDocs(q);
         
@@ -1180,7 +1269,6 @@ export async function loadMasterLedger() {
             const userName = userMap[data.userId] || 'Unknown Member';
             const dateStr = data.createdAt ? data.createdAt.toDate().toLocaleDateString() : 'Pending';
             
-            // Color code the transaction type
             let typeStyle = 'text-slate-600';
             if (data.type === 'deposit') typeStyle = 'text-green-600 font-medium';
             if (data.type === 'loan' || data.type === 'exit_payout') typeStyle = 'text-blue-600 font-medium';
@@ -1203,25 +1291,21 @@ export async function loadMasterLedger() {
     }
 }
 
-// --- CSV Export Logic ---
 window.exportLedgerCSV = function() {
     const table = document.querySelector("#ledger table");
     if (!table) return;
 
     let csvContent = "";
     
-    // Loop through all rows and columns to build the CSV string
     for (let row of table.rows) {
         let rowData = [];
         for (let cell of row.cells) {
-            // Clean the text to prevent commas or line breaks from breaking the CSV layout
             let text = cell.innerText.replace(/,/g, "").replace(/\n/g, " ").trim();
             rowData.push(text);
         }
         csvContent += rowData.join(",") + "\n";
     }
     
-    // Trigger the file download
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
@@ -1248,10 +1332,8 @@ export function generateOfficialLetter({
     date,
     notes
 }) {
-    // Generate a unique digital signature/hash for authenticity
     const digitalSignature = btoa(`${reference}-${amount}-${date}`).substring(0, 15).toUpperCase();
 
-    // Create an iframe to hold the print document
     const iframe = document.createElement('iframe');
     iframe.style.position = 'fixed';
     iframe.style.right = '0';
@@ -1261,7 +1343,6 @@ export function generateOfficialLetter({
     iframe.style.border = 'none';
     document.body.appendChild(iframe);
 
-    // The HTML content for the official letter
     const htmlContent = `
     <!DOCTYPE html>
     <html lang="en">
@@ -1292,7 +1373,7 @@ export function generateOfficialLetter({
                 right: 50px;
                 width: 100px;
                 height: 100px;
-                border: 4px solid #1e3a8a; /* blue-900 */
+                border: 4px solid #1e3a8a; 
                 border-radius: 50%;
                 display: flex;
                 align-items: center;
@@ -1310,7 +1391,7 @@ export function generateOfficialLetter({
                 content: "AUTHENTIC";
                 position: absolute;
                 font-size: 14px;
-                color: rgba(220, 38, 38, 0.7); /* red-600 */
+                color: rgba(220, 38, 38, 0.7); 
                 transform: rotate(30deg);
                 letter-spacing: 4px;
             }
@@ -1331,7 +1412,7 @@ export function generateOfficialLetter({
                 <p>Kenya</p>
             </div>
         </div>
-        </div>
+        
         <div class="flex justify-between mb-10 bg-slate-50 p-4 rounded-lg border border-slate-200">
             <div>
                 <p class="text-xs text-slate-500 uppercase">Document Ref</p>
@@ -1396,22 +1477,21 @@ export function generateOfficialLetter({
     </html>
     `;
 
-    // Write to the iframe and print
     const doc = iframe.contentWindow.document;
     doc.open();
     doc.write(htmlContent);
     doc.close();
 
-    // Wait a brief moment for Tailwind to apply styles, then print
     setTimeout(() => {
         iframe.contentWindow.focus();
         iframe.contentWindow.print();
         
-        // Clean up the DOM after printing
         setTimeout(() => {
             document.body.removeChild(iframe);
         }, 1000);
     }, 800); 
+
+    //await logAdminAction(auth.currentUser.email, `Generated official letter for ${transactionType} | Ref: ${reference} | Amount: KSH ${amount}`, "INFO");
 }
 
 export function generateRepaymentLetter({
@@ -1462,7 +1542,7 @@ export function generateRepaymentLetter({
                 right: 50px;
                 width: 100px;
                 height: 100px;
-                border: 4px solid #16a34a; /* green-600 */
+                border: 4px solid #16a34a; 
                 border-radius: 50%;
                 display: flex;
                 align-items: center;
@@ -1590,7 +1670,6 @@ export async function loadActiveLoans() {
     tableBody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-500">Loading active loans...</td></tr>';
 
     try {
-        // Query loans that are currently "approved" (meaning disbursed but not yet repaid)
         const q = query(collection(db, "loans"), where("status", "==", "approved"));
         const snapshot = await getDocs(q);
         tableBody.innerHTML = '';
@@ -1603,30 +1682,29 @@ export async function loadActiveLoans() {
         for (const loanDoc of snapshot.docs) {
             const loan = loanDoc.data();
             
-            // Fetch the user's name
             const userSnap = await getDoc(doc(db, "users", loan.userId));
             const userName = userSnap.exists() ? userSnap.data().name : 'Unknown User';
 
-// --- NEW: Format the approval date safely ---
             const approvedDate = loan.approvedAt 
                 ? loan.approvedAt.toDate().toLocaleDateString('en-GB') 
                 : new Date().toLocaleDateString('en-GB');
             
             const safeDuration = loan.durationWeeks || '?';
+            
+            const safeName = (userName || '').replace(/'/g, "\\'").replace(/"/g, "&quot;");
 
             const row = document.createElement('tr');
-            // --- NEW: Added flex and gap-2 to the <td>, and the new Print button ---
             row.innerHTML = `
                 <td class="p-3 font-bold text-slate-800">${userName}</td>
                 <td class="p-3 text-slate-600">KSH ${loan.amount}</td>
                 <td class="p-3 text-red-500 font-medium">+ KSH ${loan.interest}</td>
                 <td class="p-3 font-bold text-purple-700">KSH ${loan.repayment}</td>
                 <td class="p-3 flex gap-2">
-                    <button onclick="processRepayment('${loanDoc.id}', '${loan.userId}', ${loan.amount}, ${loan.interest}, '${userName}')" class="bg-purple-600 text-white px-3 py-1.5 rounded hover:bg-purple-700 text-xs font-bold shadow-sm transition">
+                    <button onclick="processRepayment('${loanDoc.id}', '${loan.userId}', ${loan.amount}, ${loan.interest}, '${safeName}', this)" class="bg-purple-600 text-white px-3 py-1.5 rounded hover:bg-purple-700 text-xs font-bold shadow-sm transition">
                         Confirm Repayment
                     </button>
-                    <button onclick="reprintDisbursementLetter('${loanDoc.id}', '${userName}', ${loan.amount}, ${loan.interest}, '${safeDuration}', '${approvedDate}')" class="bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded hover:bg-slate-50 text-xs font-bold shadow-sm transition">
-                        🖨️ Print Letter
+                    <button onclick="reprintDisbursementLetter('${loanDoc.id}', '${safeName}', ${loan.amount}, ${loan.interest}, '${safeDuration}', '${approvedDate}')" class="bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded hover:bg-slate-50 text-xs font-bold shadow-sm transition">
+                        Print Letter
                     </button>
                 </td>
             `;
@@ -1639,68 +1717,73 @@ export async function loadActiveLoans() {
 }
 
 window.reprintDisbursementLetter = function(loanId, userName, amount, interest, durationWeeks, approvedDate) {
-    // Generate the exact same reference number as before
     const refNumber = `BM-LN-${loanId.substring(0, 6).toUpperCase()}`;
     
-    // Call your existing print template function
     generateOfficialLetter({
         userName: userName, 
         amount: amount,
-        transactionType: "Loan Disbursement (Reprint)", // Marked as reprint for clarity
+        transactionType: "Loan Disbursement (Reprint)", 
         reference: refNumber,
-        date: approvedDate, // Uses the exact date it was approved, not today's date
+        date: approvedDate, 
         notes: `Approved for ${durationWeeks} weeks at KSH ${interest} interest.`
     });
 };
 
-    window.processRepayment = async function(loanId, userId, principal, interest, userName) {
+window.processRepayment = async function(loanId, userId, principal, interest, userName, btn) {
     const totalRepayment = principal + interest;
     
     if (!confirm(`Confirm that ${userName} has fully paid KSH ${totalRepayment} (Principal + Interest)?`)) return;
+
+    if (btn) {
+        btn.disabled = true;
+        btn.classList.add("opacity-50", "cursor-not-allowed");
+        btn.innerText = "Processing...";
+    }
 
     const loanRef = doc(db, "loans", loanId);
     const userRef = doc(db, "users", userId);
     const statsRef = doc(db, "groupStats", "main");
     const transactionRef = doc(collection(db, "transactions"));
 
+    let finalCapital = 0;
+    let finalTotalLoans = 0;
+
     try {
         await runTransaction(db, async (transaction) => {
             const statsDoc = await transaction.get(statsRef);
             const userDoc = await transaction.get(userRef);
             
-            // 1. Calculate new Master Stats
             const currentLiquidity = statsDoc.data().liquidityReserve || 0;
             const currentCapital = statsDoc.data().capital || 0;
             const currentTotalLoans = statsDoc.data().totalLoans || 0;
             const currentProfit = statsDoc.data().totalProfit || 0;
 
+            finalCapital = currentCapital + interest;
+            finalTotalLoans = currentTotalLoans - principal;
+
             transaction.update(statsRef, {
-                liquidityReserve: currentLiquidity + totalRepayment, // Cash comes back
-                capital: currentCapital + interest, // Net worth increases by profit only
-                totalLoans: currentTotalLoans - principal, // Outstanding debt shrinks
-                totalProfit: currentProfit + interest // Add to the year-end dividend pool
+                liquidityReserve: currentLiquidity + totalRepayment, 
+                capital: finalCapital, 
+                totalLoans: finalTotalLoans, 
+                totalProfit: currentProfit + interest 
             });
 
-            // 2. Clear User's Debt & UPDATE TRUST SCORE
             const currentUserDebt = userDoc.data().loansActive || 0;
             let newDebt = currentUserDebt - totalRepayment;
             if (newDebt < 0) newDebt = 0; 
 
-            // Get current count of repaid loans, default to 0 if it doesn't exist
             const currentRepaidCount = userDoc.data().loansRepaidCount || 0;
             
             transaction.update(userRef, {
                 loansActive: newDebt,
-                loansRepaidCount: currentRepaidCount + 1 // INCREMENT THE TRUST TIER
+                loansRepaidCount: currentRepaidCount + 1 
             });
 
-            // 3. Mark Loan as Repaid
             transaction.update(loanRef, {
                 status: "repaid",
                 repaidAt: serverTimestamp()
             });
 
-            // 4. Log to Master Ledger
             transaction.set(transactionRef, {
                 userId: userId,
                 type: "repayment",
@@ -1708,49 +1791,35 @@ window.reprintDisbursementLetter = function(loanId, userName, amount, interest, 
                 principal: principal,
                 interest: interest,
                 status: "completed",
-                description: "Full loan repayment including 15% interest",
+                description: "Full loan repayment including interest",
                 createdAt: serverTimestamp()
             });
         });
         
         alert(`Success! KSH ${totalRepayment} recorded. ${userName}'s trust score has increased. Group capital grew by KSH ${interest}.`);
         
-        // --- NEW: TRIGGER THE REPAYMENT CLEARANCE TEMPLATE ---
+        await logAdminAction(auth.currentUser.email, `Processed repayment for member: ${userId} | Amount: KSH ${totalRepayment}`, "INFO");
         if(confirm("Would you like to print the official Repayment Clearance letter for this member?")) {
             const today = new Date().toLocaleDateString('en-GB'); 
             const refNumber = `BM-REP-${loanId.substring(0, 6).toUpperCase()}`;
             
-            // 1. Fetch fresh user data for the advanced algorithm
             const freshUserSnap = await getDoc(userRef);
             const userData = freshUserSnap.data();
             const savings = userData.savings || 0;
             const joinDate = userData.createdAt;
             
-            // We use the NEW repaid count (current + 1) because the transaction just updated it
-            const currentRepaidCount = userData.loansRepaidCount || 0; 
-            const newRepaidCount = currentRepaidCount + 1; 
-
-            // 2. Run the Advanced Multiplier Algorithm to find their True Limit
             const monthsActive = getMonthsActive(joinDate);
             const waterfall = calculateWaterfall(savings);
             
-            // --- NEW: SIMULATE THE FUTURE VAULT ---
-            // We need to calculate what the limit will be AFTER this transaction finishes
             const futureStats = {
-                capital: statsDoc.data().capital + interest,
-                totalLoans: statsDoc.data().totalLoans - principal
+                capital: finalCapital,
+                totalLoans: finalTotalLoans
             };
             
-            const futureUser = {
-                ...userData,
-                loansActive: newDebt,
-                loansRepaidCount: newRepaidCount
-            };
-
-            const limits = calculateSmartLimit(futureUser, futureStats, newDebt, waterfall.consistencyScore, monthsActive, waterfall.arrearsTotal);
+            // Calculate limit passing 0 as active debt, since they just paid it off
+            const limits = calculateSmartLimit(userData, futureStats, 0, waterfall.consistencyScore, monthsActive, waterfall.arrearsTotal);
             const newLimit = limits.finalLimit; 
 
-            // 3. Generate the letter with the mathematically accurate limit
             generateRepaymentLetter({
                 userName: userName, 
                 amount: totalRepayment,
@@ -1760,7 +1829,6 @@ window.reprintDisbursementLetter = function(loanId, userName, amount, interest, 
             });
         }
         
-        // Refresh all Admin UI components to reflect the new wealth
         loadActiveLoans();
         if(typeof loadGroupStats === 'function') loadGroupStats();
         if(typeof loadMembers === 'function') loadMembers();
@@ -1769,6 +1837,12 @@ window.reprintDisbursementLetter = function(loanId, userName, amount, interest, 
     } catch (error) {
         console.error("Repayment failed:", error);
         alert("CRITICAL ERROR: Failed to process repayment. Database preserved.");
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.classList.remove("opacity-50", "cursor-not-allowed");
+            btn.innerText = "Confirm Repayment";
+        }
     }
 };
 
@@ -1820,21 +1894,17 @@ export async function loadPendingPayments() {
 }
 
 window.rejectPayment = async function(claimId, userId, mpesaCode) {
-    // 1. Ask the Admin for a reason so the member isn't left guessing
     const reason = prompt(`You are rejecting payment Ref: ${mpesaCode}.\nEnter a brief reason for the member (e.g., "Code already used", "Invalid code", "Amount mismatch"):`);
     
-    // If the admin clicks "Cancel" on the prompt, abort the process
     if (reason === null) return; 
 
     try {
-        // 2. Mark the claim as rejected in the database
         await updateDoc(doc(db, "paymentClaims", claimId), { 
             status: "rejected", 
             resolvedAt: serverTimestamp(),
             rejectReason: reason 
         });
 
-        // 3. Automatically trigger a Red Warning Banner on the Member's Portal
         const warningText = `PAYMENT REJECTED: Your submission for M-Pesa Ref [${mpesaCode}] was declined by the Admin. ${reason ? 'Reason: ' + reason : 'Please verify your code and submit again.'}`;
         
         await updateDoc(doc(db, "users", userId), { 
@@ -1842,6 +1912,7 @@ window.rejectPayment = async function(claimId, userId, mpesaCode) {
         });
 
         alert("Payment rejected! The member has been automatically notified on their portal.");
+        await logAdminAction(auth.currentUser.email, `Rejected payment: ${claimId} | Reason: ${reason}`, "INFO");
         loadPendingPayments(); 
         
     } catch (error) {
@@ -1867,16 +1938,13 @@ window.verifyPayment = async function(claimId, userId, amount, mpesaCode, userNa
             const newCapital = (statsDoc.data().capital || 0) + amount;
             const newLiquidity = (statsDoc.data().liquidityReserve || 0) + amount; 
 
-            // 1. Update User Savings
             transaction.update(userRef, { savings: newSavings });
 
-            // 2. Update Group Capital
             transaction.update(statsRef, { 
                 capital: newCapital,
                 liquidityReserve: newLiquidity
             });
 
-            // 3. Mark the claim as verified
             transaction.update(claimRef, {
                 status: "verified",
                 resolvedAt: serverTimestamp()
@@ -1892,9 +1960,9 @@ window.verifyPayment = async function(claimId, userId, amount, mpesaCode, userNa
             });
         });
 
+        await logAdminAction(auth.currentUser.email, `Verified payment: ${claimId} | Amount: KSH ${amount}`, "INFO");
         alert("Payment verified and credited successfully!");
         
-        // Refresh all UIs
         loadPendingPayments();
         loadContributionTracker(); 
         loadGroupStats(); 

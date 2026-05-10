@@ -17,7 +17,7 @@ const forgotPasswordLink = document.getElementById('forgotPasswordLink');
 function showError(message) {
     errorText.textContent = message;
     errorMessageContainer.classList.remove('hidden');
-    errorMessageContainer.classList.add('flex'); // Applies Tailwind flexbox
+    errorMessageContainer.classList.add('flex'); 
 }
 
 function hideError() {
@@ -57,7 +57,6 @@ loginForm.addEventListener('submit', async (e) => {
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
 
-    // 🌟 MAKE IT SING: Trigger the Loading State
     submitBtn.disabled = true;
     btnText.textContent = "Authenticating...";
     btnIcon.classList.add('hidden');
@@ -67,42 +66,56 @@ loginForm.addEventListener('submit', async (e) => {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
-        // Fetch user role from Firestore
+        // Fetch user role AND system stats from Firestore simultaneously for speed
         const userDocRef = doc(db, "users", user.uid);
-        const userDoc = await getDoc(userDocRef);
+        const statsDocRef = doc(db, "groupStats", "main");
+
+        const [userDoc, statsDoc] = await Promise.all([
+            getDoc(userDocRef),
+            getDoc(statsDocRef)
+        ]);
 
         if (userDoc.exists()) {
             const userData = userDoc.data();
+            const isAdmin = userData.role === 'admin';
+            const isSystemLocked = statsDoc.exists() ? (statsDoc.data().maintenanceMode === true) : false;
             
-            // SECURITY: Check status before allowing entry
-            if(userData.status === 'suspended') {
-                await signOut(auth); // Boot them out of Firebase session
-                throw new Error("Your account has been suspended pending review.");
+            if (isSystemLocked && !isAdmin) {
+                await signOut(auth); // Boot them out of Firebase session instantly
+                throw new Error("SYSTEM LOCKDOWN: The platform is currently under emergency maintenance. Please try again later.");
             }
 
-            // 🌟 MAKE IT SING: Success State before redirect
+            // SECURITY: Check status before allowing entry
+            if(userData.status === 'suspended') {
+                await signOut(auth);
+                throw new Error("Your account has been suspended pending review.");
+            }
+            if(userData.status === 'exited') {
+                await signOut(auth);
+                throw new Error("Your account is marked as closed/exited.");
+            }
+
             btnText.textContent = "Redirecting...";
             btnSpinner.classList.add('hidden');
             
             // Route based on role
-            if (userData.role === 'admin') {
+            if (isAdmin) {
                 window.location.href = 'admin.html';
             } else {
                 window.location.href = 'member.html';
             }
         } else {
-            await signOut(auth); // Clean up broken auth states
+            await signOut(auth); 
             throw new Error("User profile not found in database.");
         }
 
     } catch (error) {
-        // 🌟 MAKE IT SING: Revert UI state on failure
+
         submitBtn.disabled = false;
         btnText.textContent = "Access Portal";
         btnIcon.classList.remove('hidden');
         btnSpinner.classList.add('hidden');
 
-        // Translate ugly Firebase errors into human text
         let friendlyMessage = "An unexpected error occurred. Please try again.";
         
         if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
@@ -112,7 +125,7 @@ loginForm.addEventListener('submit', async (e) => {
         } else if (error.code === 'auth/network-request-failed') {
             friendlyMessage = "Network error. Please check your internet connection.";
         } else if (error.message) {
-            friendlyMessage = error.message; // Catches our custom "suspended" error
+            friendlyMessage = error.message; // This perfectly catches our custom Lockdown, Suspended, and Exited errors
         }
 
         showError(friendlyMessage);

@@ -1,7 +1,8 @@
 import { auth, db } from './firebase.js';
-// 🛡️ Added doc and setDoc for Anti-Spam (Idempotency)
 import { doc, setDoc, getDoc, collection, serverTimestamp, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+import { onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
 let currentUserData = null;
 
@@ -10,6 +11,20 @@ onAuthStateChanged(auth, async (user) => {
         await loadUserData(user.uid);
     } else {
         window.location.href = 'login.html';
+    }
+});
+
+// Put this inside your initialization logic in member.js
+const statsRef = doc(db, "groupStats", "main");
+
+onSnapshot(statsRef, async (docSnap) => {
+    if (docSnap.exists() && docSnap.data().maintenanceMode === true) {
+        // The admin just flipped the switch! 
+        // 1. Instantly sign the user out
+        await signOut(auth);
+        
+        alert("The system has been placed into emergency maintenance mode by the Administrator. You are being logged out.");
+        window.location.href = "login.html"; 
     }
 });
 
@@ -26,7 +41,7 @@ async function loadMyLedger(uid) {
         const q = query(
             collection(db, "transactions"),
             where("userId", "==", uid),
-            orderBy("createdAt", "desc") // Show newest first
+            orderBy("createdAt", "desc")
         );
         const snapshot = await getDocs(q);
         tableBody.innerHTML = '';
