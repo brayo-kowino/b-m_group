@@ -1,9 +1,6 @@
-import { auth, db } from './firebase.js';
+import { auth, db, functions } from './firebase.js';
 import { collection, query, where, orderBy, limit, getDocs, doc, updateDoc, addDoc, getDoc, runTransaction, serverTimestamp, writeBatch, Timestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-//import { collection, query, orderBy, limit, getDocs, doc, updateDoc, getDoc, addDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-
 import { httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js";
-//import { functions } from './firebase.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     loadGroupStats();
@@ -37,10 +34,8 @@ addMemberForm.addEventListener('submit', async (e) => {
     const password = document.getElementById('newMemberPassword').value;
 
     try {
-        // 1. POINT TO YOUR NEW CLOUD FUNCTION
         const addNewMember = httpsCallable(functions, 'addNewMember');
 
-        // 2. SEND THE DATA TO THE BACKEND
         const result = await addNewMember({
             fullName: name,
             memberId: memberId,
@@ -48,7 +43,6 @@ addMemberForm.addEventListener('submit', async (e) => {
             password: password
         });
 
-        // 3. SUCCESS UI
         mintStatus.innerText = result.data.message;
         mintStatus.className = "text-sm font-semibold text-center mt-4 p-3 rounded-lg bg-green-50 text-green-700 border border-green-200 block";
         addMemberForm.reset();
@@ -92,7 +86,7 @@ export async function loadMembers() {
             const userId = userDoc.id;
 
             // --- 1. CALCULATE TIME CONTEXT ---
-            const joinDateObj = user.createdAt ? user.createdAt.toDate() : new Date();
+            const joinDateObj = (user.createdAt && typeof user.createdAt.toDate === 'function') ? user.createdAt.toDate() : new Date();
             const joinDateString = joinDateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
             
             // --- 2. CALCULATE FINANCIAL CONTEXT ---
@@ -186,7 +180,7 @@ window.verifyMember = async function(userId) {
     if(confirm("Mark this user as verified?")) {
         try {
             await updateDoc(doc(db, "users", userId), { verified: true });
-            await logAdminAction(auth.currentUser.email, `Manually verified ID for member: ${userId}`, "INFO");
+            await logAdminAction(auth.currentUser?.email || "System Admin", `Manually verified ID for member: ${userId}`, "INFO");
             loadMembers(); 
         } catch (error) {
             console.error("Error verifying member:", error);
@@ -205,10 +199,10 @@ window.issueWarning = async function(userId, userName, currentWarning) {
         });
         
         if (message.trim() === "") {
-            await logAdminAction(auth.currentUser.email, `Cleared warning for member: ${userId}`, "INFO");
+            await logAdminAction(auth.currentUser?.email || "System Admin", `Cleared warning for member: ${userId}`, "INFO");
             alert(`Warning cleared for ${userName}.`);
         } else {
-            await logAdminAction(auth.currentUser.email, `Issued warning to member: ${userId} | Warning: ${message.trim()}`, "WARN");
+            await logAdminAction(auth.currentUser?.email || "System Admin", `Issued warning to member: ${userId} | Warning: ${message.trim()}`, "WARN");
             alert(`Warning successfully sent to ${userName}. They will see this on their portal immediately.`);
         }
         
@@ -230,10 +224,10 @@ window.issueUpdate = async function(userId, userName, currentInfo) {
         });
         
         if (message.trim() === "") {
-            await logAdminAction(auth.currentUser.email, `Cleared update for member: ${userId}`, "INFO");
+            await logAdminAction(auth.currentUser?.email || "System Admin", `Cleared update for member: ${userId}`, "INFO");
             alert(`Update cleared for ${userName}.`);
         } else {
-            await logAdminAction(auth.currentUser.email, `Sent update to member: ${userId} | Update: ${message.trim()}`, "INFO");
+            await logAdminAction(auth.currentUser?.email || "System Admin", `Sent update to member: ${userId} | Update: ${message.trim()}`, "INFO");
             alert(`Update successfully sent to ${userName}.`);
         }
         
@@ -251,7 +245,7 @@ window.handleStatusChange = async function(userId, newStatus) {
     if(confirm(`Are you sure you want to change this member's status to ${newStatus.toUpperCase()}?`)) {
         try {
             await updateDoc(doc(db, "users", userId), { status: newStatus });
-            await logAdminAction(auth.currentUser.email, `Changed status for member: ${userId} | New Status: ${newStatus}`, "INFO");
+            await logAdminAction(auth.currentUser?.email || "System Admin", `Changed status for member: ${userId} | New Status: ${newStatus}`, "INFO");
             loadMembers(); 
         } catch (error) {
             console.error("Error updating status:", error);
@@ -264,7 +258,6 @@ window.handleStatusChange = async function(userId, newStatus) {
 // SYSTEM HEALTH & SECURITY (KILL SWITCH)
 // ==========================================
 
-// 1. Check current system status on load
 export async function checkSystemStatus() {
     const badge = document.getElementById('systemStatusBadge');
     const btn = document.getElementById('toggleMaintenanceBtn');
@@ -273,7 +266,6 @@ export async function checkSystemStatus() {
     try {
         const statsRef = doc(db, "groupStats", "main");
         
-        // Use onSnapshot for real-time updates so if another admin clicks it, this UI updates instantly
         onSnapshot(statsRef, (doc) => {
             if (doc.exists()) {
                 const isLocked = doc.data().maintenanceMode || false;
@@ -298,7 +290,6 @@ export async function checkSystemStatus() {
     }
 }
 
-// 2. Toggle the Kill Switch
 window.toggleSystemMaintenance = async function() {
     const statsRef = doc(db, "groupStats", "main");
     
@@ -316,7 +307,6 @@ window.toggleSystemMaintenance = async function() {
             maintenanceMode: !currentlyLocked
         });
 
-        // Log this critical action
         await logAdminAction("SYSTEM_ADMIN", `System ${!currentlyLocked ? 'LOCKED DOWN' : 'RESTORED ONLINE'}`, "CRIT");
         
     } catch (error) {
@@ -342,16 +332,13 @@ export async function logAdminAction(adminName, actionTrace, severity = "INFO") 
     }
 }
 
-// 2. Fetch and display logs in the terminal UI
 export async function loadSystemLogs() {
     const tbody = document.getElementById('systemLogsBody');
     if (!tbody) return;
 
     try {
-        // Fetch the 20 most recent logs
         const q = query(collection(db, "systemLogs"), orderBy("timestamp", "desc"), limit(20));
         
-        // Real-time listener so the terminal updates live
         onSnapshot(q, (snapshot) => {
             tbody.innerHTML = '';
             
@@ -364,7 +351,6 @@ export async function loadSystemLogs() {
                 const log = docSnap.data();
                 const timeStr = log.timestamp ? log.timestamp.toDate().toLocaleString('en-GB') : 'Just now';
                 
-                // Color formatting based on severity
                 let severityBadge = '';
                 if (log.severity === 'INFO') {
                     severityBadge = `<span class="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded text-[9px] font-bold">INFO</span>`;
@@ -527,7 +513,7 @@ async function distributeAnnualProfit() {
 
         await batch.commit();
 
-        await logAdminAction(auth.currentUser.email, `Distributed annual profit | Amount: KSH ${currentProfit.toFixed(2)} | Members: ${memberCount}`, "INFO");
+        await logAdminAction(auth.currentUser?.email || "System Admin", `Distributed annual profit | Amount: KSH ${currentProfit.toFixed(2)} | Members: ${memberCount}`, "INFO");
 
         alert(`Success! KSH ${profitPerMember.toFixed(2)} has been distributed to ${memberCount} members.`);
         
@@ -585,7 +571,7 @@ window.handleDeposit = async function(userId) {
 
         inputField.value = '';
         alert("Deposit successfully recorded!");
-        await logAdminAction(auth.currentUser.email, `Recorded deposit for member: ${userId} | Amount: KSH ${amount}`, "INFO");
+        await logAdminAction(auth.currentUser?.email || "System Admin", `Recorded deposit for member: ${userId} | Amount: KSH ${amount}`, "INFO");
         
         loadContributionTracker(); 
         loadGroupStats(); 
@@ -690,7 +676,6 @@ try {
                 : '';
 
             const row = document.createElement('tr');
-            // FIX APPLIED: pass "this" in onclick
             row.innerHTML = `
                 <td class="p-3">
                     <div class="font-bold text-slate-800 text-sm">${userName}</div>
@@ -745,10 +730,12 @@ window.approveLoan = async function(loanId, btn) {
     const loanRef = doc(db, "loans", loanId);
     const statsRef = doc(db, "groupStats", "main");
 
+    // 🚀 HOISTED VARIABLES: Declare these OUTSIDE the transaction so they survive
     let approvedLoanAmount = 0;
     let approvedInterest = 0;
     let approvedDuration = 0;
     let approvedUserName = 'Member';
+    let approvedUserId = ''; 
 
     try {
         await runTransaction(db, async (transaction) => {
@@ -767,6 +754,8 @@ window.approveLoan = async function(loanId, btn) {
             const savings = userData.savings || 0;
             const activeDebt = userData.loansActive || 0;
 
+            // 🚀 POPULATE HOISTED VARIABLES HERE
+            approvedUserId = loanData.userId;
             approvedLoanAmount = loanAmount;
             approvedInterest = loanData.interest;
             approvedDuration = loanData.durationWeeks;
@@ -817,7 +806,9 @@ window.approveLoan = async function(loanId, btn) {
         });
 
         alert("Loan officially approved and disbursed!");
-        await logAdminAction(auth.currentUser.email, `Approved and disbursed loan for member: ${loanData.userId} | Amount: KSH ${loanAmount}`, "INFO");
+        
+        // 🚀 SAFE LOGGING: Using the hoisted variables
+        await logAdminAction(auth.currentUser?.email || "System Admin", `Approved and disbursed loan for member: ${approvedUserId} | Amount: KSH ${approvedLoanAmount}`, "INFO");
 
         if(confirm("Would you like to print the official disbursement letter for this loan?")) {
             const today = new Date().toLocaleDateString('en-GB'); 
@@ -861,7 +852,7 @@ window.rejectLoan = async function(loanId) {
             rejectedAt: serverTimestamp()
         });
         alert("Loan request rejected successfully.");
-        await logAdminAction(auth.currentUser.email, `Rejected loan request: ${loanId} | Reason: ${reason}`, "INFO");
+        await logAdminAction(auth.currentUser?.email || "System Admin", `Rejected loan request: ${loanId} | Reason: ${reason}`, "INFO");
         loadPendingLoans(); 
     } catch (error) {
         console.error("Error rejecting loan:", error);
@@ -1101,7 +1092,7 @@ window.resolveGrievance = async function(messageId, userId) {
         });
 
         alert("Grievance resolved! The member has been notified on their portal.");
-        await logAdminAction(auth.currentUser.email, `Resolved grievance for member: ${userId}`, "INFO");
+        await logAdminAction(auth.currentUser?.email || "System Admin", `Resolved grievance for member: ${userId}`, "INFO");
         loadGrievances(); 
         loadMembers();    
         
@@ -1176,7 +1167,7 @@ export async function loadExitRequests() {
 window.rejectExit = async function(requestId) {
     if(!confirm("Are you sure you want to reject this exit application?")) return;
     await updateDoc(doc(db, "exitRequests", requestId), { status: "rejected" });
-    await logAdminAction(auth.currentUser.email, `Rejected exit request: ${requestId}`, "INFO");
+    await logAdminAction(auth.currentUser?.email || "System Admin", `Rejected exit request: ${requestId}`, "INFO");
     loadExitRequests();
 };
 
@@ -1222,7 +1213,7 @@ window.processExit = async function(requestId, userId, payoutAmount, userName) {
         });
 
         alert(`Exit processed successfully. KSH ${payoutAmount} has been deducted from group capital. Please transfer the funds to ${userName}.`);
-        await logAdminAction(auth.currentUser.email, `Processed exit payout for member: ${userId} | Amount: KSH ${payoutAmount}`, "INFO");
+        await logAdminAction(auth.currentUser?.email || "System Admin", `Processed exit payout for member: ${userId} | Amount: KSH ${payoutAmount}`, "INFO");
         loadExitRequests();
         loadGroupStats();
         loadMembers();
@@ -1815,7 +1806,7 @@ window.processRepayment = async function(loanId, userId, principal, interest, us
         
         alert(`Success! KSH ${totalRepayment} recorded. ${userName}'s trust score has increased. Group capital grew by KSH ${interest}.`);
         
-        await logAdminAction(auth.currentUser.email, `Processed repayment for member: ${userId} | Amount: KSH ${totalRepayment}`, "INFO");
+        await logAdminAction(auth.currentUser?.email || "System Admin", `Processed repayment for member: ${userId} | Amount: KSH ${totalRepayment}`, "INFO");
         if(confirm("Would you like to print the official Repayment Clearance letter for this member?")) {
             const today = new Date().toLocaleDateString('en-GB'); 
             const refNumber = `BM-REP-${loanId.substring(0, 6).toUpperCase()}`;
@@ -1833,7 +1824,6 @@ window.processRepayment = async function(loanId, userId, principal, interest, us
                 totalLoans: finalTotalLoans
             };
             
-            // Calculate limit passing 0 as active debt, since they just paid it off
             const limits = calculateSmartLimit(userData, futureStats, 0, waterfall.consistencyScore, monthsActive, waterfall.arrearsTotal);
             const newLimit = limits.finalLimit; 
 
@@ -1929,7 +1919,7 @@ window.rejectPayment = async function(claimId, userId, mpesaCode) {
         });
 
         alert("Payment rejected! The member has been automatically notified on their portal.");
-        await logAdminAction(auth.currentUser.email, `Rejected payment: ${claimId} | Reason: ${reason}`, "INFO");
+        await logAdminAction(auth.currentUser?.email || "System Admin", `Rejected payment: ${claimId} | Reason: ${reason}`, "INFO");
         loadPendingPayments(); 
         
     } catch (error) {
@@ -1977,7 +1967,7 @@ window.verifyPayment = async function(claimId, userId, amount, mpesaCode, userNa
             });
         });
 
-        await logAdminAction(auth.currentUser.email, `Verified payment: ${claimId} | Amount: KSH ${amount}`, "INFO");
+        await logAdminAction(auth.currentUser?.email || "System Admin", `Verified payment: ${claimId} | Amount: KSH ${amount}`, "INFO");
         alert("Payment verified and credited successfully!");
         
         loadPendingPayments();
@@ -1992,7 +1982,7 @@ window.verifyPayment = async function(claimId, userId, amount, mpesaCode, userNa
 };
 
 function getMonthsActive(timestamp) {
-    if (!timestamp) return 1; 
+    if (!timestamp || typeof timestamp.toDate !== 'function') return 1; 
     const join = timestamp.toDate();
     const now = new Date();
     const diff = (now.getFullYear() - join.getFullYear()) * 12 + (now.getMonth() - join.getMonth());
