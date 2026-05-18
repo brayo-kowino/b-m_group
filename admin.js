@@ -1453,7 +1453,7 @@ export function generateOfficialLetter({
 
     const printContainer = document.createElement('div');
     printContainer.id = 'mobile-print-container';
-    printContainer.className = 'bg-white text-slate-800 p-12 font-sans relative h-screen box-border w-full';
+    printContainer.className = 'bg-white text-slate-800 p-6 font-sans relative h-screen box-border w-full';
     printContainer.innerHTML = htmlContent;
     document.body.appendChild(printContainer);
 
@@ -1618,7 +1618,7 @@ export function generateRepaymentLetter({
 
     const printContainer = document.createElement('div');
     printContainer.id = 'mobile-print-container';
-    printContainer.className = 'bg-white text-slate-800 p-12 font-sans relative h-screen box-border w-full';
+    printContainer.className = 'bg-white text-slate-800 p-6 font-sans relative h-screen box-border w-full';
     printContainer.innerHTML = htmlContent;
     document.body.appendChild(printContainer);
 
