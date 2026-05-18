@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B&M Group | Instant Verification</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div class="glass-card shadow-2xl rounded-2xl w-full max-w-md overflow-hidden transition-all duration-300">
+        
+        <!-- Header -->
+        <div class="bg-slate-900 text-white p-6 text-center">
+            <h1 class="text-2xl font-bold tracking-wider">B&M GROUP</h1>
+            <p class="text-slate-400 text-sm tracking-widest mt-1 uppercase">Instant Verification</p>
+        </div>
+
+        <div id="verification-content" class="p-8">
+            
+            <!-- Loading State -->
+            <div id="loading-state" class="flex flex-col items-center justify-center py-10">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                <p class="text-slate-500 font-medium animate-pulse">Running Cryptographic Check...</p>
+            </div>
+
+            <!-- Success State -->
+            <div id="success-state" class="hidden flex-col items-center">
+                <div class="bg-emerald-100 text-emerald-600 rounded-full p-4 mb-4">
+                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <h2 class="text-xl font-bold text-slate-900 mb-6">DOCUMENT AUTHENTIC</h2>
+                
+                <div class="w-full space-y-4 text-sm">
+                    <div class="flex justify-between border-b border-slate-200 pb-2">
+                        <span class="text-slate-500 font-semibold">Reference ID</span>
+                        <span id="display-ref" class="font-bold text-slate-900 uppercase">---</span>
+                    </div>
+                    <div class="flex justify-between border-b border-slate-200 pb-2">
+                        <span class="text-slate-500 font-semibold">Repayment Amount</span>
+                        <span id="display-amount" class="font-bold text-slate-900">---</span>
+                    </div>
+                    <div class="flex justify-between border-b border-slate-200 pb-2">
+                        <span class="text-slate-500 font-semibold">Due Date</span>
+                        <span id="display-date" class="font-bold text-slate-900">---</span>
+                    </div>
+                    <div class="flex justify-between border-b border-slate-200 pb-2">
+                        <span class="text-slate-500 font-semibold">Security Hash</span>
+                        <span id="display-hash" class="font-mono text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">---</span>
+                    </div>
+                    <div class="flex justify-between pt-2">
+                        <span class="text-slate-500 font-semibold">Integrity Check</span>
+                        <span class="font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full text-xs">PASSED</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error State -->
+            <div id="error-state" class="hidden flex-col items-center py-6 text-center">
+                <div class="bg-red-100 text-red-600 rounded-full p-4 mb-4">
+                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <h2 class="text-xl font-bold text-slate-900 mb-2">VERIFICATION FAILED</h2>
+                <p class="text-slate-500 text-sm">Data integrity check failed. The document may have been altered or is forged.</p>
+            </div>
+
+        </div>
+        
+        <div class="bg-slate-100 p-4 text-center border-t border-slate-200">
+            <p class="text-xs text-slate-500">Securely processed by B&M Group Infrastructure &copy; 2026</p>
+        </div>
+    </div>
+
+    <!-- Frontend Cryptographic Logic -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            // Extract the ingredients from the URL
+            const ref = urlParams.get('r');
+            const total = urlParams.get('t');
+            const date = urlParams.get('d');
+            const providedHash = urlParams.get('h');
+
+            const loadingState = document.getElementById('loading-state');
+            const successState = document.getElementById('success-state');
+            const errorState = document.getElementById('error-state');
+
+            // Quick 800ms timeout so the user sees the "checking" animation
+            setTimeout(() => {
+                loadingState.classList.add('hidden');
+
+                if (ref && total && date && providedHash) {
+                    
+                    // --- THE MAGIC: Reconstruct the hash exactly like the PDF generator ---
+                    const calculatedHash = btoa(`${ref}-${total}-${date}`).substring(0, 18).toUpperCase();
+
+                    // Check if our calculation matches the printed hash
+                    if (calculatedHash === providedHash) {
+                        
+                        // Populate UI
+                        document.getElementById('display-ref').textContent = ref;
+                        document.getElementById('display-amount').textContent = `KSH ${Number(total).toLocaleString()}`;
+                        document.getElementById('display-date').textContent = date;
+                        document.getElementById('display-hash').textContent = calculatedHash;
+                        
+                        // Show Success
+                        successState.classList.remove('hidden');
+                        successState.classList.add('flex');
+                    } else {
+                        // Data was tampered with (e.g. someone changed the amount in the URL)
+                        errorState.classList.remove('hidden');
+                        errorState.classList.add('flex');
+                    }
+
+                } else {
+                    // Missing parameters
+                    errorState.classList.remove('hidden');
+                    errorState.classList.add('flex');
+                }
+            }, 800);
+        });
+    </script>
+</body>
+</html>

@@ -814,6 +814,8 @@ window.approveLoan = async function(loanId, btn) {
             generateOfficialLetter({
                 userName: approvedUserName, 
                 amount: approvedLoanAmount,
+                interest: approvedInterest,
+                durationWeeks: approvedDuration,
                 transactionType: "Loan Disbursement",
                 reference: refNumber,
                 date: today,
@@ -1311,178 +1313,243 @@ window.exportLedgerCSV = function() {
 export function generateOfficialLetter({
     userName,
     amount,
-    transactionType, 
+    interest,          // Required for calculations
+    durationWeeks,     // Required for calculations
+    transactionType,
     reference,
     date,
     notes
 }) {
-    const digitalSignature = btoa(`${reference}-${amount}-${date}`).substring(0, 15).toUpperCase();
 
-    const htmlContent = `
-        <style>
-            @media print {
-                body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white !important; }
-                @page { size: A4 portrait; margin: 0; } /* Forces A4 size and removes browser margins */
-            }
-            /* NEW: Hardcode the exact dimensions of an A4 paper */
-            .print-page {
-                height: 297mm; 
-                max-width: 210mm; 
-                margin: 0 auto;
-                position: relative;
-                box-sizing: border-box;
-                overflow: hidden;
-                page-break-after: avoid;
-                page-break-inside: avoid;
-            }
-            .watermark {
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%) rotate(-45deg);
-                font-size: 8rem;
-                color: rgba(0, 0, 0, 0.03);
-                font-weight: bold;
-                white-space: nowrap;
-                z-index: -1;
-                pointer-events: none;
-            }
-            .seal {
-                position: absolute;
-                bottom: 50px;
-                right: 50px;
-                width: 100px;
-                height: 100px;
-                border: 4px solid #1e3a8a; 
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                text-align: center;
-                color: #1e3a8a;
-                font-size: 10px;
-                font-weight: bold;
-                text-transform: uppercase;
-                letter-spacing: 1px;
-                transform: rotate(-15deg);
-                opacity: 0.8;
-            }
-            .seal::after {
-                content: "AUTHENTIC";
-                position: absolute;
-                font-size: 14px;
-                color: rgba(220, 38, 38, 0.7); 
-                transform: rotate(30deg);
-                letter-spacing: 4px;
-            }
-        </style>
-        
-        <div class="watermark">B&M GROUP</div>
+    // --- 1. FINANCIAL & DATE CALCULATIONS ---
+    const principal = Number(amount) || 0;
+    const interestAmt = Number(interest) || 0;
+    const totalRepayment = principal + interestAmt;
 
-        <div class="flex justify-between items-start border-b-4 border-blue-900 pb-6 mb-8 mt-4">
-            <div class="flex items-start flex-col">
-                <img src="bm_group_logo.png" alt="B&M Group Logo" class="h-12 w-auto mb-1 ml-[-2px] object-contain" onerror="this.style.display='none'">
-                <p class="text-sm font-semibold text-slate-500 uppercase tracking-widest mt-1">Private Savings & Credit Investment</p>
-            </div>
-            <div class="text-right text-sm text-slate-600">
-                <p class="font-bold text-slate-800">Headquarters</p>
-                <p>Juja, Kiambu County</p>
-                <p>Kenya</p>
-            </div>
-        </div>
-        
-        <div class="flex justify-between mb-10 bg-slate-50 p-4 rounded-lg border border-slate-200">
-            <div>
-                <p class="text-xs text-slate-500 uppercase">Document Ref</p>
-                <p class="font-bold text-slate-800 font-mono">${reference}</p>
-            </div>
-            <div>
-                <p class="text-xs text-slate-500 uppercase">Date of Issue</p>
-                <p class="font-bold text-slate-800">${date}</p>
-            </div>
-            <div class="text-right">
-                <p class="text-xs text-slate-500 uppercase">Transaction Type</p>
-                <p class="font-bold text-blue-700 uppercase">${transactionType}</p>
-            </div>
-        </div>
-
-        <div class="mb-10 min-h-[300px]">
-            <h2 class="text-xl font-bold mb-4">Official Notification of Disbursement</h2>
-            <p class="mb-4 text-slate-700 leading-relaxed">
-                This document serves as official confirmation that a transaction has been successfully processed and approved by the B&M Group administration. The details of the disbursement are as follows:
-            </p>
-            
-            <div class="bg-white border-2 border-slate-200 rounded-lg p-6 mb-6">
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="text-sm text-slate-500">Beneficiary Name:</div>
-                    <div class="font-bold text-lg">${userName}</div>
-                    
-                    <div class="text-sm text-slate-500">Approved Amount:</div>
-                    <div class="font-extrabold text-2xl text-green-700">KSH ${amount.toLocaleString()}</div>
-                    
-                    <div class="text-sm text-slate-500">Remarks/Notes:</div>
-                    <div class="text-slate-800 font-medium">${notes || 'Standard clearance applied.'}</div>
-                </div>
-            </div>
-
-            <p class="text-sm text-slate-600 italic">
-                By accepting these funds, the beneficiary agrees to the terms and conditions outlined in the B&M Group governance charter.
-            </p>
-        </div>
-
-        <div class="mt-16 flex justify-between items-end border-t border-slate-300 pt-8">
-            <div class="w-1/3 text-center">
-                <div class="border-b border-slate-400 h-10 mb-2"></div>
-                <p class="font-bold text-sm">Brian Odhiambo</p>
-                <p class="text-xs text-slate-500">System Administrator / Co-Founder</p>
-            </div>
-            
-            <div class="w-1/3 text-center">
-                <div class="border-b border-slate-400 h-10 mb-2"></div>
-                <p class="font-bold text-sm">Beneficiary Signature</p>
-                <p class="text-xs text-slate-500">Acknowledge Receipt</p>
-            </div>
-        </div>
-
-        <div class="seal">
-            B&M<br>Verified<br>Secure
-        </div>
-        
-        <div class="absolute bottom-10 left-10 text-xs text-slate-400 font-mono">
-            Cryptographic Hash: ${digitalSignature}
-        </div>
-    `;
-
-    const originalChildren = Array.from(document.body.children);
-    originalChildren.forEach(child => {
-        if (child.tagName !== 'SCRIPT') {
-            child.setAttribute('data-original-display', child.style.display);
-            child.style.display = 'none';
+    let baseDate = new Date();
+    if (date && date.includes('/')) {
+        const parts = date.split('/');
+        if (parts.length === 3) {
+            baseDate = new Date(parts[2], parts[1] - 1, parts[0]);
         }
-    });
-
-    const printContainer = document.createElement('div');
-    printContainer.id = 'mobile-print-container';
-    printContainer.className = 'bg-white text-slate-800 p-6 font-sans w-full print-page';
+    } else if (date) {
+        baseDate = new Date(date);
+    }
     
-    printContainer.innerHTML = htmlContent;
-    document.body.appendChild(printContainer);
+    if (isNaN(baseDate.getTime())) {
+        baseDate = new Date();
+    }
 
-    setTimeout(() => {
-        window.print();
-        
-        setTimeout(() => {
-            if (document.getElementById('mobile-print-container')) {
-                document.body.removeChild(printContainer);
-            }
-            originalChildren.forEach(child => {
-                if (child.tagName !== 'SCRIPT') {
-                    child.style.display = child.getAttribute('data-original-display') || '';
+    const repaymentDateObj = new Date(baseDate.getTime());
+    repaymentDateObj.setDate(repaymentDateObj.getDate() + ((Number(durationWeeks) || 0) * 7));
+    
+    const expectedRepaymentDate = repaymentDateObj.toLocaleDateString('en-GB');
+    const digitalSignature = btoa(`${reference}-${totalRepayment}-${expectedRepaymentDate}`).substring(0, 18).toUpperCase();
+    const encodedDate = encodeURIComponent(expectedRepaymentDate);
+    const qrContent = `https://bmfinance.netlify.app/verify/vrf/v?r=${reference}&t=${totalRepayment}&d=${encodedDate}&h=${digitalSignature}`;
+    const docDefinition = {
+        pageSize: 'A4',
+        pageMargins: [40, 45, 40, 45],
+
+        background: function () {
+            return [
+                {
+                    text: 'B&M GROUP',
+                    color: '#d1d5db',
+                    opacity: 0.08,
+                    bold: true,
+                    fontSize: 80,
+                    absolutePosition: { x: 120, y: 320 },
+                    angle: -45
                 }
-            });
-        }, 1000); 
-        
-    }, 500);
+            ];
+        },
+
+        content: [
+            // ================= HEADER =================
+            {
+                columns: [
+                    [
+                        { text: 'B&M GROUP', fontSize: 28, bold: true, color: '#0f172a' },
+                        { text: 'Private Savings & Credit Investment', fontSize: 10, color: '#64748b', margin: [0, 4, 0, 0], characterSpacing: 1 }
+                    ],
+                    [
+                        { text: 'Headquarters', alignment: 'right', bold: true, fontSize: 12, color: '#0f172a' },
+                        { text: 'Juja, Kiambu County\nKenya', alignment: 'right', fontSize: 10, color: '#64748b', margin: [0, 5, 0, 0] }
+                    ]
+                ]
+            },
+
+            // ================= BLUE LINE =================
+            {
+                canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 4, lineColor: '#1e3a8a' }],
+                margin: [0, 15, 0, 25]
+            },
+
+            // ================= TOP INFO CARDS =================
+            {
+                table: {
+                    widths: ['33%', '33%', '34%'],
+                    body: [[
+                        {
+                            stack: [
+                                { text: 'DOCUMENT REF', fontSize: 9, color: '#64748b', bold: true },
+                                { text: reference, bold: true, fontSize: 12, color: '#0f172a' }
+                            ],
+                            fillColor: '#f8fafc', margin: [12, 12, 12, 12]
+                        },
+                        {
+                            stack: [
+                                { text: 'DATE OF ISSUE', fontSize: 9, color: '#64748b', bold: true },
+                                { text: date, bold: true, fontSize: 12, color: '#0f172a' }
+                            ],
+                            fillColor: '#f8fafc', margin: [12, 12, 12, 12]
+                        },
+                        {
+                            stack: [
+                                { text: 'TRANSACTION TYPE', fontSize: 9, color: '#64748b', bold: true, alignment: 'right' },
+                                { text: transactionType.toUpperCase(), bold: true, fontSize: 11, color: '#1d4ed8', alignment: 'right' }
+                            ],
+                            fillColor: '#f8fafc', margin: [12, 12, 12, 12]
+                        }
+                    ]]
+                },
+                layout: { hLineColor: '#e2e8f0', vLineColor: '#e2e8f0', hLineWidth: () => 1, vLineWidth: () => 1 },
+                margin: [0, 0, 0, 30]
+            },
+
+            // ================= TITLE =================
+            {
+                text: 'DISBURSEMENT AGREEMENT',
+                fontSize: 18,
+                bold: true,
+                color: '#0f172a',
+                characterSpacing: 1,
+                margin: [0, 0, 0, 10]
+            },
+
+            // ================= DESCRIPTION =================
+            {
+                text: `This document serves as the official financial agreement and confirmation of fund disbursement between B&M Group and the recognized beneficiary, ${userName}.`,
+                fontSize: 11,
+                color: '#475569',
+                lineHeight: 1.5,
+                margin: [0, 0, 0, 20]
+            },
+
+            // ================= FINANCIAL GRID =================
+            {
+                table: {
+                    widths: ['45%', '55%'],
+                    body: [
+                        // Header Row
+                        [
+                            { text: 'FACILITY BREAKDOWN', colSpan: 2, fontSize: 10, bold: true, color: '#64748b', fillColor: '#f1f5f9', margin: [10, 8, 10, 8] },
+                            {}
+                        ],
+                        // Data Rows
+                        [
+                            { text: 'Beneficiary Name', fontSize: 11, color: '#64748b', margin: [10, 10, 10, 10] },
+                            { text: userName, fontSize: 12, bold: true, color: '#0f172a', margin: [10, 10, 10, 10] }
+                        ],
+                        [
+                            { text: 'Principal Amount', fontSize: 11, color: '#64748b', margin: [10, 10, 10, 10] },
+                            { text: `KSH ${principal.toLocaleString()}`, fontSize: 12, bold: true, color: '#0f172a', margin: [10, 10, 10, 10] }
+                        ],
+                        [
+                            { text: 'Approved Duration', fontSize: 11, color: '#64748b', margin: [10, 10, 10, 10] },
+                            { text: `${durationWeeks} Weeks`, fontSize: 12, bold: true, color: '#0f172a', margin: [10, 10, 10, 10] }
+                        ],
+                        [
+                            { text: 'System Interest Fee', fontSize: 11, color: '#64748b', margin: [10, 10, 10, 10] },
+                            { text: `KSH ${interestAmt.toLocaleString()}`, fontSize: 12, bold: true, color: '#0f172a', margin: [10, 10, 10, 10] }
+                        ],
+                        // Highlighted Totals
+                        [
+                            { text: 'TOTAL REPAYMENT DUE', fontSize: 11, bold: true, color: '#065f46', fillColor: '#ecfdf5', margin: [10, 12, 10, 12] },
+                            { text: `KSH ${totalRepayment.toLocaleString()}`, fontSize: 14, bold: true, color: '#059669', fillColor: '#ecfdf5', margin: [10, 12, 10, 12] }
+                        ],
+                        [
+                            { text: 'EXPECTED REPAYMENT DATE', fontSize: 11, bold: true, color: '#991b1b', fillColor: '#fef2f2', margin: [10, 12, 10, 12] },
+                            { text: expectedRepaymentDate, fontSize: 14, bold: true, color: '#dc2626', fillColor: '#fef2f2', margin: [10, 12, 10, 12] }
+                        ]
+                    ]
+                },
+                layout: { hLineColor: '#cbd5e1', vLineColor: '#cbd5e1', hLineWidth: () => 1, vLineWidth: () => 1 },
+                margin: [0, 0, 0, 20]
+            },
+
+            // ================= ADMINISTRATIVE PORTAL NOTE =================
+            {
+                stack: [
+                    { text: 'ADMINISTRATIVE NOTES', fontSize: 9, bold: true, color: '#64748b', margin: [0, 0, 0, 5] },
+                    { text: notes || 'Standard clearance applied. Late repayments will negatively impact your system trust score and future borrowing limits.', fontSize: 10, color: '#334155', margin: [0, 0, 0, 5] },
+                    { text: 'Please note that repayment information, and your updated financial standing can be accessed at any time by logging into your B&M Group member portal.', fontSize: 10, bold: true, color: '#1d4ed8' }
+                ],
+                padding: [15, 15, 15, 15],
+                margin: [0, 0, 0, 40]
+            },
+
+            // ================= SIGNATURE AREA =================
+            {
+                columns: [
+                    {
+                        width: '45%',
+                        stack: [
+                            { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 180, y2: 0, lineWidth: 1, lineColor: '#94a3b8' }] },
+                            { text: 'Brian Odhiambo', bold: true, alignment: 'center', margin: [0, 10, 0, 3], color: '#0f172a' },
+                            { text: 'System Administrator', fontSize: 10, color: '#64748b', alignment: 'center' }
+                        ]
+                    },
+                    {
+                        width: '45%',
+                        stack: [
+                            { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 180, y2: 0, lineWidth: 1, lineColor: '#94a3b8' }] },
+                            { text: 'Beneficiary Signature', bold: true, alignment: 'center', margin: [0, 10, 0, 3], color: '#0f172a' },
+                            { text: 'Acknowledge Receipt', fontSize: 10, color: '#64748b', alignment: 'center' }
+                        ]
+                    }
+                ],
+                columnGap: 30
+            },
+
+            // ================= REPLACED HASH WITH QR CODE =================
+            {
+                qr: qrContent,
+                fit: 70, // Adjust size of QR code here
+                absolutePosition: { x: 40, y: 725 }
+            },
+            {
+                text: 'Scan to verify authenticity',
+                fontSize: 8,
+                color: '#94a3b8',
+                absolutePosition: { x: 40, y: 700 }
+            },
+
+            // ================= STAMP / SEAL =================
+            {
+                absolutePosition: { x: 450, y: 690 },
+                canvas: [
+                    { type: 'ellipse', x: 45, y: 45, r1: 45, r2: 45, lineWidth: 3, lineColor: '#1e3a8a' }
+                ]
+            },
+            {
+                absolutePosition: { x: 450, y: 718 },
+                columns: [
+                    { width: 90, text: 'B&M\nVERIFIED', alignment: 'center', color: '#1e3a8a', fontSize: 9, bold: true }
+                ]
+            },
+            {
+                absolutePosition: { x: 450, y: 742 },
+                columns: [
+                    { width: 90, text: 'AUTHENTIC', alignment: 'center', color: '#dc2626', fontSize: 12, bold: true, angle: -20 }
+                ]
+            }
+
+        ] 
+    };
+
+    pdfMake.createPdf(docDefinition).download(`${reference}.pdf`);
 }
 
 export function generateRepaymentLetter({
@@ -1724,6 +1791,8 @@ window.reprintDisbursementLetter = function(loanId, userName, amount, interest, 
         userName: userName, 
         amount: amount,
         transactionType: "Loan Disbursement (Reprint)", 
+        interest: interest,
+        durationWeeks: durationWeeks,
         reference: refNumber,
         date: approvedDate, 
         notes: `Approved for ${durationWeeks} weeks at KSH ${interest} interest.`
