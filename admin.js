@@ -1346,7 +1346,7 @@ export function generateOfficialLetter({
     const expectedRepaymentDate = repaymentDateObj.toLocaleDateString('en-GB');
     const digitalSignature = btoa(`${reference}-${totalRepayment}-${expectedRepaymentDate}`).substring(0, 18).toUpperCase();
     const encodedDate = encodeURIComponent(expectedRepaymentDate);
-    const qrContent = `https://bmfinance.netlify.app/verify/vrf/v?r=${reference}&t=${totalRepayment}&d=${encodedDate}&h=${digitalSignature}`;
+    const qrContent = `https://bmfinance.netlify.app/verify/vrf?r=${reference}&t=${totalRepayment}&d=${encodedDate}&h=${digitalSignature}`;
     const docDefinition = {
         pageSize: 'A4',
         pageMargins: [40, 45, 40, 45],
