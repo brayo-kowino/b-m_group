@@ -400,6 +400,8 @@ async function renderContributionChart(uid) {
             }
         });
 
+        document.getElementById('chartSkeleton')?.classList.add('hidden');
+
     } catch (error) {
         console.error("Error rendering trend chart:", error);
     }
@@ -473,7 +475,7 @@ async function loadUserData(uid) {
         
         let expectedTotalSoFar = 0; 
 
-for (let i = 0; i <= currentMonth; i++) {
+        for (let i = 0; i <= currentMonth; i++) {
             const daysInMonth = new Date(currentYear, i + 1, 0).getDate(); 
             const target = (Math.floor(daysInMonth / 7) * 70) + ((daysInMonth % 7) * 10);
             const monthName = new Date(currentYear, i, 1).toLocaleString('default', { month: 'long' });
@@ -682,6 +684,9 @@ for (let i = 0; i <= currentMonth; i++) {
         // Update UI
         document.getElementById('availableLoanLimit').textContent = `KSH ${finalSmartLimit}`;
         document.getElementById('totalLoanLimit').textContent = activeLoansTotal > 0 ? trueFutureLimit : baseLimit; 
+
+        document.getElementById('savingsSkeleton')?.classList.add('hidden');
+        document.getElementById('loanLimitSkeleton')?.classList.add('hidden');
 
         const limitHelper = document.getElementById('limitHelperText');
         if(limitHelper) {

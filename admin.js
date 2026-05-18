@@ -451,6 +451,12 @@ export async function loadVisualAnalytics() {
             });
         }
 
+        document.getElementById('totalCapitalSkeleton')?.classList.add('hidden');
+        document.getElementById('activeLoansSkeleton')?.classList.add('hidden');
+        document.getElementById('liquidityReserveSkeleton')?.classList.add('hidden');
+        document.getElementById('capitalDoughnutSkeleton')?.classList.add('hidden');
+        document.getElementById('wealthBarSkeleton')?.classList.add('hidden');
+
     } catch (error) {
         console.error("Error loading visual analytics:", error);
     }
@@ -1750,11 +1756,6 @@ export function generateRepaymentLetter({
 
     pdfMake.createPdf(docDefinition).download(`${reference}-Clearance.pdf`);
 }
-
-//generateRepaymentLetter("Test User", 15000, "BM-LN-ABC123", "15/09/2024", 50000);
-// ==========================================
-// ACTIVE LOANS & REPAYMENT PROCESSING
-// ==========================================
 
 export async function loadActiveLoans() {
     const tableBody = document.getElementById('activeLoansTableBody');

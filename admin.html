@@ -10,6 +10,24 @@
     <title>B&M Group - Admin Command Center</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    keyframes: {
+                        shimmer: {
+                            '100%': { transform: 'translateX(100%)' }
+                        }
+                    },
+                    animation: {
+                        shimmer: 'shimmer 1.5s infinite'
+                    }
+                }
+            }
+        }
+    </script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/chart.js/dist/chart.umd.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.10/pdfmake.min.js"></script>
@@ -18,52 +36,28 @@
     <style>
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background-color: #F1F5F9; /* Slightly cooler slate background for admin */
+            background-color: #F1F5F9; 
         }
-        /* Soft iOS style shadow for cards */
-        .ios-shadow {
-            box-shadow: 0 4px 24px -6px rgba(0, 0, 0, 0.04);
-        }
-        /* Hide scrollbar for cleaner look */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #94a3b8;
-            border-radius: 10px;
-        }
+        .ios-shadow { box-shadow: 0 4px 24px -6px rgba(0, 0, 0, 0.04); }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
         
-        /* --- CREATIVE DARK POLYGON ADMIN THEME --- */
         .admin-polygon-theme {
-            background-color: #0f172a; /* Deep Slate Base */
-            /* Custom Low-Poly Dark Blue/Slate Pattern */
+            background-color: #0f172a; 
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cpolygon points='0,0 100,50 0,100' fill='%231e293b' opacity='0.5'/%3E%3Cpolygon points='200,0 100,50 200,100' fill='%23020617' opacity='0.5'/%3E%3Cpolygon points='100,50 200,100 100,150 0,100' fill='%231e3a8a' opacity='0.4'/%3E%3Cpolygon points='0,200 100,150 0,100' fill='%231e293b' opacity='0.5'/%3E%3Cpolygon points='200,200 100,150 200,100' fill='%23020617' opacity='0.5'/%3E%3C/svg%3E");
             color: white;
             border-right: 1px solid rgba(255, 255, 255, 0.05);
         }
-
-        /* Glowing effect for the active sidebar item */
         .admin-glow {
             box-shadow: 0 0 20px rgba(37, 99, 235, 0.4);
             border: 1px solid rgba(96, 165, 250, 0.3);
         }
-
-        /* Scanline effect for the live logs */
-        .scanline {
-            position: relative;
-            overflow: hidden;
-        }
+        .scanline { position: relative; overflow: hidden; }
         .scanline::after {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 2px;
+            top: 0; left: 0; width: 100%; height: 2px;
             background: rgba(34, 197, 94, 0.3);
             animation: scan 4s linear infinite;
         }
@@ -105,16 +99,13 @@
         
         <nav id="side-nav" class="flex-1 px-4 py-2 space-y-1.0 overflow-y-auto font-medium text-sm">
             <p class="px-4 text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-2">Main Menu</p>
-            
             <a href="#group-analytics" class="block px-4 py-3 rounded-xl bg-blue-600/90 text-white admin-glow font-semibold tracking-wide transition-all">Overview</a>
             <a href="#members" class="block px-4 py-3 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition-colors tracking-wide">Members</a>
             <a href="#add-members" class="block px-4 py-3 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition-colors tracking-wide">Add Member</a>
             <a href="#contributions" class="block px-4 py-3 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition-colors tracking-wide">Contributions</a>
             <a href="#pendingPayments" class="block px-4 py-3 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition-colors tracking-wide">Payment Verifications</a>
             <a href="#pending-loans" class="block px-4 py-3 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition-colors tracking-wide">Loans</a>
-             <a href="#system-health" class="block px-4 py-3 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition-colors tracking-wide flex justify-between items-center">
-                System Logs
-            </a>
+            <a href="#system-health" class="block px-4 py-3 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition-colors tracking-wide flex justify-between items-center">System Logs</a>
             <a href="#ledger" class="block px-4 py-3 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition-colors tracking-wide">Group Ledger</a>
             <a href="#adminInbox" class="block px-4 py-3 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition-colors tracking-wide">Inbox & Exits</a>    
         </nav>
@@ -134,17 +125,12 @@
 
     <script>
         const navLinks = document.querySelectorAll('#side-nav a:not([href="member.html"])');
-
         navLinks.forEach(link => {
             link.addEventListener('click', function() {
                 navLinks.forEach(l => {
-                    // Remove active admin classes
                     l.classList.remove('bg-blue-600/90', 'text-white', 'admin-glow', 'font-semibold');
-                    // Add inactive admin classes
                     l.classList.add('text-slate-300', 'hover:bg-white/10', 'hover:text-white');
                 });
-                
-                // Set clicked to active
                 this.classList.add('bg-blue-600/90', 'text-white', 'admin-glow', 'font-semibold');
                 this.classList.remove('text-slate-300', 'hover:bg-white/10', 'hover:text-white');
             });
@@ -160,16 +146,22 @@
     <main class="flex-1 p-2 pt-24 md:pt-10 md:px-10 w-full max-w-7xl mx-auto">
         <header class="mb-8 flex items-center gap-4">
             <div class="h-1 grow bg-blue-300"></div>
-            
             <h1 id="group-analytics" class="shrink-0 text-3xl font-bold tracking-tight text-slate-900">
                 Group Overview
             </h1>
-            
             <div class="h-1 grow bg-blue-300"></div>
         </header>
 
         <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 mb-8 md:mb-10">
             <div class="bg-white p-4 md:p-6 rounded-[4px] md:rounded-[4px] ios-shadow border border-slate-200 flex flex-col justify-center relative overflow-hidden">
+                <div id="totalCapitalSkeleton" class="absolute inset-0 bg-white z-10 p-4 md:p-6 flex flex-col justify-center">
+                    <div class="flex items-center gap-2 mb-1 md:mb-2 ml-2">
+                        <div class="hidden md:flex w-6 h-6 md:w-8 md:h-8 rounded-full bg-slate-200 relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                        <div class="h-4 w-24 bg-slate-200 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                    </div>
+                    <div class="h-8 md:h-10 w-32 bg-slate-200 rounded mt-1 ml-2 relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                </div>
+
                 <div class="absolute top-0 left-0 w-1 h-full"></div>
                 <div class="flex items-center gap-2 mb-1 md:mb-2 ml-2">
                     <div class="hidden w-6 h-6 md:w-8 md:h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
@@ -181,6 +173,14 @@
             </div>
 
             <div class="bg-white p-4 md:p-6 rounded-[4px] md:rounded-[4px] ios-shadow border border-slate-200 flex flex-col justify-center relative overflow-hidden">
+                <div id="activeLoansSkeleton" class="absolute inset-0 bg-white z-10 p-4 md:p-6 flex flex-col justify-center">
+                    <div class="flex items-center gap-2 mb-1 md:mb-2 ml-2">
+                        <div class="hidden md:flex w-6 h-6 md:w-8 md:h-8 rounded-full bg-slate-200 relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                        <div class="h-4 w-24 bg-slate-200 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                    </div>
+                    <div class="h-8 md:h-10 w-32 bg-slate-200 rounded mt-1 ml-2 relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                </div>
+
                 <div class="absolute top-0 left-0 w-1 h-full"></div>
                 <div class="flex items-center gap-2 mb-1 md:mb-2 ml-2">
                     <div class="hidden w-6 h-6 md:w-8 md:h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
@@ -193,6 +193,14 @@
             </div>
 
             <div class="col-span-2 md:col-span-1 bg-white p-4 md:p-6 rounded-[4px] md:rounded-[4px] ios-shadow border border-slate-200 flex flex-col justify-center relative overflow-hidden">
+                <div id="liquidityReserveSkeleton" class="absolute inset-0 bg-white z-10 p-4 md:p-6 flex flex-col justify-center">
+                    <div class="flex items-center gap-2 mb-1 md:mb-2 ml-2">
+                        <div class="hidden md:flex w-6 h-6 md:w-8 md:h-8 rounded-full bg-slate-200 relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                        <div class="h-4 w-32 bg-slate-200 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                    </div>
+                    <div class="h-8 md:h-10 w-32 bg-slate-200 rounded mt-1 ml-2 relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                </div>
+
                 <div class="absolute top-0 left-0 w-1 h-full"></div>
                 <div class="flex items-center gap-2 mb-1 md:mb-2 ml-2">
                     <div class="hidden w-6 h-6 md:w-8 md:h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
@@ -205,16 +213,34 @@
             </div>
         </div>
 
-        <!-- VISUAL ANALYTICS DASHBOARD -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 mt-8">
-            <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 relative">
+                <div id="capitalDoughnutSkeleton" class="absolute inset-0 bg-white z-10 flex flex-col p-6 items-center justify-center">
+                    <div class="w-full flex justify-start mb-4"><div class="h-4 w-32 bg-slate-200 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div></div>
+                    <div class="w-48 h-48 rounded-full border-[16px] border-slate-100 relative overflow-hidden flex-shrink-0">
+                        <div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div>
+                    </div>
+                </div>
+
                 <h3 class="text-sm font-bold text-slate-700 uppercase mb-4 tracking-wider">Capital Distribution</h3>
                 <div class="relative h-64 w-full flex justify-center">
                     <canvas id="capitalDoughnutChart"></canvas>
                 </div>
             </div>
 
-            <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 relative">
+                <div id="wealthBarSkeleton" class="absolute inset-0 bg-white z-10 flex flex-col p-6">
+                    <div class="w-full flex justify-start mb-4"><div class="h-4 w-40 bg-slate-200 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div></div>
+                    <div class="w-full h-full border-b border-l border-slate-100 flex items-end justify-between px-4 pb-0 relative overflow-hidden">
+                        <div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-slate-50/80 to-transparent animate-shimmer z-20"></div>
+                        <div class="w-[10%] h-[30%] bg-slate-200 rounded-t-sm"></div>
+                        <div class="w-[10%] h-[50%] bg-slate-200 rounded-t-sm"></div>
+                        <div class="w-[10%] h-[40%] bg-slate-200 rounded-t-sm"></div>
+                        <div class="w-[10%] h-[80%] bg-slate-200 rounded-t-sm"></div>
+                        <div class="w-[10%] h-[60%] bg-slate-200 rounded-t-sm"></div>
+                    </div>
+                </div>
+
                 <h3 class="text-sm font-bold text-slate-700 uppercase mb-4 tracking-wider">Group Wealth Overview</h3>
                 <div class="relative h-64 w-full flex justify-center">
                     <canvas id="wealthBarChart"></canvas>
@@ -241,6 +267,15 @@
                         </tr>
                     </thead>
                     <tbody id="membersTableBody" class="divide-y divide-slate-100">
+                        <tr>
+                            <td colspan="4" class="p-4">
+                                <div class="flex flex-col gap-3">
+                                    <div class="h-12 w-full bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                                    <div class="h-12 w-full bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                                    <div class="h-12 w-full bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                                </div>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -268,6 +303,14 @@
                         </tr>
                     </thead>
                     <tbody id="contributionsTableBody" class="divide-y divide-slate-100">
+                        <tr>
+                            <td colspan="4" class="p-4">
+                                <div class="flex flex-col gap-3">
+                                    <div class="h-10 w-full bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                                    <div class="h-10 w-full bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                                </div>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -290,6 +333,14 @@
                         </tr>
                     </thead>
                     <tbody id="pendingPaymentsTable" class="divide-y divide-slate-100">
+                        <tr>
+                            <td colspan="4" class="p-4">
+                                <div class="flex flex-col gap-3">
+                                    <div class="h-10 w-full bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                                    <div class="h-10 w-full bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                                </div>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -313,6 +364,14 @@
                         </tr>
                     </thead>
                     <tbody id="activeLoansTableBody" class="divide-y divide-slate-100">
+                        <tr>
+                            <td colspan="5" class="p-4">
+                                <div class="flex flex-col gap-3">
+                                    <div class="h-10 w-full bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                                    <div class="h-10 w-full bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                                </div>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -332,6 +391,14 @@
                         </tr>
                     </thead>
                     <tbody id="pendingLoansTable" class="divide-y divide-slate-100">
+                        <tr>
+                            <td colspan="6" class="p-4">
+                                <div class="flex flex-col gap-3">
+                                    <div class="h-10 w-full bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                                    <div class="h-10 w-full bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                                </div>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -354,6 +421,8 @@
                     <span class="bg-slate-100 text-slate-600 border border-slate-200 text-[10px] uppercase px-3 py-1 rounded-full font-bold tracking-wider">Inbox</span>
                 </div>
                 <div class="overflow-y-auto flex-1 max-h-80 pr-2 space-y-3" id="grievancesContainer">
+                    <div class="w-full h-16 bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                    <div class="w-full h-16 bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
                 </div>
             </div>
 
@@ -364,6 +433,8 @@
                     <span class="bg-red-50 text-red-600 border border-red-100 text-[10px] uppercase px-3 py-1 rounded-full font-bold tracking-wider">Sec 13 Check</span>
                 </div>
                 <div class="overflow-y-auto flex-1 max-h-80 pr-2 space-y-4" id="exitRequestsContainer">
+                    <div class="w-full h-24 bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                    <div class="w-full h-24 bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
                 </div>
             </div>
         </section>
@@ -418,7 +489,6 @@
             </header>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Kill Switch Card -->
                 <div class="bg-slate-900 rounded-[4px] ios-shadow border border-slate-800 p-6 flex flex-col justify-between admin-polygon-theme">
                     <div>
                         <div class="flex justify-between items-start mb-4">
@@ -437,7 +507,6 @@
                     </button>
                 </div>
 
-                <!-- Live Audit Trail Terminal -->
                 <div class="lg:col-span-2 bg-[#0a0a0a] rounded-[4px] ios-shadow border border-slate-800 p-1 flex flex-col scanline min-w-0 w-full">
                     <div class="bg-slate-900 flex justify-between items-center px-4 py-2 border-b border-slate-800">
                         <div class="flex items-center gap-2">
@@ -462,13 +531,20 @@
                                 </tr>
                             </thead>
                             <tbody id="systemLogsBody" class="divide-y divide-slate-800/50 text-slate-300">
+                                <tr>
+                                    <td colspan="4" class="py-2">
+                                        <div class="flex flex-col gap-2">
+                                            <div class="h-4 w-full bg-slate-800 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-slate-700/60 to-transparent animate-shimmer"></div></div>
+                                            <div class="h-4 w-full bg-slate-800 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-slate-700/60 to-transparent animate-shimmer"></div></div>
+                                        </div>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
         </section>
-
 
         <section id="ledger" class="bg-white rounded-[4px] ios-shadow border border-slate-200 p-6 md:p-8 mb-12">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-slate-100 pb-4">
@@ -490,6 +566,15 @@
                         </tr>
                     </thead>
                     <tbody id="ledgerTableBody" class="divide-y divide-slate-100">
+                        <tr>
+                            <td colspan="5" class="p-4">
+                                <div class="flex flex-col gap-3">
+                                    <div class="h-10 w-full bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                                    <div class="h-10 w-full bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                                    <div class="h-10 w-full bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                                </div>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
