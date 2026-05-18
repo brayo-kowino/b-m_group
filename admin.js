@@ -1318,12 +1318,22 @@ export function generateOfficialLetter({
 }) {
     const digitalSignature = btoa(`${reference}-${amount}-${date}`).substring(0, 15).toUpperCase();
 
-    // 1. Cleaned up HTML (No <html> or <body> tags, just the styles and content)
     const htmlContent = `
         <style>
             @media print {
                 body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white !important; }
-                @page { margin: 0; } /* Keeps browser headers/footers hidden */
+                @page { size: A4 portrait; margin: 0; } /* Forces A4 size and removes browser margins */
+            }
+            /* NEW: Hardcode the exact dimensions of an A4 paper */
+            .print-page {
+                height: 297mm; 
+                max-width: 210mm; 
+                margin: 0 auto;
+                position: relative;
+                box-sizing: border-box;
+                overflow: hidden;
+                page-break-after: avoid;
+                page-break-inside: avoid;
             }
             .watermark {
                 position: absolute;
@@ -1453,7 +1463,8 @@ export function generateOfficialLetter({
 
     const printContainer = document.createElement('div');
     printContainer.id = 'mobile-print-container';
-    printContainer.className = 'bg-white text-slate-800 p-6 font-sans relative h-screen box-border w-full';
+    printContainer.className = 'bg-white text-slate-800 p-6 font-sans w-full print-page';
+    
     printContainer.innerHTML = htmlContent;
     document.body.appendChild(printContainer);
 
@@ -1487,7 +1498,17 @@ export function generateRepaymentLetter({
         <style>
             @media print {
                 body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white !important; }
-                @page { margin: 0; }
+                @page { size: A4 portrait; margin: 0; }
+            }
+            .print-page {
+                height: 297mm; 
+                max-width: 210mm; 
+                margin: 0 auto;
+                position: relative;
+                box-sizing: border-box;
+                overflow: hidden;
+                page-break-after: avoid;
+                page-break-inside: avoid;
             }
             .watermark {
                 position: absolute;
@@ -1618,7 +1639,8 @@ export function generateRepaymentLetter({
 
     const printContainer = document.createElement('div');
     printContainer.id = 'mobile-print-container';
-    printContainer.className = 'bg-white text-slate-800 p-6 font-sans relative h-screen box-border w-full';
+    printContainer.className = 'bg-white text-slate-800 p-6 font-sans w-full print-page';
+    
     printContainer.innerHTML = htmlContent;
     document.body.appendChild(printContainer);
 
@@ -1638,7 +1660,6 @@ export function generateRepaymentLetter({
         
     }, 500);
 }
-
 // ==========================================
 // ACTIVE LOANS & REPAYMENT PROCESSING
 // ==========================================
