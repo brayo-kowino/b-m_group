@@ -1532,14 +1532,8 @@ export function generateOfficialLetter({
             // ================= REPLACED HASH WITH QR CODE =================
             {
                 qr: qrContent,
-                fit: 100, 
+                fit: 150, 
                 absolutePosition: { x: 40, y: 715 }
-            },
-            {
-                text: 'Scan to verify authenticity',
-                fontSize: 8,
-                color: '#94a3b8',
-                absolutePosition: { x: 40, y: 700 }
             },
 
             // ================= STAMP / SEAL =================
