@@ -1460,30 +1460,39 @@ export function generateOfficialLetter({
     </body>
     </html>
     `;
+    // 1. Hide everything currently on the screen (saves event listeners, doesn't break the app)
+    const originalChildren = Array.from(document.body.children);
+    originalChildren.forEach(child => {
+        if (child.tagName !== 'SCRIPT') {
+            // Save original display state in a data attribute just in case
+            child.setAttribute('data-original-display', child.style.display);
+            child.style.display = 'none';
+        }
+    });
 
-    const doc = iframe.contentWindow.document;
-    doc.open();
-    doc.write(htmlContent);
-    doc.close();
+    // 2. Create a temporary print container directly on the body
+    const printContainer = document.createElement('div');
+    printContainer.id = 'mobile-print-container';
+    printContainer.innerHTML = htmlContent;
+    document.body.appendChild(printContainer);
 
+    // 3. Give the DOM a tiny fraction of a second to render, then print the MAIN window
     setTimeout(() => {
-        iframe.contentWindow.focus();
+        window.print();
         
-        iframe.contentWindow.onafterprint = () => {
-            if (document.body.contains(iframe)) {
-                document.body.removeChild(iframe);
-            }
-        };
-
-        iframe.contentWindow.print();
-        
+        // 4. Cleanup: Remove the letter and unhide the dashboard after the print dialog closes
         setTimeout(() => {
-            if (document.body.contains(iframe)) {
-                document.body.removeChild(iframe);
+            if (document.getElementById('mobile-print-container')) {
+                document.body.removeChild(printContainer);
             }
-        }, 60000); 
-
-    }, 800); 
+            originalChildren.forEach(child => {
+                if (child.tagName !== 'SCRIPT') {
+                    child.style.display = child.getAttribute('data-original-display') || '';
+                }
+            });
+        }, 1000); // 1-second delay ensures the print spooler catches it before it disappears
+        
+    }, 500);
 }
 
 export function generateRepaymentLetter({
@@ -1638,30 +1647,35 @@ export function generateRepaymentLetter({
     </body>
     </html>
     `;
+    
+    const originalChildren = Array.from(document.body.children);
+    originalChildren.forEach(child => {
+        if (child.tagName !== 'SCRIPT') {
+            child.setAttribute('data-original-display', child.style.display);
+            child.style.display = 'none';
+        }
+    });
 
-    const doc = iframe.contentWindow.document;
-    doc.open();
-    doc.write(htmlContent);
-    doc.close();
+    const printContainer = document.createElement('div');
+    printContainer.id = 'mobile-print-container';
+    printContainer.innerHTML = htmlContent;
+    document.body.appendChild(printContainer);
 
     setTimeout(() => {
-        iframe.contentWindow.focus();
+        window.print();
         
-        iframe.contentWindow.onafterprint = () => {
-            if (document.body.contains(iframe)) {
-                document.body.removeChild(iframe);
+        setTimeout(() => {
+            if (document.getElementById('mobile-print-container')) {
+                document.body.removeChild(printContainer);
             }
-        };
-
-        iframe.contentWindow.print();
+            originalChildren.forEach(child => {
+                if (child.tagName !== 'SCRIPT') {
+                    child.style.display = child.getAttribute('data-original-display') || '';
+                }
+            });
+        }, 1000); 
         
-        setTimeout(() => { 
-            if (document.body.contains(iframe)) {
-                document.body.removeChild(iframe); 
-            }
-        }, 60000); 
-        
-    }, 800); 
+    }, 500);
 }
 
 // ==========================================
