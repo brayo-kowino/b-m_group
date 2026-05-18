@@ -254,9 +254,160 @@ function getStartOfMonth() {
     return new Date(now.getFullYear(), now.getMonth(), 1);
 }
 
+let contributionChartInstance = null;
+
+async function renderContributionChart(uid) {
+    try {
+        const q = query(
+            collection(db, "transactions"),
+            where("userId", "==", uid),
+            where("type", "==", "deposit"),
+            orderBy("createdAt", "asc")
+        );
+        
+        const snapshot = await getDocs(q);
+
+        // Group data by month
+        const groupedData = {};
+        
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            if (data.createdAt) {
+                const date = data.createdAt.toDate();
+                const monthYear = date.toLocaleString('default', { month: 'short', year: 'numeric' });
+                
+                if (!groupedData[monthYear]) {
+                    groupedData[monthYear] = 0;
+                }
+                groupedData[monthYear] += Number(data.amount);
+            }
+        });
+
+        // If empty, add a placeholder
+        if (Object.keys(groupedData).length === 0) {
+            const currentMonth = new Date().toLocaleString('default', { month: 'short', year: 'numeric' });
+            groupedData[currentMonth] = 0;
+        }
+
+        const labels = Object.keys(groupedData);
+        const monthlyDeposits = [];
+        const cumulativeSavings = [];
+        
+        let runningTotal = 0;
+
+        // Build the arrays for the chart
+        labels.forEach(month => {
+            const monthAmount = groupedData[month];
+            monthlyDeposits.push(monthAmount);
+            
+            runningTotal += monthAmount;
+            cumulativeSavings.push(runningTotal);
+        });
+
+        const ctx = document.getElementById('contributionChart').getContext('2d');
+        
+        if (contributionChartInstance) {
+            contributionChartInstance.destroy();
+        }
+
+        contributionChartInstance = new Chart(ctx, {
+            // We set the base type to bar, but override the line dataset below
+            type: 'bar', 
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        type: 'line',
+                        label: 'Total Savings (KSH)',
+                        data: cumulativeSavings,
+                        borderColor: '#10b981', // Tailwind emerald-500 (Green means money!)
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        yAxisID: 'y', // Bind to main Y axis
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#10b981',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        order: 1 // Draws line on top of bars
+                    },
+                    {
+                        type: 'bar',
+                        label: 'Monthly Deposit (KSH)',
+                        data: monthlyDeposits,
+                        backgroundColor: '#3b82f6', // Tailwind blue-500
+                        borderRadius: 4, // Rounded tops on the bars
+                        barThickness: 'flex',
+                        maxBarThickness: 40,
+                        order: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index', // Hovering shows both line and bar data together!
+                    intersect: false,
+                },
+                plugins: {
+                    legend: { 
+                        display: true, 
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            boxWidth: 8,
+                            font: { family: "'Inter', sans-serif", size: 12 }
+                        }
+                    }, 
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        padding: 12,
+                        cornerRadius: 8,
+                        titleFont: { size: 13, family: "'Inter', sans-serif" },
+                        bodyFont: { size: 12, family: "'Inter', sans-serif" },
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${context.parsed.y}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { 
+                            borderDash: [4, 4], 
+                            color: '#e2e8f0' 
+                        },
+                        ticks: { 
+                            font: { size: 11, family: "'Inter', sans-serif" }, 
+                            color: '#64748b' 
+                        },
+                        border: { display: false }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { 
+                            font: { size: 11, family: "'Inter', sans-serif" }, 
+                            color: '#64748b' 
+                        },
+                        border: { display: false }
+                    }
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error("Error rendering trend chart:", error);
+    }
+}
 async function loadUserData(uid) {
     const userRef = doc(db, "users", uid);
     const userSnap = await getDoc(userRef);
+    let globalData = null;
 
     if (userSnap.exists()) {
         currentUserData = userSnap.data();
@@ -279,9 +430,7 @@ async function loadUserData(uid) {
             const statsRef = doc(db, "groupStats", "main");
             const statsSnap = await getDoc(statsRef);
             if (statsSnap.exists()) {
-                const globalData = statsSnap.data();
-                
-                // Calculate vault math (30% reserve means 70% is loanable)
+                globalData = statsSnap.data();
                 totalGroupCapital = globalData.capital || 0;
                 totalLentOut = globalData.totalLoans || 0;
                 maxGroupLoanable = totalGroupCapital * 0.70; 
@@ -304,13 +453,12 @@ async function loadUserData(uid) {
 
         await loadMyLedger(uid);
         await loadMyLoans(uid);
+        await renderContributionChart(uid);
 
-        // 3. Load Monthly Progress & Calculate Consistency
         const now = new Date();
         const currentYear = now.getFullYear();
         const currentMonth = now.getMonth();
         
-        // Calculate Months Active on the fly
         const joinDateObj = currentUserData.createdAt ? currentUserData.createdAt.toDate() : new Date();
         const diffInMonths = (currentYear - joinDateObj.getFullYear()) * 12 + (currentMonth - joinDateObj.getMonth());
         const monthsActive = Math.max(1, diffInMonths);
@@ -325,40 +473,35 @@ async function loadUserData(uid) {
         
         let expectedTotalSoFar = 0; 
 
-        for (let i = 0; i <= currentMonth; i++) {
+for (let i = 0; i <= currentMonth; i++) {
             const daysInMonth = new Date(currentYear, i + 1, 0).getDate(); 
             const target = (Math.floor(daysInMonth / 7) * 70) + ((daysInMonth % 7) * 10);
             const monthName = new Date(currentYear, i, 1).toLocaleString('default', { month: 'long' });
+            const shortMonthName = new Date(currentYear, i, 1).toLocaleString('default', { month: 'short' });
             
             expectedTotalSoFar += target; 
 
             let statusBadge = '';
             let allocated = 0;
 
+            // 1. Calculate Allocation
             if (remaining >= target) {
                 allocated = target;
                 remaining -= target;
-                statusBadge = `<span class="bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded text-xs font-bold">Cleared</span>`;
+                statusBadge = `<span class="bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">Cleared</span>`;
             } else {
                 allocated = remaining;
                 remaining = 0;
                 
                 if (i === currentMonth) {
-                    statusBadge = `<span class="bg-blue-100 text-blue-700 border border-blue-200 px-2 py-0.5 rounded text-xs font-bold">In Progress</span>`;
+                    statusBadge = `<span class="bg-blue-100 text-blue-700 border border-blue-200 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">In Progress</span>`;
                 } else {
-                    statusBadge = `<span class="bg-red-100 text-red-700 border border-red-200 px-2 py-0.5 rounded text-xs font-bold">Pending</span>`;
+                    statusBadge = `<span class="bg-rose-100 text-rose-700 border border-rose-200 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">Arrears</span>`;
                     unclearedPastMonths.push(monthName);
                 }
             }
 
-            timelineHTML += `
-                <div class="border border-slate-200 rounded-md p-3 bg-slate-50 text-center flex flex-col items-center justify-center">
-                    <span class="text-sm font-bold text-slate-800 mb-1">${monthName}</span>
-                    <span class="text-xs text-slate-500 mb-2">${allocated} / ${target}</span>
-                    ${statusBadge}
-                </div>
-            `;
-
+            // 2. Determine if this is the "Focus" Month
             let isFocusMonth = false;
             if (allocated < target && !activeTargetMonthFound) {
                 isFocusMonth = true;
@@ -368,6 +511,33 @@ async function loadUserData(uid) {
                 activeTargetMonthFound = true;
             }
 
+            // 3. Generate Gamified UI
+            if (allocated >= target && !isFocusMonth) {
+                // GAMIFIED "LEVEL PASSED" TICK
+                timelineHTML += `
+                    <div class="flex flex-col items-center justify-center gap-1.5 min-w-[50px] transition-transform hover:scale-110">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-md shadow-green-500/20 text-white relative border-2 border-white">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${shortMonthName}</span>
+                    </div>
+                `;
+            } else {
+                // DETAILED ACTION CARD (For Arrears or Current Month)
+                let ringGlow = isFocusMonth ? 'ring-2 ring-blue-400 shadow-blue-900/10' : 'border border-slate-200';
+                
+                timelineHTML += `
+                    <div class="${ringGlow} rounded-xl p-4 bg-white shadow-sm text-center flex flex-col items-center justify-center min-w-[130px]">
+                        <span class="text-sm font-black text-slate-800 mb-1 tracking-tight">${monthName}</span>
+                        <span class="text-xs text-slate-500 mb-2 font-medium">${allocated} / ${target} KSH</span>
+                        ${statusBadge}
+                    </div>
+                `;
+            }
+
+            // 4. Update the Main Progress Bar (if this is the focus month)
             if (isFocusMonth) {
                 currentMonthAllocated = allocated;
                 currentMonthTarget = target;
@@ -378,14 +548,14 @@ async function loadUserData(uid) {
 
                 const progressBar = document.getElementById('monthlyProgressBar');
                 progressBar.style.width = `${progressPercentage}%`;
-                progressBar.className = "h-full rounded-full transition-all duration-1000 ease-out";
+                progressBar.className = "h-full rounded-full transition-all duration-1000 ease-out shadow-inner";
                 
                 if (progressPercentage === 100) {
-                    progressBar.classList.add('bg-green-500');
+                    progressBar.classList.add('bg-gradient-to-r', 'from-emerald-400', 'to-green-500');
                 } else if (progressPercentage === 0) {
-                    progressBar.classList.add('bg-slate-300');
+                    progressBar.classList.add('bg-slate-200');
                 } else {
-                    progressBar.classList.add('bg-blue-500');
+                    progressBar.classList.add('bg-gradient-to-r', 'from-blue-400', 'to-blue-600');
                 }
 
                 document.getElementById('monthlyText').textContent = `${allocated} / ${target} KSH`;
@@ -402,14 +572,13 @@ async function loadUserData(uid) {
             }
         }
 
+        // Wrap the timeline in a flex container that allows wrapping and nice spacing
+        document.getElementById('clearanceTimeline').className = "flex flex-row flex-wrap items-center gap-4 py-2";
         document.getElementById('clearanceTimeline').innerHTML = timelineHTML;
 
         const actualSaved = currentUserData.savings || 0;
         const consistencyScore = expectedTotalSoFar > 0 ? Math.min(100, Math.round((actualSaved / expectedTotalSoFar) * 100)) : 50;
 
-// ==========================================
-        // DYNAMIC ALGORITHMIC LOAN LIMIT & AVAILABLE BALANCE
-        // ==========================================
         const savings = currentUserData.savings || 0;
         const loansRepaid = currentUserData.loansRepaidCount || 0; 
         const hasArrears = unclearedPastMonths.length - 1 > 0; 
@@ -433,9 +602,9 @@ async function loadUserData(uid) {
             console.error("Error fetching active loans:", error);
         }
 
-let finalSmartLimit = 0;
+        let finalSmartLimit = 0;
         let baseLimit = 0;
-        let trueFutureLimit = 0; // Stores the accurate simulated limit
+        let trueFutureLimit = 0;
 
         if (savings >= 500) {
             if (hasArrears || currentUserData.status === 'restricted') {
@@ -449,7 +618,6 @@ let finalSmartLimit = 0;
                 helperClass = "text-[10px] md:text-xs text-amber-500 mt-2 font-semibold";
             } 
             else {
-                // --- CORE MULTIPLIERS (Unchanging) ---
                 const equityShare = totalGroupCapital > 0 ? (savings / totalGroupCapital) : 0;
                 const allowedExposureRatio = Math.min(0.95, 0.30 + equityShare);
                 const penaltyResistance = Math.min(1.0, equityShare * 1.5); 
@@ -481,13 +649,11 @@ let finalSmartLimit = 0;
                 const futureScaledHealth = futureVaultHealth + ((1 - futureVaultHealth) * penaltyResistance);
                 const futureDynamicMultiplier = Math.max(0.8, earnedMultiplier * futureScaledHealth);
                 
-                // Calculate the true future limits
                 const futureBaseLimit = Math.floor(savings * futureDynamicMultiplier);
                 let futureMaxExposure = Math.max(futureRemainingLiquidity * allowedExposureRatio, savings);
                 
                 trueFutureLimit = Math.floor(Math.min(futureBaseLimit, futureRemainingLiquidity, futureMaxExposure));
 
-                // Default messaging
                 if (equityShare >= 0.20) { 
                     limitStatus = `Your credit limit is healthy based on your contribution performance.`;
                     helperClass = "text-[10px] md:text-xs text-purple-600 mt-2 font-bold";
@@ -501,22 +667,20 @@ let finalSmartLimit = 0;
             }
         }
 
-        // --- 3. APPLY THE GAMIFIED LOCK ---
         if (activeLoansTotal > 0) {
-            finalSmartLimit = 0; // Lock the borrowable cash
-            limitStatus = `Credit Locked: Clear your KSH ${activeLoansTotal} debt to unlock your new KSH ${trueFutureLimit} limit!`;
+            finalSmartLimit = 0; 
+            limitStatus = `Clear your KSH ${activeLoansTotal} debt to unlock your new KSH ${trueFutureLimit} limit`;
             helperClass = "text-[10px] md:text-xs text-rose-600 mt-2 font-bold";
         } else if (finalSmartLimit < (baseLimit - activeLoansTotal) && finalSmartLimit > 0) {
-            limitStatus = `Limit adjusted to KSH ${finalSmartLimit} because the group vault is currently low.`;
+            limitStatus = `Limit adjusted to KSH ${finalSmartLimit} because the group reserves are currently low.`;
             helperClass = "text-[10px] md:text-xs text-orange-600 mt-2 font-bold italic";
         } else if (globalRemainingLiquidity <= 0 && savings >= 500) {
-            limitStatus = "Loan facility temporarily paused: Group vault has reached its 30% reserve limit.";
+            limitStatus = "Loan facility temporarily paused: Group has reached its 30% reserve limit.";
             helperClass = "text-[10px] md:text-xs text-rose-600 mt-2 font-black";
         }
 
         // Update UI
         document.getElementById('availableLoanLimit').textContent = `KSH ${finalSmartLimit}`;
-        // Show the True Future Limit in the "of X" text if they have a loan, otherwise show normal base
         document.getElementById('totalLoanLimit').textContent = activeLoansTotal > 0 ? trueFutureLimit : baseLimit; 
 
         const limitHelper = document.getElementById('limitHelperText');
@@ -528,14 +692,13 @@ let finalSmartLimit = 0;
         currentUserData.calculatedLimit = baseLimit;
         currentUserData.availableLimit = finalSmartLimit;
 
-        // 4. The Smart Warning Engine
         const alertsList = document.getElementById('alertsList');
         const personalAlertsBanner = document.getElementById('personalAlertsBanner');
         let hasWarnings = false;
         alertsList.innerHTML = ''; 
 
         if (unclearedPastMonths.length > 0) {
-            alertsList.innerHTML += `<li><strong>Arrears Detected:</strong> You have uncleared targets for <strong>${unclearedPastMonths.join(', ')}</strong>. Our policies require all prior balances to be fully cleared before June.</li>`;
+            alertsList.innerHTML += `<li><strong>Arrears Detected:</strong> You have uncleared savings for <strong>${unclearedPastMonths.join(', ')}</strong>. Our policies require all prior balances to be fully cleared before June.</li>`;
             hasWarnings = true;
         }
 
@@ -571,10 +734,26 @@ let finalSmartLimit = 0;
         } else {
             personalAlertsBanner.classList.add('hidden');
         }
-    }
+        let notificationCount = 0;
+        if (globalData && globalData.announcement) notificationCount++;
+        
+        if (currentUserData.infoMessage) notificationCount++;
+        
+        const alertItems = alertsList.querySelectorAll('li').length;
+        notificationCount += alertItems;
+
+        const notifBadge = document.getElementById('notifBadge');
+        if (notificationCount > 0) {
+            notifBadge.textContent = notificationCount;
+            notifBadge.classList.remove('hidden');
+            notifBadge.classList.add('flex');
+        } else {
+            notifBadge.classList.add('hidden');
+            notifBadge.classList.remove('flex');
+        }
+    } 
 }
 
-// Live Interest Calculation
 const amountInput = document.getElementById('loanAmount');
 const interestPreview = document.getElementById('interestPreview');
 const calcInterest = document.getElementById('calcInterest');
@@ -589,7 +768,6 @@ amountInput.addEventListener('input', (e) => {
     }
 });
 
-// --- Handle Loan Submission (IMMUNIZED) ---
 document.getElementById('loanForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const errorDiv = document.getElementById('loanError');
