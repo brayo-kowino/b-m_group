@@ -1318,26 +1318,12 @@ export function generateOfficialLetter({
 }) {
     const digitalSignature = btoa(`${reference}-${amount}-${date}`).substring(0, 15).toUpperCase();
 
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = 'none';
-    document.body.appendChild(iframe);
-
+    // 1. Cleaned up HTML (No <html> or <body> tags, just the styles and content)
     const htmlContent = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>Official Disbursement - ${reference}</title>
-        <script src="https://cdn.tailwindcss.com"></script>
         <style>
             @media print {
-                body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                @page { margin: 0; }
+                body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white !important; }
+                @page { margin: 0; } /* Keeps browser headers/footers hidden */
             }
             .watermark {
                 position: absolute;
@@ -1380,14 +1366,12 @@ export function generateOfficialLetter({
                 letter-spacing: 4px;
             }
         </style>
-    </head>
-    <body class="bg-white text-slate-800 p-10 font-sans relative h-screen">
         
         <div class="watermark">B&M GROUP</div>
 
-        <div class="flex justify-between items-start border-b-4 border-blue-900 pb-6 mb-8">
+        <div class="flex justify-between items-start border-b-4 border-blue-900 pb-6 mb-8 mt-4">
             <div class="flex items-start flex-col">
-                <img src="bm_group_logo.png" alt="B&M Group Logo" class="h-12 w-auto mb-1 ml-[-2px] object-contain">
+                <img src="bm_group_logo.png" alt="B&M Group Logo" class="h-12 w-auto mb-1 ml-[-2px] object-contain" onerror="this.style.display='none'">
                 <p class="text-sm font-semibold text-slate-500 uppercase tracking-widest mt-1">Private Savings & Credit Investment</p>
             </div>
             <div class="text-right text-sm text-slate-600">
@@ -1457,30 +1441,25 @@ export function generateOfficialLetter({
         <div class="absolute bottom-10 left-10 text-xs text-slate-400 font-mono">
             Cryptographic Hash: ${digitalSignature}
         </div>
-    </body>
-    </html>
     `;
-    // 1. Hide everything currently on the screen (saves event listeners, doesn't break the app)
+
     const originalChildren = Array.from(document.body.children);
     originalChildren.forEach(child => {
         if (child.tagName !== 'SCRIPT') {
-            // Save original display state in a data attribute just in case
             child.setAttribute('data-original-display', child.style.display);
             child.style.display = 'none';
         }
     });
 
-    // 2. Create a temporary print container directly on the body
     const printContainer = document.createElement('div');
     printContainer.id = 'mobile-print-container';
+    printContainer.className = 'bg-white text-slate-800 p-12 font-sans relative h-screen box-border w-full';
     printContainer.innerHTML = htmlContent;
     document.body.appendChild(printContainer);
 
-    // 3. Give the DOM a tiny fraction of a second to render, then print the MAIN window
     setTimeout(() => {
         window.print();
         
-        // 4. Cleanup: Remove the letter and unhide the dashboard after the print dialog closes
         setTimeout(() => {
             if (document.getElementById('mobile-print-container')) {
                 document.body.removeChild(printContainer);
@@ -1490,7 +1469,7 @@ export function generateOfficialLetter({
                     child.style.display = child.getAttribute('data-original-display') || '';
                 }
             });
-        }, 1000); // 1-second delay ensures the print spooler catches it before it disappears
+        }, 1000); 
         
     }, 500);
 }
@@ -1504,25 +1483,10 @@ export function generateRepaymentLetter({
 }) {
     const digitalSignature = btoa(`${reference}-${amount}-${date}`).substring(0, 15).toUpperCase();
 
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = 'none';
-    document.body.appendChild(iframe);
-
     const htmlContent = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>Repayment Clearance - ${reference}</title>
-        <script src="https://cdn.tailwindcss.com"></script>
         <style>
             @media print {
-                body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white !important; }
                 @page { margin: 0; }
             }
             .watermark {
@@ -1566,14 +1530,12 @@ export function generateRepaymentLetter({
                 letter-spacing: 4px;
             }
         </style>
-    </head>
-    <body class="bg-white text-slate-800 p-10 font-sans relative h-screen">
         
         <div class="watermark">B&M GROUP</div>
 
-        <div class="flex justify-between items-start border-b-4 border-green-700 pb-6 mb-8">
+        <div class="flex justify-between items-start border-b-4 border-green-700 pb-6 mb-8 mt-4">
             <div class="flex items-start flex-col">
-                <img src="bm_group_logo.png" alt="B&M Group Logo" class="h-12 w-auto mb-1 ml-[-2px] object-contain">
+                <img src="bm_group_logo.png" alt="B&M Group Logo" class="h-12 w-auto mb-1 ml-[-2px] object-contain" onerror="this.style.display='none'">
                 <p class="text-sm font-semibold text-slate-500 uppercase tracking-widest mt-1">Private Savings & Credit Investment</p>
             </div>
             <div class="text-right text-sm text-slate-600">
@@ -1644,10 +1606,8 @@ export function generateRepaymentLetter({
         <div class="absolute bottom-10 left-10 text-xs text-slate-400 font-mono">
             Cryptographic Hash: ${digitalSignature}
         </div>
-    </body>
-    </html>
     `;
-    
+
     const originalChildren = Array.from(document.body.children);
     originalChildren.forEach(child => {
         if (child.tagName !== 'SCRIPT') {
@@ -1658,6 +1618,7 @@ export function generateRepaymentLetter({
 
     const printContainer = document.createElement('div');
     printContainer.id = 'mobile-print-container';
+    printContainer.className = 'bg-white text-slate-800 p-12 font-sans relative h-screen box-border w-full';
     printContainer.innerHTML = htmlContent;
     document.body.appendChild(printContainer);
 
