@@ -1497,8 +1497,7 @@ export function generateOfficialLetter({
                         width: '45%',
                         stack: [
                             { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 180, y2: 0, lineWidth: 1, lineColor: '#94a3b8' }] },
-                            { text: 'Brian Odhiambo', bold: true, alignment: 'center', margin: [0, 10, 0, 3], color: '#0f172a' },
-                            { text: 'System Administrator', fontSize: 10, color: '#64748b', alignment: 'center' }
+                            
                         ]
                     },
                     {
@@ -1516,7 +1515,7 @@ export function generateOfficialLetter({
             // ================= REPLACED HASH WITH QR CODE =================
             {
                 qr: qrContent,
-                fit: 70, // Adjust size of QR code here
+                fit: 100, // Adjust size of QR code here
                 absolutePosition: { x: 40, y: 725 }
             },
             {
