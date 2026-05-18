@@ -1561,177 +1561,197 @@ export function generateRepaymentLetter({
     date,
     newLimit
 }) {
-    // --- ENHANCED CRYPTOGRAPHIC HASH FOR REPAYMENT (PATCHED) ---
+    // --- ENHANCED CRYPTOGRAPHIC HASH FOR REPAYMENT ---
     const secretKey = "BM_VAULT_2026_X9Q"; 
     const rawDataString = `${reference}-${amount}-${date}-${secretKey}`;
     const digitalSignature = btoa(rawDataString).replace(/=/g, '').toUpperCase();
-
-    const htmlContent = `
-        <style>
-            @media print {
-                body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white !important; }
-                @page { size: A4 portrait; margin: 0; }
-            }
-            .print-page {
-                height: 297mm; 
-                max-width: 210mm; 
-                margin: 0 auto;
-                position: relative;
-                box-sizing: border-box;
-                overflow: hidden;
-                page-break-after: avoid;
-                page-break-inside: avoid;
-            }
-            .watermark {
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%) rotate(-45deg);
-                font-size: 8rem;
-                color: rgba(0, 0, 0, 0.03);
-                font-weight: bold;
-                white-space: nowrap;
-                z-index: -1;
-                pointer-events: none;
-            }
-            .seal {
-                position: absolute;
-                bottom: 50px;
-                right: 50px;
-                width: 100px;
-                height: 100px;
-                border: 4px solid #16a34a; 
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                text-align: center;
-                color: #16a34a;
-                font-size: 10px;
-                font-weight: bold;
-                text-transform: uppercase;
-                letter-spacing: 1px;
-                transform: rotate(-15deg);
-                opacity: 0.8;
-            }
-            .seal::after {
-                content: "CLEARED";
-                position: absolute;
-                font-size: 14px;
-                color: rgba(220, 38, 38, 0.7);
-                transform: rotate(30deg);
-                letter-spacing: 4px;
-            }
-        </style>
-        
-        <div class="watermark">B&M GROUP</div>
-
-        <div class="flex justify-between items-start border-b-4 border-green-700 pb-6 mb-8 mt-4">
-            <div class="flex items-start flex-col">
-                <img src="bm_group_logo.png" alt="B&M Group Logo" class="h-12 w-auto mb-1 ml-[-2px] object-contain" onerror="this.style.display='none'">
-                <p class="text-sm font-semibold text-slate-500 uppercase tracking-widest mt-1">Private Savings & Credit Investment</p>
-            </div>
-            <div class="text-right text-sm text-slate-600">
-                <p class="font-bold text-slate-800">Headquarters</p>
-                <p>Juja, Kiambu County</p>
-                <p>Kenya</p>
-            </div>
-        </div>
-
-        <div class="flex justify-between mb-10 bg-slate-50 p-4 rounded-lg border border-slate-200">
-            <div>
-                <p class="text-xs text-slate-500 uppercase">Clearance Ref</p>
-                <p class="font-bold text-slate-800 font-mono">${reference}</p>
-            </div>
-            <div>
-                <p class="text-xs text-slate-500 uppercase">Date of Clearance</p>
-                <p class="font-bold text-slate-800">${date}</p>
-            </div>
-            <div class="text-right">
-                <p class="text-xs text-slate-500 uppercase">Transaction Status</p>
-                <p class="font-bold text-green-700 uppercase">Fully Repaid</p>
-            </div>
-        </div>
-
-        <div class="mb-10 min-h-[300px]">
-            <h2 class="text-2xl font-bold mb-4 text-green-800">Congratulations! Loan Cleared.</h2>
-            <p class="mb-4 text-slate-700 leading-relaxed">
-                Dear <strong>${userName}</strong>,<br><br>
-                This document serves as official confirmation that your loan repayment has been successfully processed and verified by the B&M Group administration. Your outstanding debt for this facility has been entirely cleared. 
-            </p>
-            
-            <div class="bg-white border-2 border-green-100 rounded-lg p-6 mb-6 shadow-sm">
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="text-sm text-slate-500">Amount Received:</div>
-                    <div class="font-bold text-lg">KSH ${amount.toLocaleString()}</div>
-                    
-                    <div class="text-sm text-slate-500">Remaining Balance:</div>
-                    <div class="font-extrabold text-xl text-green-600">KSH 0.00</div>
-                    
-                    <div class="text-sm font-bold text-purple-700 mt-4 border-t border-slate-100 pt-4">New Estimated Limit:</div>
-                    <div class="font-extrabold text-2xl text-purple-700 mt-4 border-t border-slate-100 pt-4">KSH ${newLimit.toLocaleString()}</div>
-                </div>
-            </div>
-
-            <p class="text-sm text-slate-800 font-semibold p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                By clearing this loan, your credit score has increased! Please log into your member portal to view your updated dashboard, check your exact new limits, and access your improved credit features.
-            </p>
-        </div>
-
-        <div class="mt-16 flex justify-between items-end border-t border-slate-300 pt-8">
-            <div class="w-1/3 text-center">
-                <div class="border-b border-slate-400 h-10 mb-2"></div>
-                <p class="font-bold text-sm">Brian Odhiambo</p>
-                <p class="text-xs text-slate-500">System Administrator / Co-Founder</p>
-            </div>
-            
-            <div class="w-1/3 text-center">
-                <div class="border-b border-slate-400 h-10 mb-2"></div>
-                <p class="font-bold text-sm">B&M Finance Team</p>
-                <p class="text-xs text-slate-500">Official Stamp</p>
-            </div>
-        </div>
-
-        <div class="seal">
-            DEBT<br>CLEARED<br>100%
-        </div>
-        
-        <div class="absolute bottom-10 left-10 text-[9px] text-slate-400 font-mono break-all max-w-md">
-            Cryptographic Hash: ${digitalSignature}
-        </div>
-    `;
-
-    const originalChildren = Array.from(document.body.children);
-    originalChildren.forEach(child => {
-        if (child.tagName !== 'SCRIPT') {
-            child.setAttribute('data-original-display', child.style.display);
-            child.style.display = 'none';
-        }
-    });
-
-    const printContainer = document.createElement('div');
-    printContainer.id = 'mobile-print-container';
-    printContainer.className = 'bg-white text-slate-800 p-6 font-sans w-full print-page';
     
-    printContainer.innerHTML = htmlContent;
-    document.body.appendChild(printContainer);
+    const encodedDate = encodeURIComponent(date);
+    
+    // Generates a verification URL payload for repayments
+    const qrContent = `https://bmfinance.netlify.app/verify/repayment?r=${reference}&a=${amount}&d=${encodedDate}&h=${digitalSignature}`;
 
-    setTimeout(() => {
-        window.print();
-        
-        setTimeout(() => {
-            if (document.getElementById('mobile-print-container')) {
-                document.body.removeChild(printContainer);
-            }
-            originalChildren.forEach(child => {
-                if (child.tagName !== 'SCRIPT') {
-                    child.style.display = child.getAttribute('data-original-display') || '';
+    const docDefinition = {
+        pageSize: 'A4',
+        pageMargins: [40, 45, 40, 45],
+
+        background: function () {
+            return [
+                {
+                    text: 'B&M GROUP',
+                    color: '#d1d5db',
+                    opacity: 0.08,
+                    bold: true,
+                    fontSize: 80,
+                    absolutePosition: { x: 120, y: 320 },
+                    angle: -45
                 }
-            });
-        }, 1000); 
-        
-    }, 500);
+            ];
+        },
+
+        content: [
+            // ================= HEADER =================
+            {
+                columns: [
+                    [
+                        { text: 'B&M GROUP', fontSize: 28, bold: true, color: '#0f172a' },
+                        { text: 'Private Savings & Credit Investment', fontSize: 10, color: '#64748b', margin: [0, 4, 0, 0], characterSpacing: 1 }
+                    ],
+                    [
+                        { text: 'Headquarters', alignment: 'right', bold: true, fontSize: 12, color: '#0f172a' },
+                        { text: 'Juja, Kiambu County\nKenya', alignment: 'right', fontSize: 10, color: '#64748b', margin: [0, 5, 0, 0] }
+                    ]
+                ]
+            },
+
+            // ================= GREEN SUCCESS LINE =================
+            {
+                canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 4, lineColor: '#16a34a' }], // Green line
+                margin: [0, 15, 0, 25]
+            },
+
+            // ================= TOP INFO CARDS =================
+            {
+                table: {
+                    widths: ['33%', '33%', '34%'],
+                    body: [[
+                        {
+                            stack: [
+                                { text: 'CLEARANCE REF', fontSize: 9, color: '#64748b', bold: true },
+                                { text: reference, bold: true, fontSize: 12, color: '#0f172a' }
+                            ],
+                            fillColor: '#f8fafc', margin: [12, 12, 12, 12]
+                        },
+                        {
+                            stack: [
+                                { text: 'DATE OF CLEARANCE', fontSize: 9, color: '#64748b', bold: true },
+                                { text: date, bold: true, fontSize: 12, color: '#0f172a' }
+                            ],
+                            fillColor: '#f8fafc', margin: [12, 12, 12, 12]
+                        },
+                        {
+                            stack: [
+                                { text: 'TRANSACTION STATUS', fontSize: 9, color: '#64748b', bold: true, alignment: 'right' },
+                                { text: 'FULLY REPAID', bold: true, fontSize: 11, color: '#16a34a', alignment: 'right' }
+                            ],
+                            fillColor: '#f0fdf4', margin: [12, 12, 12, 12] // Light green background
+                        }
+                    ]]
+                },
+                layout: { hLineColor: '#e2e8f0', vLineColor: '#e2e8f0', hLineWidth: () => 1, vLineWidth: () => 1 },
+                margin: [0, 0, 0, 30]
+            },
+
+            // ================= TITLE =================
+            {
+                text: 'REPAYMENT CLEARANCE CERTIFICATE',
+                fontSize: 18,
+                bold: true,
+                color: '#16a34a', // Green title
+                characterSpacing: 1,
+                margin: [0, 0, 0, 10]
+            },
+
+            // ================= DESCRIPTION =================
+            {
+                text: `Dear ${userName},\n\nThis document serves as official confirmation that your loan repayment has been successfully processed and verified by the B&M Group administration. Your outstanding debt for this facility has been entirely cleared.`,
+                fontSize: 11,
+                color: '#475569',
+                lineHeight: 1.5,
+                margin: [0, 0, 0, 20]
+            },
+
+            // ================= FINANCIAL GRID =================
+            {
+                table: {
+                    widths: ['45%', '55%'],
+                    body: [
+                        [
+                            { text: 'CLEARANCE SUMMARY', colSpan: 2, fontSize: 10, bold: true, color: '#64748b', fillColor: '#f1f5f9', margin: [10, 8, 10, 8] },
+                            {}
+                        ],
+                        [
+                            { text: 'Beneficiary Name', fontSize: 11, color: '#64748b', margin: [10, 10, 10, 10] },
+                            { text: userName, fontSize: 12, bold: true, color: '#0f172a', margin: [10, 10, 10, 10] }
+                        ],
+                        [
+                            { text: 'Amount Received', fontSize: 11, color: '#64748b', margin: [10, 10, 10, 10] },
+                            { text: `KSH ${Number(amount).toLocaleString()}`, fontSize: 12, bold: true, color: '#0f172a', margin: [10, 10, 10, 10] }
+                        ],
+                        [
+                            { text: 'Remaining Balance', fontSize: 11, bold: true, color: '#16a34a', fillColor: '#f0fdf4', margin: [10, 12, 10, 12] },
+                            { text: 'KSH 0.00', fontSize: 14, bold: true, color: '#15803d', fillColor: '#f0fdf4', margin: [10, 12, 10, 12] }
+                        ],
+                        [
+                            { text: 'NEW ESTIMATED CREDIT LIMIT', fontSize: 11, bold: true, color: '#6b21a8', fillColor: '#faf5ff', margin: [10, 12, 10, 12] },
+                            { text: `KSH ${Number(newLimit).toLocaleString()}`, fontSize: 14, bold: true, color: '#7e22ce', fillColor: '#faf5ff', margin: [10, 12, 10, 12] }
+                        ]
+                    ]
+                },
+                layout: { hLineColor: '#cbd5e1', vLineColor: '#cbd5e1', hLineWidth: () => 1, vLineWidth: () => 1 },
+                margin: [0, 0, 0, 20]
+            },
+
+            // ================= CREDIT SCORE NOTE =================
+            {
+                stack: [
+                    { text: 'TRUST SCORE UPDATE', fontSize: 9, bold: true, color: '#7e22ce', margin: [0, 0, 0, 5] },
+                    { text: 'By clearing this loan on time, your system trust score has increased. Please log into your member portal to view your updated dashboard, check your exact new limits, and access your improved credit features.', fontSize: 10, color: '#581c87', bold: true }
+                ],
+                padding: [15, 15, 15, 15],
+                fillColor: '#faf5ff',
+                layout: { hLineColor: '#e9d5ff', vLineColor: '#e9d5ff', hLineWidth: () => 1, vLineWidth: () => 1 },
+                margin: [0, 0, 0, 40]
+            },
+
+            // ================= SIGNATURE AREA =================
+            {
+                columns: [
+                    {
+                        width: '45%',
+                        stack: [
+                                                   ]
+                    },
+                    {
+                        width: '45%',
+                        stack: [
+                            { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 180, y2: 0, lineWidth: 1, lineColor: '#94a3b8' }] },
+                            { text: 'B&M Finance Team', bold: true, alignment: 'center', margin: [0, 10, 0, 3], color: '#0f172a' },
+                            { text: 'Official Authorization', fontSize: 10, color: '#64748b', alignment: 'center' }
+                        ]
+                    }
+                ],
+                columnGap: 30
+            },
+
+            // ================= QR CODE =================
+            {
+                qr: qrContent,
+                fit: 120, 
+                absolutePosition: { x: 40, y: 680 }
+            },
+
+            // ================= STAMP / SEAL =================
+            {
+                absolutePosition: { x: 450, y: 680 },
+                canvas: [
+                    { type: 'ellipse', x: 45, y: 45, r1: 45, r2: 45, lineWidth: 3, lineColor: '#16a34a' } // Green ring
+                ]
+            },
+            {
+                absolutePosition: { x: 450, y: 712 },
+                columns: [
+                    { width: 90, text: 'CLEARED\n100%', alignment: 'center', color: '#16a34a', fontSize: 11, bold: true }
+                ]
+            }
+
+        ] 
+    };
+
+    pdfMake.createPdf(docDefinition).download(`${reference}-Clearance.pdf`);
 }
+
+//generateRepaymentLetter("Test User", 15000, "BM-LN-ABC123", "15/09/2024", 50000);
 // ==========================================
 // ACTIVE LOANS & REPAYMENT PROCESSING
 // ==========================================
