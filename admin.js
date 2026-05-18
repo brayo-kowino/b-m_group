@@ -1,4 +1,4 @@
-import { auth, db, functions } from './firebase.js';
+import { auth, db} from './firebase.js';
 import { collection, query, where, orderBy, limit, getDocs, doc, updateDoc, addDoc, getDoc, runTransaction, serverTimestamp, writeBatch, Timestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js";
 
@@ -730,7 +730,6 @@ window.approveLoan = async function(loanId, btn) {
     const loanRef = doc(db, "loans", loanId);
     const statsRef = doc(db, "groupStats", "main");
 
-    // 🚀 HOISTED VARIABLES: Declare these OUTSIDE the transaction so they survive
     let approvedLoanAmount = 0;
     let approvedInterest = 0;
     let approvedDuration = 0;
@@ -754,7 +753,6 @@ window.approveLoan = async function(loanId, btn) {
             const savings = userData.savings || 0;
             const activeDebt = userData.loansActive || 0;
 
-            // 🚀 POPULATE HOISTED VARIABLES HERE
             approvedUserId = loanData.userId;
             approvedLoanAmount = loanAmount;
             approvedInterest = loanData.interest;
@@ -807,7 +805,6 @@ window.approveLoan = async function(loanId, btn) {
 
         alert("Loan officially approved and disbursed!");
         
-        // 🚀 SAFE LOGGING: Using the hoisted variables
         await logAdminAction(auth.currentUser?.email || "System Admin", `Approved and disbursed loan for member: ${approvedUserId} | Amount: KSH ${approvedLoanAmount}`, "INFO");
 
         if(confirm("Would you like to print the official disbursement letter for this loan?")) {
