@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>B&M Group | Instant Verification</title>
+    <title>B&M Group | Advanced Verification</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .glass-card {
@@ -17,21 +17,18 @@
 
     <div class="glass-card shadow-2xl rounded-2xl w-full max-w-md overflow-hidden transition-all duration-300">
         
-        <!-- Header -->
         <div class="bg-slate-900 text-white p-6 text-center">
             <h1 class="text-2xl font-bold tracking-wider">B&M GROUP</h1>
-            <p class="text-slate-400 text-sm tracking-widest mt-1 uppercase">Instant Verification</p>
+            <p class="text-slate-400 text-sm tracking-widest mt-1 uppercase">Advanced Verification</p>
         </div>
 
         <div id="verification-content" class="p-8">
             
-            <!-- Loading State -->
             <div id="loading-state" class="flex flex-col items-center justify-center py-10">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
                 <p class="text-slate-500 font-medium animate-pulse">Running Cryptographic Check...</p>
             </div>
 
-            <!-- Success State -->
             <div id="success-state" class="hidden flex-col items-center">
                 <div class="bg-emerald-100 text-emerald-600 rounded-full p-4 mb-4">
                     <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -40,14 +37,22 @@
                 </div>
                 <h2 class="text-xl font-bold text-slate-900 mb-6">DOCUMENT AUTHENTIC</h2>
                 
-                <div class="w-full space-y-4 text-sm">
+                <div class="w-full space-y-3 text-sm">
                     <div class="flex justify-between border-b border-slate-200 pb-2">
                         <span class="text-slate-500 font-semibold">Reference ID</span>
                         <span id="display-ref" class="font-bold text-slate-900 uppercase">---</span>
                     </div>
                     <div class="flex justify-between border-b border-slate-200 pb-2">
-                        <span class="text-slate-500 font-semibold">Repayment Amount</span>
-                        <span id="display-amount" class="font-bold text-slate-900">---</span>
+                        <span class="text-slate-500 font-semibold">Beneficiary</span>
+                        <span id="display-name" class="font-bold text-slate-900">---</span>
+                    </div>
+                    <div class="flex justify-between border-b border-slate-200 pb-2">
+                        <span class="text-slate-500 font-semibold">Facility Breakdown</span>
+                        <span id="display-breakdown" class="font-medium text-slate-700">---</span>
+                    </div>
+                    <div class="flex justify-between border-b border-slate-200 pb-2">
+                        <span class="text-slate-500 font-semibold">Total Repayment</span>
+                        <span id="display-total" class="font-bold text-blue-600">---</span>
                     </div>
                     <div class="flex justify-between border-b border-slate-200 pb-2">
                         <span class="text-slate-500 font-semibold">Due Date</span>
@@ -55,7 +60,7 @@
                     </div>
                     <div class="flex justify-between border-b border-slate-200 pb-2">
                         <span class="text-slate-500 font-semibold">Security Hash</span>
-                        <span id="display-hash" class="font-mono text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">---</span>
+                        <span id="display-hash" class="font-mono text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">---</span>
                     </div>
                     <div class="flex justify-between pt-2">
                         <span class="text-slate-500 font-semibold">Integrity Check</span>
@@ -64,7 +69,6 @@
                 </div>
             </div>
 
-            <!-- Error State -->
             <div id="error-state" class="hidden flex-col items-center py-6 text-center">
                 <div class="bg-red-100 text-red-600 rounded-full p-4 mb-4">
                     <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -82,14 +86,16 @@
         </div>
     </div>
 
-    <!-- Frontend Cryptographic Logic -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             
-            // Extract the ingredients from the URL
+            // Extract all the ingredients from the URL
             const ref = urlParams.get('r');
-            const total = urlParams.get('t');
+            const name = urlParams.get('n');
+            const principal = urlParams.get('p');
+            const interest = urlParams.get('i');
+            const weeks = urlParams.get('w');
             const date = urlParams.get('d');
             const providedHash = urlParams.get('h');
 
@@ -97,21 +103,30 @@
             const successState = document.getElementById('success-state');
             const errorState = document.getElementById('error-state');
 
-            // Quick 800ms timeout so the user sees the "checking" animation
             setTimeout(() => {
                 loadingState.classList.add('hidden');
 
-                if (ref && total && date && providedHash) {
+                // Ensure all parameters exist before doing the math
+                if (ref && name && principal && interest && weeks && date && providedHash) {
                     
-                    // --- THE MAGIC: Reconstruct the hash exactly like the PDF generator ---
-                    const calculatedHash = btoa(`${ref}-${total}-${date}`).substring(0, 18).toUpperCase();
+                    // --- THE MAGIC: Reconstruct the exact string ---
+                    // Order MUST match the PDF generator: Ref - Name - Principal - Interest - Duration - DueDate
+                    const rawDataString = `${ref}-${name}-${principal}-${interest}-${weeks}-${date}`;
+                    
+                    // Calculate the 24-character hash
+                    const calculatedHash = btoa(rawDataString).substring(0, 24).toUpperCase();
 
-                    // Check if our calculation matches the printed hash
+                    // Check if our calculation matches the printed document's hash
                     if (calculatedHash === providedHash) {
                         
+                        // Do the math for the UI
+                        const totalRepayment = Number(principal) + Number(interest);
+
                         // Populate UI
                         document.getElementById('display-ref').textContent = ref;
-                        document.getElementById('display-amount').textContent = `KSH ${Number(total).toLocaleString()}`;
+                        document.getElementById('display-name').textContent = name;
+                        document.getElementById('display-breakdown').textContent = `KSH ${principal} + KSH ${interest} (${weeks} Wks)`;
+                        document.getElementById('display-total').textContent = `KSH ${totalRepayment.toLocaleString()}`;
                         document.getElementById('display-date').textContent = date;
                         document.getElementById('display-hash').textContent = calculatedHash;
                         
@@ -119,7 +134,7 @@
                         successState.classList.remove('hidden');
                         successState.classList.add('flex');
                     } else {
-                        // Data was tampered with (e.g. someone changed the amount in the URL)
+                        // Data was tampered with (e.g. someone changed the principal amount in the URL)
                         errorState.classList.remove('hidden');
                         errorState.classList.add('flex');
                     }

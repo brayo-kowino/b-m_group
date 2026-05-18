@@ -1305,7 +1305,6 @@ window.exportLedgerCSV = function() {
     document.body.removeChild(link);
 };
 
-
 // ==========================================
 // OFFICIAL PRINTABLE LETTER GENERATOR
 // ==========================================
@@ -1321,7 +1320,6 @@ export function generateOfficialLetter({
     notes
 }) {
 
-    // --- 1. FINANCIAL & DATE CALCULATIONS ---
     const principal = Number(amount) || 0;
     const interestAmt = Number(interest) || 0;
     const totalRepayment = principal + interestAmt;
@@ -1344,9 +1342,19 @@ export function generateOfficialLetter({
     repaymentDateObj.setDate(repaymentDateObj.getDate() + ((Number(durationWeeks) || 0) * 7));
     
     const expectedRepaymentDate = repaymentDateObj.toLocaleDateString('en-GB');
-    const digitalSignature = btoa(`${reference}-${totalRepayment}-${expectedRepaymentDate}`).substring(0, 18).toUpperCase();
+
+    const rawDataString = `${reference}-${userName}-${principal}-${interestAmt}-${durationWeeks}-${expectedRepaymentDate}`;
+    
+    // Create the hash and slice it for display
+    const digitalSignature = btoa(rawDataString).substring(0, 24).toUpperCase();
+    
+    // We encode the Name and Date to handle spaces and slashes safely in the URL
+    const encodedName = encodeURIComponent(userName);
     const encodedDate = encodeURIComponent(expectedRepaymentDate);
-    const qrContent = `https://bmfinance.netlify.app/verify/vrf?r=${reference}&t=${totalRepayment}&d=${encodedDate}&h=${digitalSignature}`;
+    
+    // Pass ALL ingredients to the verification portal
+    const qrContent = `https://bmfinance.netlify.app/verify/vrf.html?r=${reference}&n=${encodedName}&p=${principal}&i=${interestAmt}&w=${durationWeeks}&d=${encodedDate}&h=${digitalSignature}`;
+
     const docDefinition = {
         pageSize: 'A4',
         pageMargins: [40, 45, 40, 45],
@@ -1384,6 +1392,17 @@ export function generateOfficialLetter({
             {
                 canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 4, lineColor: '#1e3a8a' }],
                 margin: [0, 15, 0, 25]
+            },
+            
+            // ================= SECURITY HASH TOP DISPLAY =================
+            // Displaying the hash prominently at the top adds instant authority
+            {
+                text: `SECURE HASH: ${digitalSignature}`,
+                fontSize: 8,
+                color: '#94a3b8',
+                alignment: 'right',
+                fontFamily: 'Courier',
+                margin: [0, 0, 0, 10]
             },
 
             // ================= TOP INFO CARDS =================
@@ -1497,13 +1516,14 @@ export function generateOfficialLetter({
                         width: '45%',
                         stack: [
                             { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 180, y2: 0, lineWidth: 1, lineColor: '#94a3b8' }] },
-                            
+                            { text: 'Brian Odhiambo', bold: true, alignment: 'center', margin: [0, 10, 0, 3], color: '#0f172a' },
+                            { text: 'System Administrator', fontSize: 10, color: '#64748b', alignment: 'center' }
                         ]
                     },
                     {
-                        width: '80%',
+                        width: '45%',
                         stack: [
-                            { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 250, y2: 0, lineWidth: 1, lineColor: '#94a3b8' }] },
+                            { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 180, y2: 0, lineWidth: 1, lineColor: '#94a3b8' }] },
                             { text: 'Beneficiary Signature', bold: true, alignment: 'center', margin: [0, 10, 0, 3], color: '#0f172a' },
                             { text: 'Acknowledge Receipt', fontSize: 10, color: '#64748b', alignment: 'center' }
                         ]
@@ -1515,14 +1535,14 @@ export function generateOfficialLetter({
             // ================= REPLACED HASH WITH QR CODE =================
             {
                 qr: qrContent,
-                fit: 100, // Adjust size of QR code here
-                absolutePosition: { x: 40, y: 725 }
+                fit: 80, // Adjust size of QR code here
+                absolutePosition: { x: 40, y: 715 }
             },
             {
                 text: 'Scan to verify authenticity',
                 fontSize: 8,
                 color: '#94a3b8',
-                absolutePosition: { x: 40, y: 700 }
+                absolutePosition: { x: 40, y: 800 }
             },
 
             // ================= STAMP / SEAL =================
