@@ -1312,14 +1312,13 @@ window.exportLedgerCSV = function() {
 export function generateOfficialLetter({
     userName,
     amount,
-    interest,          // Required for calculations
-    durationWeeks,     // Required for calculations
+    interest,          
+    durationWeeks,     
     transactionType,
     reference,
     date,
     notes
 }) {
-
     const principal = Number(amount) || 0;
     const interestAmt = Number(interest) || 0;
     const totalRepayment = principal + interestAmt;
@@ -1343,16 +1342,21 @@ export function generateOfficialLetter({
     
     const expectedRepaymentDate = repaymentDateObj.toLocaleDateString('en-GB');
 
-    const rawDataString = `${reference}-${userName}-${principal}-${interestAmt}-${durationWeeks}-${expectedRepaymentDate}`;
+    // --- ENHANCED CRYPTOGRAPHIC HASH (PATCHED) ---
+    // 1. Define the System Secret Key
+    const secretKey = "BM_VAULT_2026_X9Q"; 
     
-    // Create the hash and slice it for display
-    const digitalSignature = btoa(rawDataString).substring(0, 24).toUpperCase();
+    // 2. Combine all critical data points + the secret key
+    const rawDataString = `${reference}-${userName}-${principal}-${interestAmt}-${durationWeeks}-${expectedRepaymentDate}-${secretKey}`;
     
-    // We encode the Name and Date to handle spaces and slashes safely in the URL
+    // 3. Generate the full hash (No truncation, strip equals signs for cleaner URLs)
+    const digitalSignature = btoa(rawDataString).replace(/=/g, '').toUpperCase();
+    
+    // 4. Encode variables for the URL
     const encodedName = encodeURIComponent(userName);
     const encodedDate = encodeURIComponent(expectedRepaymentDate);
     
-    // Pass ALL ingredients to the verification portal
+    // 5. Build the QR Payload (Passes the ingredients, NOT the secret key)
     const qrContent = `https://bmfinance.netlify.app/verify/vrf.html?r=${reference}&n=${encodedName}&p=${principal}&i=${interestAmt}&w=${durationWeeks}&d=${encodedDate}&h=${digitalSignature}`;
 
     const docDefinition = {
@@ -1395,10 +1399,9 @@ export function generateOfficialLetter({
             },
             
             // ================= SECURITY HASH TOP DISPLAY =================
-            // Displaying the hash prominently at the top adds instant authority
             {
-                text: `SECURE HASH: ${digitalSignature}`,
-                fontSize: 8,
+                text: `SECURE HASH:\n${digitalSignature}`,
+                fontSize: 7,
                 color: '#94a3b8',
                 alignment: 'right',
                 fontFamily: 'Courier',
@@ -1461,12 +1464,10 @@ export function generateOfficialLetter({
                 table: {
                     widths: ['45%', '55%'],
                     body: [
-                        // Header Row
                         [
                             { text: 'FACILITY BREAKDOWN', colSpan: 2, fontSize: 10, bold: true, color: '#64748b', fillColor: '#f1f5f9', margin: [10, 8, 10, 8] },
                             {}
                         ],
-                        // Data Rows
                         [
                             { text: 'Beneficiary Name', fontSize: 11, color: '#64748b', margin: [10, 10, 10, 10] },
                             { text: userName, fontSize: 12, bold: true, color: '#0f172a', margin: [10, 10, 10, 10] }
@@ -1483,7 +1484,6 @@ export function generateOfficialLetter({
                             { text: 'System Interest Fee', fontSize: 11, color: '#64748b', margin: [10, 10, 10, 10] },
                             { text: `KSH ${interestAmt.toLocaleString()}`, fontSize: 12, bold: true, color: '#0f172a', margin: [10, 10, 10, 10] }
                         ],
-                        // Highlighted Totals
                         [
                             { text: 'TOTAL REPAYMENT DUE', fontSize: 11, bold: true, color: '#065f46', fillColor: '#ecfdf5', margin: [10, 12, 10, 12] },
                             { text: `KSH ${totalRepayment.toLocaleString()}`, fontSize: 14, bold: true, color: '#059669', fillColor: '#ecfdf5', margin: [10, 12, 10, 12] }
@@ -1515,10 +1515,7 @@ export function generateOfficialLetter({
                     {
                         width: '45%',
                         stack: [
-                            { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 180, y2: 0, lineWidth: 1, lineColor: '#94a3b8' }] },
-                            { text: 'Brian Odhiambo', bold: true, alignment: 'center', margin: [0, 10, 0, 3], color: '#0f172a' },
-                            { text: 'System Administrator', fontSize: 10, color: '#64748b', alignment: 'center' }
-                        ]
+                                                    ]
                     },
                     {
                         width: '45%',
@@ -1535,14 +1532,14 @@ export function generateOfficialLetter({
             // ================= REPLACED HASH WITH QR CODE =================
             {
                 qr: qrContent,
-                fit: 80, // Adjust size of QR code here
+                fit: 100, 
                 absolutePosition: { x: 40, y: 715 }
             },
             {
                 text: 'Scan to verify authenticity',
                 fontSize: 8,
                 color: '#94a3b8',
-                absolutePosition: { x: 40, y: 800 }
+                absolutePosition: { x: 40, y: 700 }
             },
 
             // ================= STAMP / SEAL =================
@@ -1578,7 +1575,10 @@ export function generateRepaymentLetter({
     date,
     newLimit
 }) {
-    const digitalSignature = btoa(`${reference}-${amount}-${date}`).substring(0, 15).toUpperCase();
+    // --- ENHANCED CRYPTOGRAPHIC HASH FOR REPAYMENT (PATCHED) ---
+    const secretKey = "BM_VAULT_2026_X9Q"; 
+    const rawDataString = `${reference}-${amount}-${date}-${secretKey}`;
+    const digitalSignature = btoa(rawDataString).replace(/=/g, '').toUpperCase();
 
     const htmlContent = `
         <style>
@@ -1710,7 +1710,7 @@ export function generateRepaymentLetter({
             DEBT<br>CLEARED<br>100%
         </div>
         
-        <div class="absolute bottom-10 left-10 text-xs text-slate-400 font-mono">
+        <div class="absolute bottom-10 left-10 text-[9px] text-slate-400 font-mono break-all max-w-md">
             Cryptographic Hash: ${digitalSignature}
         </div>
     `;

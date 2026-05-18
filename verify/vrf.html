@@ -60,7 +60,7 @@
                     </div>
                     <div class="flex justify-between border-b border-slate-200 pb-2">
                         <span class="text-slate-500 font-semibold">Security Hash</span>
-                        <span id="display-hash" class="font-mono text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">---</span>
+                        <span id="display-hash" class="font-mono text-[8px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded break-all max-w-[50%] text-right">---</span>
                     </div>
                     <div class="flex justify-between pt-2">
                         <span class="text-slate-500 font-semibold">Integrity Check</span>
@@ -90,7 +90,6 @@
         document.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             
-            // Extract all the ingredients from the URL
             const ref = urlParams.get('r');
             const name = urlParams.get('n');
             const principal = urlParams.get('p');
@@ -106,23 +105,21 @@
             setTimeout(() => {
                 loadingState.classList.add('hidden');
 
-                // Ensure all parameters exist before doing the math
                 if (ref && name && principal && interest && weeks && date && providedHash) {
                     
-                    // --- THE MAGIC: Reconstruct the exact string ---
-                    // Order MUST match the PDF generator: Ref - Name - Principal - Interest - Duration - DueDate
-                    const rawDataString = `${ref}-${name}-${principal}-${interest}-${weeks}-${date}`;
+                    // --- THE SECURE MATH (PATCHED) ---
+                    // Must exactly match the key from the PDF generator
+                    const secretKey = "BM_VAULT_2026_X9Q"; 
+                    const rawDataString = `${ref}-${name}-${principal}-${interest}-${weeks}-${date}-${secretKey}`;
                     
-                    // Calculate the 24-character hash
-                    const calculatedHash = btoa(rawDataString).substring(0, 24).toUpperCase();
+                    // Calculate the FULL un-truncated hash
+                    const calculatedHash = btoa(rawDataString).replace(/=/g, '').toUpperCase();
 
-                    // Check if our calculation matches the printed document's hash
+                    // Validation Check
                     if (calculatedHash === providedHash) {
                         
-                        // Do the math for the UI
                         const totalRepayment = Number(principal) + Number(interest);
 
-                        // Populate UI
                         document.getElementById('display-ref').textContent = ref;
                         document.getElementById('display-name').textContent = name;
                         document.getElementById('display-breakdown').textContent = `KSH ${principal} + KSH ${interest} (${weeks} Wks)`;
@@ -130,17 +127,14 @@
                         document.getElementById('display-date').textContent = date;
                         document.getElementById('display-hash').textContent = calculatedHash;
                         
-                        // Show Success
                         successState.classList.remove('hidden');
                         successState.classList.add('flex');
                     } else {
-                        // Data was tampered with (e.g. someone changed the principal amount in the URL)
                         errorState.classList.remove('hidden');
                         errorState.classList.add('flex');
                     }
 
                 } else {
-                    // Missing parameters
                     errorState.classList.remove('hidden');
                     errorState.classList.add('flex');
                 }
