@@ -1527,19 +1527,19 @@ export function generateOfficialLetter({
 
             // ================= STAMP / SEAL =================
             {
-                absolutePosition: { x: 450, y: 690 },
+                absolutePosition: { x: 450, y: 710 },
                 canvas: [
                     { type: 'ellipse', x: 45, y: 45, r1: 45, r2: 45, lineWidth: 3, lineColor: '#1e3a8a' }
                 ]
             },
             {
-                absolutePosition: { x: 450, y: 718 },
+                absolutePosition: { x: 450, y: 738 },
                 columns: [
                     { width: 90, text: 'B&M\nVERIFIED', alignment: 'center', color: '#1e3a8a', fontSize: 9, bold: true }
                 ]
             },
             {
-                absolutePosition: { x: 450, y: 742 },
+                absolutePosition: { x: 450, y: 762 },
                 columns: [
                     { width: 90, text: 'AUTHENTIC', alignment: 'center', color: '#dc2626', fontSize: 12, bold: true, angle: -20 }
                 ]
