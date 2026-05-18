@@ -1501,9 +1501,9 @@ export function generateOfficialLetter({
                         ]
                     },
                     {
-                        width: '45%',
+                        width: '80%',
                         stack: [
-                            { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 180, y2: 0, lineWidth: 1, lineColor: '#94a3b8' }] },
+                            { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 250, y2: 0, lineWidth: 1, lineColor: '#94a3b8' }] },
                             { text: 'Beneficiary Signature', bold: true, alignment: 'center', margin: [0, 10, 0, 3], color: '#0f172a' },
                             { text: 'Acknowledge Receipt', fontSize: 10, color: '#64748b', alignment: 'center' }
                         ]
@@ -1527,7 +1527,7 @@ export function generateOfficialLetter({
 
             // ================= STAMP / SEAL =================
             {
-                absolutePosition: { x: 450, y: 710 },
+                absolutePosition: { x: 450, y: 720 },
                 canvas: [
                     { type: 'ellipse', x: 45, y: 45, r1: 45, r2: 45, lineWidth: 3, lineColor: '#1e3a8a' }
                 ]
