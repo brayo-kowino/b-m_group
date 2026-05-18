@@ -733,9 +733,6 @@ try {
     }
 }
 
-// ==========================================
-// FIX APPLIED: SCOPE FIX & BUTTON LOCKING
-// ==========================================
 window.approveLoan = async function(loanId, btn) {
     if (!confirm("Approve this loan and disburse the funds?")) return;
 
@@ -748,7 +745,6 @@ window.approveLoan = async function(loanId, btn) {
     const loanRef = doc(db, "loans", loanId);
     const statsRef = doc(db, "groupStats", "main");
 
-    // Declare these outside the transaction so the letter generator can use them
     let approvedLoanAmount = 0;
     let approvedInterest = 0;
     let approvedDuration = 0;
@@ -1484,14 +1480,22 @@ export function generateOfficialLetter({
 
     setTimeout(() => {
         iframe.contentWindow.focus();
+        
+        iframe.contentWindow.onafterprint = () => {
+            if (document.body.contains(iframe)) {
+                document.body.removeChild(iframe);
+            }
+        };
+
         iframe.contentWindow.print();
         
         setTimeout(() => {
-            document.body.removeChild(iframe);
-        }, 1000);
-    }, 800); 
+            if (document.body.contains(iframe)) {
+                document.body.removeChild(iframe);
+            }
+        }, 60000); 
 
-    //await logAdminAction(auth.currentUser.email, `Generated official letter for ${transactionType} | Ref: ${reference} | Amount: KSH ${amount}`, "INFO");
+    }, 800); 
 }
 
 export function generateRepaymentLetter({
@@ -1654,8 +1658,21 @@ export function generateRepaymentLetter({
 
     setTimeout(() => {
         iframe.contentWindow.focus();
+        
+        iframe.contentWindow.onafterprint = () => {
+            if (document.body.contains(iframe)) {
+                document.body.removeChild(iframe);
+            }
+        };
+
         iframe.contentWindow.print();
-        setTimeout(() => { document.body.removeChild(iframe); }, 1000);
+        
+        setTimeout(() => { 
+            if (document.body.contains(iframe)) {
+                document.body.removeChild(iframe); 
+            }
+        }, 60000); 
+        
     }, 800); 
 }
 
