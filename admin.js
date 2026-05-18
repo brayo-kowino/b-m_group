@@ -1399,14 +1399,6 @@ export function generateOfficialLetter({
             },
             
             // ================= SECURITY HASH TOP DISPLAY =================
-            {
-                text: `SECURE HASH:\n${digitalSignature}`,
-                fontSize: 7,
-                color: '#94a3b8',
-                alignment: 'right',
-                fontFamily: 'Courier',
-                margin: [0, 0, 0, 10]
-            },
 
             // ================= TOP INFO CARDS =================
             {
