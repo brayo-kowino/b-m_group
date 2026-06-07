@@ -2132,15 +2132,24 @@ window.verifyPayment = async function(claimId, userId, amount, mpesaCode, userNa
                 const loanDoc = await transaction.get(loanRef);
                 const loanData = loanDoc.data();
 
-                // 1. Calculate the exact penalty at this exact moment
-                const startDate = loanData.approvedAt ? loanData.approvedAt.toDate() : loanData.createdAt.toDate();
-                const dueDate = new Date(startDate.getTime() + loanData.durationWeeks * 7 * 24 * 60 * 60 * 1000);
-                const timeDiff = dueDate.getTime() - new Date().getTime();
-                const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
-                
+                // 1. Calculate the exact penalty
                 let currentPenalty = 0;
-                if (daysRemaining < 0) {
-                    currentPenalty = loanData.penaltyFrozen ? (loanData.frozenPenaltyAmount || 0) : (Math.abs(daysRemaining) * 5);
+
+                if (type === 'penalty_freeze_request') {
+                    // YOUR NEW LOGIC: If they are requesting a freeze, we trust the exact cash they sent.
+                    // Penalty paid = (Total Cash Sent) - (Original System Interest)
+                    // E.g., If they send 155, and interest is 150, the penalty they are clearing is exactly 5.
+                    currentPenalty = Math.max(0, amount - loanData.interest);
+                } else {
+                    // Standard recalculation for normal mdogo mdogo installments
+                    const startDate = loanData.approvedAt ? loanData.approvedAt.toDate() : loanData.createdAt.toDate();
+                    const dueDate = new Date(startDate.getTime() + loanData.durationWeeks * 7 * 24 * 60 * 60 * 1000);
+                    const timeDiff = dueDate.getTime() - new Date().getTime();
+                    const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+                    if (daysRemaining < 0) {
+                        currentPenalty = loanData.penaltyFrozen ? (loanData.frozenPenaltyAmount || 0) : (Math.abs(daysRemaining) * 5);
+                    }
                 }
 
                 const paidSoFar = loanData.amountPaidSoFar || 0;
