@@ -77,50 +77,127 @@ async function loadMyLedger(uid) {
     }
 }
 
-// --- Load Personal Loan Requests ---
+// --- Theme Switching Logic ---
+function triggerDangerZone(isDanger) {
+    const dangerBanner = document.getElementById('dangerBanner');
+    const nav = document.querySelector('nav');
+    
+    if (isDanger) {
+        document.body.classList.replace('bg-[#F5F5F7]', 'bg-red-50');
+        dangerBanner.classList.remove('hidden');
+        
+        // Turn Nav Red
+        nav.classList.remove('nav-polygon-theme', 'bg-white/85');
+        nav.classList.add('bg-red-100', 'border-red-300');
+    } else {
+        document.body.classList.replace('bg-red-50', 'bg-[#F5F5F7]');
+        dangerBanner.classList.add('hidden');
+        
+        // Restore normal Nav
+        nav.classList.add('nav-polygon-theme');
+        nav.classList.remove('bg-red-100', 'border-red-300');
+    }
+}
+
+// --- Upgraded Load Personal Loan Requests (With Penalty Math) ---
 async function loadMyLoans(uid) {
     const container = document.getElementById('myLoansList');
+    const lipaSelect = document.getElementById('lipaLoanSelect');
     if (!container) return;
 
     try {
-        const q = query(
-            collection(db, "loans"),
-            where("userId", "==", uid),
-            orderBy("createdAt", "desc")
-        );
+        const q = query(collection(db, "loans"), where("userId", "==", uid), orderBy("createdAt", "desc"));
         const snapshot = await getDocs(q);
+        
         container.innerHTML = '';
+        if (lipaSelect) lipaSelect.innerHTML = '<option value="">Select a loan to pay...</option>';
 
         if (snapshot.empty) {
             container.innerHTML = '<div class="text-sm text-slate-500 text-center bg-slate-50 p-3 rounded border border-slate-100">No loan history found.</div>';
+            if (lipaSelect) lipaSelect.innerHTML = '<option value="">No active loans</option>';
             return;
         }
 
+        let isAnyOverdue = false;
+
         snapshot.forEach((docSnap) => {
             const loan = docSnap.data();
+            const loanId = docSnap.id;
             const dateStr = loan.createdAt ? loan.createdAt.toDate().toLocaleDateString() : 'Just now';
 
             let statusBadge = '';
             let extraInfo = '';
+            let timeInfo = `<span>${loan.durationWeeks} Weeks</span>`;
+            let penaltyAmount = 0;
 
-            if (loan.status === 'pending') {
+// === DATE & DUE TRACKING LOGIC ===
+            if (loan.status === 'approved') {
+                const startDate = loan.approvedAt ? loan.approvedAt.toDate() : loan.createdAt.toDate();
+                const dueDate = new Date(startDate.getTime() + loan.durationWeeks * 7 * 24 * 60 * 60 * 1000);
+                const today = new Date();
+                
+                const timeDiff = dueDate.getTime() - today.getTime();
+                const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+                if (daysRemaining < 0) {
+                    isAnyOverdue = true;
+                    const daysLate = Math.abs(daysRemaining);
+                    
+                    if (loan.penaltyFrozen) {
+                        penaltyAmount = loan.frozenPenaltyAmount || 0;
+                        statusBadge = '<span class="bg-rose-100 text-rose-700 border border-rose-300 px-2 py-0.5 rounded text-[10px] font-bold uppercase">PENALTY FROZEN</span>';
+                        timeInfo = `<span class="text-rose-600 font-bold">${daysLate} Days Late (Frozen)</span>`;
+                    } else {
+                        penaltyAmount = daysLate * 5;
+                        statusBadge = '<span class="bg-red-600 text-white border border-red-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase animate-pulse">OVERDUE</span>';
+                        timeInfo = `<span class="text-red-600 font-bold">${daysLate} Days Late!</span>`;
+                    }
+
+                } else if (daysRemaining <= 3) {
+                    statusBadge = '<span class="bg-amber-100 text-amber-700 border border-amber-300 px-2 py-0.5 rounded text-[10px] font-bold uppercase">DUE SOON</span>';
+                    timeInfo = `<span class="text-amber-600 font-bold">${daysRemaining} Days Left</span>`;
+                } else {
+                    statusBadge = '<span class="bg-blue-100 text-blue-700 border border-blue-200 px-2 py-0.5 rounded text-[10px] font-bold uppercase">Active</span>';
+                    timeInfo = `<span class="text-blue-600">${daysRemaining} Days Left</span>`;
+                }
+
+                // === MERGED INTEREST & PENALTY MATH ===
+                const effectiveInterest = loan.interest + penaltyAmount; 
+                const totalDue = loan.amount + effectiveInterest; // Principal + New Combined Interest
+                const balance = totalDue - (loan.amountPaidSoFar || 0);
+
+                // Populate Lipa Mdogo Dropdown
+                if (lipaSelect) {
+                    let dropdownText = `KSH ${loan.amount} Loan (Bal: KSH ${balance})`;
+                    if (daysRemaining < 0 && !loan.penaltyFrozen) {
+                        dropdownText += ` - OVERDUE! New Int: KSH ${effectiveInterest}`;
+                    }
+                    lipaSelect.innerHTML += `<option value="${loanId}">${dropdownText}</option>`;
+                }
+
+                // Show the merged effective interest clearly to the user
+                extraInfo = `
+                    <div class="text-xs text-slate-600 font-medium">Principal: KSH ${loan.amount}</div>
+                    <div class="text-xs font-bold ${penaltyAmount > 0 ? 'text-red-600' : 'text-slate-600'}">
+                        Interest & Fees: KSH ${effectiveInterest} 
+                        ${penaltyAmount > 0 ? `<span class="text-[10px] font-medium text-red-500">(Orig: ${loan.interest} + ${penaltyAmount} penalty)</span>` : ''}
+                    </div>
+                `;
+
+            } else if (loan.status === 'pending') {
+            
                 statusBadge = '<span class="bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">Pending Review</span>';
-            } else if (loan.status === 'approved') {
-                statusBadge = '<span class="bg-blue-100 text-blue-700 border border-blue-200 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">Active</span>';
+                extraInfo = `<div class="text-xs text-slate-600 font-medium">Total Repayment: KSH ${loan.repayment}</div>`;
             } else if (loan.status === 'repaid') {
                 statusBadge = '<span class="bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">Cleared</span>';
-            } else if (loan.status === 'rejected') {
-                statusBadge = '<span class="bg-red-100 text-red-700 border border-red-200 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">Rejected</span>';
-                if (loan.rejectReason) {
-                    extraInfo = `
-                        <div class="mt-2 text-xs text-red-700 bg-red-50 p-2.5 rounded border border-red-100">
-                            <strong>Admin Note:</strong> ${loan.rejectReason}
-                        </div>`;
-                }
+                extraInfo = `<div class="text-xs text-slate-600 font-medium">Total Repayment: KSH ${loan.repayment}</div>`;
             }
 
+            // Build UI Card
+            const cardClass = isAnyOverdue && loan.status === 'approved' && !loan.penaltyFrozen ? 'border-red-300 bg-red-50' : 'border-slate-200 bg-white';
+            
             const card = document.createElement('div');
-            card.className = 'border border-slate-200 rounded-md p-3 bg-white shadow-sm transition hover:shadow-md';
+            card.className = `border rounded-md p-3 shadow-sm transition hover:shadow-md mb-3 ${cardClass}`;
             card.innerHTML = `
                 <div class="flex justify-between items-start mb-1.5">
                     <div class="font-bold text-slate-800 text-sm">KSH ${loan.amount}</div>
@@ -128,19 +205,78 @@ async function loadMyLoans(uid) {
                 </div>
                 <div class="flex justify-between items-center text-xs text-slate-500 mb-1">
                     <span>${dateStr}</span>
-                    <span>${loan.durationWeeks} Weeks</span>
+                    ${timeInfo}
                 </div>
-                <div class="text-xs text-slate-600 font-medium">Repayment: KSH ${loan.repayment}</div>
                 ${extraInfo}
             `;
             container.appendChild(card);
         });
+
+        // Fire the Danger Zone if needed
+        triggerDangerZone(isAnyOverdue);
+
     } catch (error) {
         console.error("Error loading personal loans:", error);
         container.innerHTML = '<div class="text-xs text-red-500 text-center p-2 bg-red-50 rounded">Failed to load requests. Please refresh.</div>';
     }
 }
 
+// --- Handle Lipa Mdogo Mdogo Submission ---
+const lipaForm = document.getElementById('lipaMdogoForm');
+if (lipaForm) {
+    lipaForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('lipaSubmitBtn');
+        const statusDiv = document.getElementById('lipaStatus');
+        
+        const loanId = document.getElementById('lipaLoanSelect').value;
+        const intent = document.getElementById('lipaIntent').value; // Get their intent
+        const amount = Number(document.getElementById('lipaAmount').value);
+        const mpesaCode = document.getElementById('lipaCode').value.trim().toUpperCase();
+
+        if (!loanId) {
+            statusDiv.innerHTML = "Please select a valid active loan.";
+            statusDiv.className = "mt-3 text-sm font-medium rounded p-2 bg-red-50 text-red-600";
+            statusDiv.classList.remove('hidden');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = "Processing...";
+
+        try {
+            const uniqueClaimId = `${auth.currentUser.uid}_install_${mpesaCode}`;
+
+            // Send to Admin with the explicit 'intent' attached
+            await setDoc(doc(db, "paymentClaims", uniqueClaimId), {
+                userId: auth.currentUser.uid,
+                loanId: loanId,
+                type: intent === 'freeze_penalty' ? "penalty_freeze_request" : "repayment", 
+                amount: amount,
+                mpesaCode: mpesaCode,
+                status: "pending", 
+                createdAt: serverTimestamp() 
+            });
+
+            statusDiv.innerHTML = intent === 'freeze_penalty' 
+                ? `<strong>Request Sent!</strong> Receipt ${mpesaCode} sent. The Admin will verify your interest payment and freeze the KSH 5 daily penalty.`
+                : `<strong>Installment Logged!</strong> Receipt ${mpesaCode} sent. Your balance will update upon Admin verification.`;
+            
+            statusDiv.className = "mt-3 text-sm font-medium rounded p-2 bg-green-50 text-green-700";
+            statusDiv.classList.remove('hidden');
+            
+            e.target.reset(); 
+        } catch (error) {
+            console.error("Installment submission error:", error);
+            statusDiv.innerHTML = "System error logging payment. Please try again.";
+            statusDiv.className = "mt-3 text-sm font-medium rounded p-2 bg-red-50 text-red-600";
+            statusDiv.classList.remove('hidden');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "Submit Payment";
+        }
+    });
+}
 // --- 2. Grievance / Support Form (IMMUNIZED) ---
 document.getElementById('grievanceForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -589,7 +725,9 @@ async function loadUserData(uid) {
         let helperClass = "text-[10px] md:text-xs text-slate-400 mt-2 font-medium"; 
         
         // 1. Calculate Active Loans First
-        let activeLoansTotal = 0;
+        let activeLoansTotal = 0; // The principal (used for limit exposure math)
+        let actualOutstandingBalance = 0; // The REAL debt (Principal + Interest + Penalties - Paid)
+
         try {
             const activeLoansQuery = query(
                 collection(db, "loans"),
@@ -597,8 +735,33 @@ async function loadUserData(uid) {
                 where("status", "in", ["pending", "approved"])
             );
             const activeLoansSnap = await getDocs(activeLoansQuery);
+            
             activeLoansSnap.forEach(docSnap => {
-                activeLoansTotal += Number(docSnap.data().amount);
+                const loan = docSnap.data();
+                activeLoansTotal += Number(loan.amount); // Keep principal for vault math
+
+                if (loan.status === 'approved') {
+                    // Recreate the Penalty Math for the Dashboard Banner
+                    const startDate = loan.approvedAt ? loan.approvedAt.toDate() : loan.createdAt.toDate();
+                    const dueDate = new Date(startDate.getTime() + loan.durationWeeks * 7 * 24 * 60 * 60 * 1000);
+                    const today = new Date();
+                    
+                    const timeDiff = dueDate.getTime() - today.getTime();
+                    const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+                    let penaltyAmount = 0;
+                    if (daysRemaining < 0) {
+                        penaltyAmount = loan.penaltyFrozen ? (loan.frozenPenaltyAmount || 0) : (Math.abs(daysRemaining) * 5);
+                    }
+
+                    const paidSoFar = loan.amountPaidSoFar || 0;
+                    const totalDue = loan.repayment + penaltyAmount; // Principal + Interest + Penalty
+                    
+                    actualOutstandingBalance += (totalDue - paidSoFar); 
+                } else if (loan.status === 'pending') {
+                    // If it's pending, they haven't paid anything yet, but they will owe the repayment amount
+                    actualOutstandingBalance += loan.repayment;
+                }
             });
         } catch (error) {
             console.error("Error fetching active loans:", error);
@@ -669,11 +832,12 @@ async function loadUserData(uid) {
             }
         }
 
-        if (activeLoansTotal > 0) {
+        if (actualOutstandingBalance > 0) {
             finalSmartLimit = 0; 
-            limitStatus = `Clear your KSH ${activeLoansTotal} debt to unlock your new KSH ${trueFutureLimit} limit`;
+            limitStatus = `Clear your KSH ${actualOutstandingBalance} outstanding balance to unlock your new KSH ${trueFutureLimit} limit.`;
             helperClass = "text-[10px] md:text-xs text-rose-600 mt-2 font-bold";
         } else if (finalSmartLimit < (baseLimit - activeLoansTotal) && finalSmartLimit > 0) {
+            
             limitStatus = `Limit adjusted to KSH ${finalSmartLimit} because the group reserves are currently low.`;
             helperClass = "text-[10px] md:text-xs text-orange-600 mt-2 font-bold italic";
         } else if (globalRemainingLiquidity <= 0 && savings >= 500) {
