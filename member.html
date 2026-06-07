@@ -238,7 +238,7 @@
 
             <div class="flex flex-col gap-6">
                 <section class="bg-white p-6 md:p-8 rounded-[4px] ios-shadow border border-slate-100 relative overflow-hidden flex flex-col justify-center">
-                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-indigo-500"></div>
+                    <div class="absolute top-0 left-0 w-full h-0 bg-gradient-to-r from-blue-400 to-indigo-500"></div>
                     <div class="flex justify-between items-end mb-5 mt-1">
                         <h3 id="monthTitle" class="text-slate-500 text-sm font-medium tracking-tight">Monthly Target Progress</h3>
                         <span id="monthlyText" class="text-lg font-bold text-slate-800">0 / 0 KSH</span>
@@ -278,7 +278,7 @@
                 <p class="text-sm text-slate-500 mb-6 font-medium">After sending your contribution via M-Pesa or Bank, submit the exact details below for Admin verification.</p>
                 
                 <div class="bg-gradient-to-br from-slate-50 to-emerald-50/30 border border-emerald-100 rounded-xl p-5 mb-6 relative overflow-hidden shadow-sm">
-                    <div class="absolute top-0 left-0 w-1.5 h-full bg-emerald-500"></div>
+                    <div class="absolute top-0 left-0 w-0 h-full bg-emerald-500"></div>
                     
                     <div class="flex items-center gap-3 mb-4">
                         <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-sm">
@@ -331,7 +331,7 @@
             </section>
 
             <section class="bg-white p-6 md:p-8 rounded-[4px] ios-shadow border border-slate-100 relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-400 to-orange-500"></div>
+                <div class="absolute top-0 left-0 w-full h-0 bg-gradient-to-r from-blue-400 to-blue-500"></div>
                 <h2 class="text-xl font-bold text-slate-900 mb-2 mt-1 tracking-tight">Lipa Mdogo Mdogo</h2>
                 <p class="text-sm text-slate-500 mb-6 font-medium">Clear your loan in installments, or pay your interest to freeze late penalties.</p>
                 
@@ -346,7 +346,7 @@
                         <label class="block text-xs font-semibold text-slate-700 mb-2 uppercase tracking-wider">Payment Intent</label>
                         <select id="lipaIntent" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 focus:outline-none bg-slate-50 focus:bg-white transition-all text-sm font-medium" required>
                             <option value="installment">Standard Installment (Reduce Balance)</option>
-                            <option value="freeze_penalty" class="text-rose-600 font-bold">Pay Interest Only (Freeze KSH 5/day Penalty)</option>
+                            <option value="freeze_penalty" class="text-rose-600 font-bold">Pay Interest Only (Stop KSH 5/day Penalty)</option>
                         </select>
                     </div>
                     <div>
@@ -358,7 +358,7 @@
                         <input type="text" id="lipaCode" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/10 focus:outline-none bg-slate-50 focus:bg-white transition-all text-sm uppercase font-medium" placeholder="e.g. SGH1234567" required>
                     </div>
                     <div class="sm:col-span-2 mt-1">
-                        <button type="submit" id="lipaSubmitBtn" class="w-full bg-amber-500 text-white py-3 px-4 rounded-xl hover:bg-amber-600 font-semibold transition-all shadow-sm text-sm">
+                        <button type="submit" id="lipaSubmitBtn" class="w-full bg-blue-500 text-white py-3 px-4 rounded-xl hover:bg-blue-600 font-semibold transition-all shadow-sm text-sm">
                             Submit Payment
                         </button>
                     </div>

@@ -1829,11 +1829,16 @@ export async function loadActiveLoans() {
                     <div class="text-xs text-slate-500">Paid: KSH ${paidSoFar}</div>
                     <div class="font-bold ${currentBalance > 0 ? 'text-rose-600' : 'text-emerald-600'}">Bal: KSH ${currentBalance}</div>
                 </td>
-                <td class="p-3 flex gap-2 flex-wrap">
-                    <button onclick="processRepayment('${loanDoc.id}', '${loan.userId}', ${loan.amount}, ${loan.interest}, ${penaltyAmount}, ${paidSoFar}, '${safeName}', this)" class="bg-purple-600 text-white px-3 py-1.5 rounded hover:bg-purple-700 text-xs font-bold shadow-sm transition">
-                        Manual Clear
+                <td class="p-3 flex gap-2 flex-wrap items-center">
+                    <select id="repayType-${loanDoc.id}" class="text-xs border border-slate-200 rounded p-1.5 bg-slate-50 focus:ring-purple-500 font-medium text-slate-700">
+                        <option value="full">Full Balance</option>
+                        <option value="interest">Interest Only</option>
+                        <option value="mdogo">Mdogo Mdogo (Custom)</option>
+                    </select>
+                    <button onclick="processRepayment('${loanDoc.id}', '${loan.userId}', ${loan.amount}, ${loan.interest}, ${penaltyAmount}, ${paidSoFar}, '${safeName}', this, document.getElementById('repayType-${loanDoc.id}').value)" class="bg-purple-600 text-white px-3 py-1.5 rounded hover:bg-purple-700 text-xs font-bold shadow-sm transition">
+                        Clear
                     </button>
-                    </td>
+                </td>
             `;
             tableBody.appendChild(row);
         }
@@ -1858,11 +1863,19 @@ window.reprintDisbursementLetter = function(loanId, userName, amount, interest, 
     });
 };
 
-window.processRepayment = async function(loanId, userId, principal, interest, penaltyAmount, paidSoFar, userName, btn) {
+window.processRepayment = async function(loanId, userId, principal, interest, penaltyAmount, paidSoFar, userName, btn, repayType) {
     // 1. Calculate the true reality of the debt
     const effectiveInterest = interest + penaltyAmount;
     const totalDue = principal + effectiveInterest;
     const remainingBalance = totalDue - paidSoFar;
+
+    // Determine the prefill amount based on the dropdown selection
+    let prefillAmount = remainingBalance; 
+    if (repayType === 'interest') {
+        prefillAmount = effectiveInterest;
+    } else if (repayType === 'mdogo') {
+        prefillAmount = ''; // Leave it blank so you can type the custom amount
+    }
 
     // 2. Prompt the Admin for the exact cash received
     const amountInput = prompt(
@@ -1874,7 +1887,7 @@ window.processRepayment = async function(loanId, userId, principal, interest, pe
         `Paid So Far: KSH ${paidSoFar}\n` +
         `Remaining Balance: KSH ${remainingBalance}\n\n` +
         `Enter the exact cash amount you are receiving right now:`, 
-        remainingBalance
+        prefillAmount
     );
 
     if (amountInput === null) return; 
@@ -1994,11 +2007,10 @@ window.processRepayment = async function(loanId, userId, principal, interest, pe
         if (btn) {
             btn.disabled = false;
             btn.classList.remove("opacity-50", "cursor-not-allowed");
-            btn.innerText = "Manual Clear";
+            btn.innerText = "Clear";
         }
     }
 };
-
 // ==========================================
 // PENDING PAYMENT VERIFICATIONS (M-PESA)
 // ==========================================

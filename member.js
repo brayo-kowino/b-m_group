@@ -166,13 +166,14 @@ async function loadMyLoans(uid) {
                 const totalDue = loan.amount + effectiveInterest; // Principal + New Combined Interest
                 const balance = totalDue - (loan.amountPaidSoFar || 0);
 
-                // Populate Lipa Mdogo Dropdown
+               // Populate Lipa Mdogo Dropdown
                 if (lipaSelect) {
                     let dropdownText = `KSH ${loan.amount} Loan (Bal: KSH ${balance})`;
                     if (daysRemaining < 0 && !loan.penaltyFrozen) {
                         dropdownText += ` - OVERDUE! New Int: KSH ${effectiveInterest}`;
                     }
-                    lipaSelect.innerHTML += `<option value="${loanId}">${dropdownText}</option>`;
+                    // We add data-interest and data-balance so JS can read them later
+                    lipaSelect.innerHTML += `<option value="${loanId}" data-interest="${effectiveInterest}" data-balance="${balance}">${dropdownText}</option>`;
                 }
 
                 // Show the merged effective interest clearly to the user
@@ -219,6 +220,45 @@ async function loadMyLoans(uid) {
         console.error("Error loading personal loans:", error);
         container.innerHTML = '<div class="text-xs text-red-500 text-center p-2 bg-red-50 rounded">Failed to load requests. Please refresh.</div>';
     }
+}
+
+// --- Auto-Prefill Lipa Mdogo Amount ---
+const lipaLoanSelect = document.getElementById('lipaLoanSelect');
+const lipaIntent = document.getElementById('lipaIntent');
+const lipaAmount = document.getElementById('lipaAmount');
+
+function handlePrefillAmount() {
+    if (!lipaLoanSelect || !lipaIntent || !lipaAmount) return;
+
+    // Grab the currently selected option element
+    const selectedOption = lipaLoanSelect.options[lipaLoanSelect.selectedIndex];
+    
+    // If they haven't selected a valid loan, clear it and bail out
+    if (!selectedOption || !selectedOption.value) {
+        lipaAmount.value = '';
+        return;
+    }
+
+    const intent = lipaIntent.value;
+    const exactInterest = selectedOption.getAttribute('data-interest');
+    const exactBalance = selectedOption.getAttribute('data-balance');
+
+    if (intent === 'freeze_penalty') {
+        // Prefill the exact interest + penalties
+        lipaAmount.value = exactInterest;
+    } else if (intent === 'full_balance') { 
+        // If you ever add a 'full balance' option, this covers it
+        lipaAmount.value = exactBalance;
+    } else {
+        // Otherwise (mdogo mdogo), clear it so they can type
+        lipaAmount.value = '';
+    }
+}
+
+// Watch both dropdowns for changes
+if (lipaLoanSelect && lipaIntent) {
+    lipaLoanSelect.addEventListener('change', handlePrefillAmount);
+    lipaIntent.addEventListener('change', handlePrefillAmount);
 }
 
 // --- Handle Lipa Mdogo Mdogo Submission ---
