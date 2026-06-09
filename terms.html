@@ -1,106 +1,186 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terms of Service | B&M Group</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <title>Terms & Private Charter | B&M Group</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        /* UI Elements use Inter, Reading Text uses Lora (Book Serif) */
+        .font-ui { font-family: 'Inter', sans-serif; }
+        .font-reading { font-family: 'Lora', serif; }
+        
+        .glass-nav {
+            background-color: rgba(226, 232, 240, 0.90);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cpolygon points='0,0 100,50 0,100' fill='%2394a3b8' opacity='0.12'/%3E%3Cpolygon points='200,0 100,50 200,100' fill='%2394a3b8' opacity='0.08'/%3E%3Cpolygon points='100,50 200,100 100,150 0,100' fill='%2364748b' opacity='0.04'/%3E%3Cpolygon points='0,200 100,150 0,100' fill='%2394a3b8' opacity='0.12'/%3E%3Cpolygon points='200,200 100,150 200,100' fill='%2394a3b8' opacity='0.08'/%3E%3C/svg%3E");
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        /* Elegant paragraph styling for book feel */
+        .prose-reading p {
+            margin-bottom: 1.5rem;
+            line-height: 1.8;
+            color: #334155; /* slate-700 */
+        }
+        
+        .prose-reading li {
+            margin-bottom: 0.75rem;
+            line-height: 1.7;
+            color: #334155;
+        }
+
+        /* Subtle section divider */
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #cbd5e1, transparent);
+            margin: 3rem 0;
+        }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased selection:bg-blue-200 selection:text-blue-900">
+<body class="bg-[#F8FAFC] text-slate-800 antialiased selection:bg-blue-200 selection:text-blue-900 font-ui">
 
-    <nav class="bg-slate-900 border-b border-slate-800 shadow-sm sticky top-0 z-50">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16 items-center">
-                <a href="index.html" class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
-                    <div class="flex-shrink-0 flex items-center gap-3 cursor-pointer group" onclick="window.scrollTo(0,0)">
-                    <img src="bm_group_logo.png" alt="B&M Group Logo" class="h-10 w-auto object-contain" id="navLogo" onerror="this.style.display='none'; document.getElementById('logoFallback').style.display='flex'">
-                    
-                    <div id="logoFallback" class="hidden w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-md group-hover:shadow-blue-500/30 transition-all duration-300">
+    <nav class="fixed w-full z-50 glass-nav border-b border-slate-300 shadow-sm transition-all duration-300" id="navbar">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20 items-center">
+                
+                <div class="flex-shrink-0 flex items-center gap-3 cursor-pointer group" onclick="window.location.href='index.html'">
+                    <div class="hidden w-10 h-10 bg-blue-900 text-white rounded-xl flex items-center justify-center font-black text-sm shadow-md">
                         B&M
                     </div>
-                    <span class=" hidden font-bold text-xl md:text-2xl tracking-tight text-slate-900 group-hover:text-blue-700 transition-colors">Group</span>
+                    <span class="font-bold text-xl md:text-2xl tracking-tight text-slate-900 group-hover:text-blue-700 transition-colors hidden sm:block">B&M Group</span>
                 </div>
-                </a>
-                <a href="index.html" class="text-sm font-medium text-slate-300 hover:text-white transition-colors">
-                    Back to Home
-                </a>
+                
+                <div class="flex items-center gap-4">
+                    <a href="index.html" class="flex items-center gap-2 bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-slate-50 hover:text-blue-600 transition-all shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                        Back to Home
+                    </a>
+                </div>
             </div>
         </div>
     </nav>
 
-    <main class="py-16 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        <div class="bg-white p-8 md:p-12 rounded-2xl shadow-sm border border-slate-200">
-            <div class="mb-10 border-b border-slate-100 pb-8">
-                <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">Terms of Service</h1>
-                <p class="text-slate-500">Effective Date: March 2026 | Last Updated: March 2026</p>
-            </div>
+    <main class="pt-32 pb-24 px-4 sm:px-6 lg:px-8">
+        <article class="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden">
+            
+            <header class="bg-slate-900 text-white px-8 py-12 md:px-16 md:py-16 text-center relative overflow-hidden">
+                <div class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.05\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
+                <div class="relative z-10">
+                    <span class="text-blue-400 font-bold tracking-widest uppercase text-xs mb-4 block">Official Document</span>
+                    <h1 class="text-3xl md:text-5xl font-black tracking-tight mb-4">Terms & Private Charter</h1>
+                    <p class="text-slate-400 font-medium text-sm">Effective Date: June 2026 | Location: Juja, Kenya</p>
+                </div>
+            </header>
 
-            <div class="space-y-8 text-slate-600 leading-relaxed">
+            <div class="px-8 py-12 md:px-16 md:py-14 font-reading prose-reading text-lg">
                 
-                <section>
-                    <h2 class="text-xl font-bold text-slate-900 mb-3">1. Acceptance of Terms</h2>
-                    <p>By accessing the B&M Group member portal, executing transactions, or maintaining active membership within the association, you agree to be bound by these Terms of Service ("Terms") and the official B&M Group Constitution. If you do not agree with any part of these terms, you must immediately formally request membership termination.</p>
-                </section>
+                <p class="text-xl leading-relaxed text-slate-800 font-medium mb-8">
+                    By accessing the B&M Group member portal, making deposits, or participating in any group activities, you agree to follow these rules completely. This document outlines exactly how we operate, how your funds are handled, and what is expected of you.
+                </p>
 
-                <section>
-                    <h2 class="text-xl font-bold text-slate-900 mb-3">2. Private Association Status</h2>
-                    <p>B&M Group is a strictly private, invite-only savings and credit association. We are not a licensed public bank, microfinance institution, or public investment fund. All capital is collectively owned by vetted members and managed strictly according to internal bylaws for the mutual benefit of the group.</p>
-                </section>
+                <div class="section-divider"></div>
 
-                <section>
-                    <h2 class="text-xl font-bold text-slate-900 mb-3">3. Financial Commitments & Penalties</h2>
-                    <ul class="list-disc pl-5 space-y-2 mt-2">
-                        <li><strong>Mandatory Contributions:</strong> All agreed-upon weekly/monthly savings must be deposited by the 5th day of the respective month.</li>
-                        <li><strong>Strict Enforcement:</strong> Failure to meet deposit deadlines will trigger automatic administrative penalties as outlined in the Constitution. "Zero Emotion" applies to all financial commitments.</li>
-                    </ul>
-                </section>
+                <h2 class="font-ui text-2xl font-bold text-slate-900 mb-4 tracking-tight">1. Private & Unregistered Status</h2>
+                <p>
+                    <strong>B&M Group is a strictly private, invite-only association.</strong> We are not a bank, we are not a licensed microfinance institution, and we are not a public investment fund. 
+                </p>
+                <p>
+                    We are not registered with or regulated by the Central Bank of Kenya (CBK) or any other public financial regulatory authority. We operate entirely as a private mutual agreement among vetted partners who have chosen to pool their resources together for collective financial growth.
+                </p>
 
-                <section>
-                    <h2 class="text-xl font-bold text-slate-900 mb-3">4. Lending, Credit, and Default</h2>
-                    <p>Access to credit is a privilege, not a right, earned through disciplined saving.</p>
-                    <ul class="list-disc pl-5 space-y-2 mt-2">
-                        <li><strong>Borrowing Limits:</strong> Members in good standing may borrow up to two times (2x) their accumulated total savings, subject to group liquidity.</li>
-                        <li><strong>Guarantor Liability:</strong> Some loans may require approved member guarantors. In the event of a default, liability is immediately and fully transferred to the guarantors. The group reserves the right to recover defaulted funds directly from the guarantors' accumulated savings.</li>
-                    </ul>
-                </section>
+                <h2 class="font-ui text-2xl font-bold text-slate-900 mb-4 mt-10 tracking-tight">2. The "Invite-Only" Mandate & Confidentiality</h2>
+                <p>
+                    B&M Group operates under a strict wall of confidentiality and does not allow open public registration. This is a deliberate, uncompromising security measure designed entirely to protect our members' capital.
+                </p>
+                <p>
+                    <strong>Preventing Premeditated Fraud:</strong> In an open registration system, an unknown individual could easily create an account, save small amounts consistently to build a false profile of trust, and unlock our 2x loan target. They could then take a massive loan and disappear. This kind of calculated "hit-and-run" fraud would bankrupt the association and ruin the financial progress of our honest members.
+                </p>
+                <p>
+                    <strong>The Reality of Debt Recovery:</strong> Tracking down and pursuing a defaulted borrower who lives miles away especially without holding advanced physical assets or collateral is an exhausting and prohibitively expensive legal nightmare. We are a wealth-creation group, not a debt-collection agency. We refuse to become an association plagued by police cases, financial stress, and internal conflict.
+                </p>
+                <p>
+                    By keeping the group highly confidential and restricting membership strictly to trusted individuals who are physically known and personally vouched for by an existing member, we eliminate these risks before they ever enter our system.
+                </p>
 
-                <section>
-                    <h2 class="text-xl font-bold text-slate-900 mb-3">5. Portal Access and Confidentiality</h2>
-                    <p>The online ledger and member portal contain highly sensitive financial data. Members must maintain absolute confidentiality regarding group operations, individual balances, and lending activities.</p>
-                    <ul class="list-disc pl-5 space-y-2 mt-2">
-                        <li>Account credentials must never be shared.</li>
-                        <li>Members are responsible for all activity conducted under their account.</li>
-                        <li>Any unauthorized distribution of internal group data will result in immediate expulsion and potential legal action.</li>
-                    </ul>
-                </section>
+                <h2 class="font-ui text-2xl font-bold text-slate-900 mb-4 mt-10 tracking-tight">3. Clean Funds & Anti-Money Laundering (AML)</h2>
+                <p>
+                    We have a zero-tolerance policy for dirty money. B&M Group does not associate with, facilitate, or hide funds generated from illegal activities, fraud, corruption, or money laundering schemes.
+                </p>
+                <ul class="list-disc pl-6 mb-6">
+                    <li>All money deposited into the B&M Group system <strong>must</strong> come from clean, legal, and verifiable sources.</li>
+                    <li>If the administrators suspect that any member is using the group to clean illegal money, that member's account will be immediately frozen.</li>
+                    <li>We reserve the right to expel any member involved in financial crimes and cooperate fully with local authorities if necessary.</li>
+                </ul>
 
-                <section>
-                    <h2 class="text-xl font-bold text-slate-900 mb-3">6. Exit & Termination</h2>
-                    <p>Members may exit the group voluntarily by providing the formal notice period required by the Constitution. Upon exit, a member's net savings (total savings plus dividends, minus any outstanding loans, penalties, or guarantor liabilities) will be disbursed according to the group's liquidity schedule. Management reserves the right to expel any member for constitutional violations.</p>
-                </section>
+                <h2 class="font-ui text-2xl font-bold text-slate-900 mb-4 mt-10 tracking-tight">4. Financial Discipline & Penalties</h2>
+                <p>
+                    Our system is built on facts and math, not emotions. To protect the group's money, strict discipline is enforced automatically by the portal.
+                </p>
+                <ul class="list-disc pl-6 mb-6">
+                    <li><strong>Monthly Savings:</strong> All agreed-upon savings must be deposited and recorded in the portal by the given deadlines.</li>
+                    <li><strong>No Excuses:</strong> The system will automatically apply late fees (e.g., KSH 10 extra per day late) if you miss your target. The system does not accept excuses for late payments.</li>
+                </ul>
 
-                <section>
-                    <h2 class="text-xl font-bold text-slate-900 mb-3">7. Governing Law</h2>
-                    <p>These terms and the operations of the B&M Group shall be governed by and construed in accordance with the laws of the Republic of Kenya. Any disputes arising from these terms will first be subjected to internal arbitration as dictated by the group's management committee.</p>
-                </section>
+                <h2 class="font-ui text-2xl font-bold text-slate-900 mb-4 mt-10 tracking-tight">5. Borrowing, Credit, & Defaulting</h2>
+                <p>
+                    Access to group funds is a privilege earned through consistent saving and a high system trust score.
+                </p>
+                <ul class="list-disc pl-6 mb-6">
+                    <li><strong>Borrowing Limits:</strong> You may borrow up to two times (2x) your total savings, provided the group has enough available liquidity.</li>
+                    <li><strong>Fixed Interest:</strong> All loans carry a flat 15% system fee.</li>
+                    <li><strong>Default Consequences:</strong> If you fail to repay your loan, late penalties of KSH 5 per day will accumulate. If you default entirely, your accumulated savings will be seized to clear the debt. If your debt exceeds your savings, your guarantors will be forced to pay the remaining balance.</li>
+                </ul>
 
-                <section class="bg-blue-50 p-6 rounded-lg border border-blue-100 mt-8">
-                    <h3 class="text-lg font-bold text-blue-900 mb-2">Need Clarification?</h3>
-                    <p class="text-blue-800 text-sm">For detailed operational mechanics, exact penalty figures, and dividend calculation structures, please refer to the official PDF Constitution provided upon your induction into the group.</p>
-                </section>
+                <h2 class="font-ui text-2xl font-bold text-slate-900 mb-4 mt-10 tracking-tight">6. Privacy & Security</h2>
+                <p>
+                    The online portal contains highly confidential financial data. You must keep your login details secure. 
+                </p>
+                <p>
+                    You are not allowed to screenshot, share, or expose internal group ledgers, member balances, or loan data to anyone outside the group. Any breach of privacy will result in immediate expulsion.
+                </p>
+
+                <h2 class="font-ui text-2xl font-bold text-slate-900 mb-4 mt-10 tracking-tight">7. Leaving the Group</h2>
+                <p>
+                    You are free to leave the group at any time by submitting a formal exit request through the portal. 
+                </p>
+                <p>
+                    However, <strong>you cannot exit if you have an active loan.</strong> All your debts must be fully cleared first. Once cleared, your total savings (plus any earned dividends) will be returned to you according to the group's cash-flow schedule.
+                </p>
+
+                <div class="section-divider"></div>
+
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-8 mt-10 font-ui">
+                    <h3 class="text-xl font-bold text-slate-900 mb-3 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+                        Inquiries & Contact
+                    </h3>
+                    <p class="text-sm text-slate-600 mb-4">
+                        While we are a closed, private association, our administration is completely transparent with our members and invited guests. If you have questions about our policies, need to report an issue, or wish to make a formal inquiry regarding membership requirements, we are open to speaking with you.
+                    </p>
+                    <p class="text-sm font-semibold text-slate-800">
+                        Current members should use the "Support & Grievances" form directly inside the web portal. External inquiries can be directed to the following contact channels: Email: <a href="mailto:info@bmgroup.com" class="text-blue-600 hover:underline">info@bmgroup.com</a>
+                    </p>
+                </div>
 
             </div>
-        </div>
+        </article>
     </main>
 
-    <footer class="bg-slate-950 text-slate-400 py-8 border-t border-slate-900 mt-12">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm">
-            &copy; 2026 B&M Group. All rights reserved. Strictly Private.
+    <footer class="bg-slate-950 text-slate-400 py-12 border-t border-slate-900 font-ui">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-slate-800 text-slate-300 rounded flex items-center justify-center font-bold text-xs">
+                    B&M
+                </div>
+                <span class="text-sm font-medium tracking-wide">&copy; 2026 B&M Group.</span>
+            </div>
+            <div class="text-sm text-slate-500 font-medium tracking-wide">
+                Strictly Private. All Rights Reserved.
+            </div>
         </div>
     </footer>
 

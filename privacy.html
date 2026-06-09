@@ -1,105 +1,162 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Privacy Policy | B&M Group</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        /* UI Elements use Inter, Reading Text uses Lora (Book Serif) */
+        .font-ui { font-family: 'Inter', sans-serif; }
+        .font-reading { font-family: 'Lora', serif; }
+        
+        .glass-nav {
+            background-color: rgba(226, 232, 240, 0.90);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cpolygon points='0,0 100,50 0,100' fill='%2394a3b8' opacity='0.12'/%3E%3Cpolygon points='200,0 100,50 200,100' fill='%2394a3b8' opacity='0.08'/%3E%3Cpolygon points='100,50 200,100 100,150 0,100' fill='%2364748b' opacity='0.04'/%3E%3Cpolygon points='0,200 100,150 0,100' fill='%2394a3b8' opacity='0.12'/%3E%3Cpolygon points='200,200 100,150 200,100' fill='%2394a3b8' opacity='0.08'/%3E%3C/svg%3E");
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        /* Elegant paragraph styling for book feel */
+        .prose-reading p {
+            margin-bottom: 1.5rem;
+            line-height: 1.8;
+            color: #334155; /* slate-700 */
+        }
+        
+        .prose-reading li {
+            margin-bottom: 0.75rem;
+            line-height: 1.7;
+            color: #334155;
+        }
+
+        /* Subtle section divider */
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #cbd5e1, transparent);
+            margin: 3rem 0;
+        }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased selection:bg-blue-200 selection:text-blue-900">
+<body class="bg-[#F8FAFC] text-slate-800 antialiased selection:bg-blue-200 selection:text-blue-900 font-ui">
 
-    <nav class="bg-slate-900 border-b border-slate-800 shadow-sm sticky top-0 z-50">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16 items-center">
-                <a href="index.html" class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
-                    <div class="flex-shrink-0 flex items-center gap-3 cursor-pointer group" onclick="window.scrollTo(0,0)">
-                    <img src="bm_group_logo.png" alt="B&M Group Logo" class="h-10 w-auto object-contain" id="navLogo" onerror="this.style.display='none'; document.getElementById('logoFallback').style.display='flex'">
-                    
-                    <div id="logoFallback" class="hidden w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-md group-hover:shadow-blue-500/30 transition-all duration-300">
+    <nav class="fixed w-full z-50 glass-nav border-b border-slate-300 shadow-sm transition-all duration-300" id="navbar">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20 items-center">
+                
+                <div class="flex-shrink-0 flex items-center gap-3 cursor-pointer group" onclick="window.location.href='index.html'">
+                    <div class="hidden w-10 h-10 bg-blue-900 text-white rounded-xl flex items-center justify-center font-black text-sm shadow-md">
                         B&M
                     </div>
-                    <span class=" hidden font-bold text-xl md:text-2xl tracking-tight text-slate-900 group-hover:text-blue-700 transition-colors">Group</span>
+                    <span class="font-bold text-xl md:text-2xl tracking-tight text-slate-900 group-hover:text-blue-700 transition-colors hidden sm:block">B&M Group</span>
                 </div>
-               
-                </a>
-                <a href="index.html" class="text-sm font-medium text-slate-300 hover:text-white transition-colors">
-                    Back to Home
-                </a>
+                
+                <div class="flex items-center gap-4">
+                    <a href="index.html" class="flex items-center gap-2 bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-slate-50 hover:text-blue-600 transition-all shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                        Back to Home
+                    </a>
+                </div>
             </div>
         </div>
     </nav>
 
-    <main class="py-16 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        <div class="bg-white p-8 md:p-12 rounded-2xl shadow-sm border border-slate-200">
-            <div class="mb-10 border-b border-slate-100 pb-8">
-                <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">Privacy Policy</h1>
-                <p class="text-slate-500">Effective Date: March 2026 | Last Updated: March 2026</p>
-            </div>
+    <main class="pt-32 pb-24 px-4 sm:px-6 lg:px-8">
+        <article class="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden">
+            
+            <header class="bg-slate-900 text-white px-8 py-12 md:px-16 md:py-16 text-center relative overflow-hidden">
+                <div class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.05\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
+                <div class="relative z-10">
+                    <span class="text-blue-400 font-bold tracking-widest uppercase text-xs mb-4 block">Data Security & Confidentiality</span>
+                    <h1 class="text-3xl md:text-5xl font-black tracking-tight mb-4">Privacy Policy</h1>
+                    <p class="text-slate-400 font-medium text-sm">Effective Date: June 2026 | Location: Juja, Kenya</p>
+                </div>
+            </header>
 
-            <div class="space-y-8 text-slate-600 leading-relaxed">
+            <div class="px-8 py-12 md:px-16 md:py-14 font-reading prose-reading text-lg">
                 
-                <section>
-                    <h2 class="text-xl font-bold text-slate-900 mb-3">1. Introduction</h2>
-                    <p>At B&M Group, trust and absolute transparency are the foundations of our financial ecosystem. This Privacy Policy explains how we collect, use, protect, and handle your personal and financial information when you use our member portal and participate in the group's activities. As a strictly private association, we prioritize the confidentiality of our members' capital.</p>
-                </section>
+                <p class="text-xl leading-relaxed text-slate-800 font-medium mb-8">
+                    At B&M Group, absolute transparency internally and strict confidentiality externally are the foundations of our financial ecosystem. This Privacy Policy explains exactly how we collect, use, and protect your data when you participate in the group. As an invite-only association, protecting our members' information is a critical security mandate.
+                </p>
 
-                <section>
-                    <h2 class="text-xl font-bold text-slate-900 mb-3">2. Information We Collect</h2>
-                    <p>To maintain an accurate ledger and ensure the security of group funds, we collect the following data upon your admission and throughout your membership:</p>
-                    <ul class="list-disc pl-5 space-y-2 mt-2">
-                        <li><strong>Identity Verification:</strong> Full legal name, National ID/Passport number, and secure login credentials.</li>
-                        <li><strong>Contact Information:</strong> Active email addresses and mobile phone numbers.</li>
-                        <li><strong>Financial Data:</strong> Transaction histories, M-Pesa/bank account details used for deposits and disbursements, loan application details, and dividend accruals.</li>
-                    </ul>
-                </section>
+                <div class="section-divider"></div>
 
-                <section>
-                    <h2 class="text-xl font-bold text-slate-900 mb-3">3. How We Use Your Data</h2>
-                    <p>We operate with a "Zero Emotion" policy, meaning your data is used strictly for objective financial administration. We use your information to:</p>
-                    <ul class="list-disc pl-5 space-y-2 mt-2">
-                        <li>Maintain your personal financial ledger and track weekly/monthly contributions.</li>
-                        <li>Process loan applications, assess borrowing eligibility, and calculate compounding interest.</li>
-                        <li>Distribute annual dividends based on your precise contribution weight.</li>
-                        <li>Enforce administrative penalties for late submissions or defaults.</li>
-                    </ul>
-                </section>
+                <h2 class="font-ui text-2xl font-bold text-slate-900 mb-4 tracking-tight">1. Information We Collect</h2>
+                <p>
+                    To maintain a flawless ledger and ensure the security of group funds, we collect the following data upon your admission and throughout your active membership:
+                </p>
+                <ul class="list-disc pl-6 mb-6">
+                    <li><strong>Identity Verification:</strong> Full legal name, National ID/Passport number, and secure portal login credentials.</li>
+                    <li><strong>Contact Information:</strong> Active email addresses and primary mobile phone numbers.</li>
+                    <li><strong>Financial Data:</strong> Transaction histories, M-Pesa details used for deposits and disbursements, precise loan application parameters, and individual dividend accruals.</li>
+                </ul>
 
-                <section>
-                    <h2 class="text-xl font-bold text-slate-900 mb-3">4. Data Visibility & Guarantors</h2>
-                    <p>B&M Group does <strong>not</strong> sell, rent, or trade your personal information to any third parties or marketing agencies. However, due to the nature of our collective capital risk, internal visibility rules apply:</p>
-                    <ul class="list-disc pl-5 space-y-2 mt-2">
-                        <li>Your total savings and loan status are accessible to the Management Committee (Chairperson, Treasurer, and Secretary) for operational purposes.</li>
-                        <li><strong>Guarantor Transparency:</strong> If you apply for a loan, your guarantors have the right to know your current financial standing within the group. In the event of a default, your full loan profile and penalty status will be disclosed to your guarantors as they assume the financial liability.</li>
-                    </ul>
-                </section>
+                <h2 class="font-ui text-2xl font-bold text-slate-900 mb-4 mt-10 tracking-tight">2. How We Use Your Data</h2>
+                <p>
+                    We operate with a "Zero Emotion" administrative framework. Your data is never analyzed for marketing; it is utilized strictly for objective financial management. Your information is used to:
+                </p>
+                <ul class="list-disc pl-6 mb-6">
+                    <li>Maintain your personal financial ledger and automatically audit your weekly/monthly contributions.</li>
+                    <li>Process incoming loan applications, execute borrowing eligibility algorithms, and calculate compounding interest or daily penalties.</li>
+                    <li>Distribute annual dividends based on your precise historical contribution weight.</li>
+                    <li>Enforce systemic administrative actions when deadlines are missed.</li>
+                </ul>
 
-                <section>
-                    <h2 class="text-xl font-bold text-slate-900 mb-3">5. Data Security</h2>
-                    <p>We implement strict digital security measures to protect your data within the member portal. Passwords are encrypted, and access to the master ledger is heavily restricted. Members are required to keep their portal access credentials strictly confidential. Management will never ask for your portal password.</p>
-                </section>
+                <h2 class="font-ui text-2xl font-bold text-slate-900 mb-4 mt-10 tracking-tight">3. Data Visibility & Guarantors</h2>
+                <p>
+                    B&M Group does <strong>not</strong> sell, rent, or trade your personal information to any third parties, brokers, or marketing agencies. However, due to the nature of our collective capital risk, strict internal visibility protocols apply:
+                </p>
+                <ul class="list-disc pl-6 mb-6">
+                    <li>Your overall savings total and active loan status are accessible to the Executive Administration for routine operational auditing and risk assessment.</li>
+                    <li><strong>Guarantor Transparency:</strong> If you apply for a credit facility, your selected guarantors have the absolute right to know your current financial standing within the group. In the event of a default, your full loan profile and penalty accumulation will be disclosed to your guarantors, as they assume the financial liability.</li>
+                </ul>
 
-                <section>
-                    <h2 class="text-xl font-bold text-slate-900 mb-3">6. Your Rights & Data Retention</h2>
-                    <p>You have the right to access your complete financial ledger 24/7 via the member portal. If you identify any discrepancies, you may formally request a ledger review from the Treasurer. Your data will be retained for the active duration of your membership. Upon formal exit from the B&M Group and the settling of all financial obligations, your data will be securely archived for historical record-keeping purposes as required by group policy.</p>
-                </section>
+                <h2 class="font-ui text-2xl font-bold text-slate-900 mb-4 mt-10 tracking-tight">4. Digital Security</h2>
+                <p>
+                    We implement modern digital security architecture to protect your data within the web portal. All passwords are encrypted, and database access to the master ledger is heavily restricted to executive oversight. Members are required to keep their portal access credentials strictly confidential. Management will never ask you for your portal password.
+                </p>
 
-                <section class="bg-blue-50 p-6 rounded-lg border border-blue-100 mt-8">
-                    <h3 class="text-lg font-bold text-blue-900 mb-2">Questions Regarding Your Data?</h3>
-                    <p class="text-blue-800 text-sm">If you have any questions about how your data is handled or need to update your contact information, please reach out directly to the B&M Group Secretary.</p>
-                </section>
+                <h2 class="font-ui text-2xl font-bold text-slate-900 mb-4 mt-10 tracking-tight">5. Your Rights & Data Retention</h2>
+                <p>
+                    You have the fundamental right to access your complete financial ledger 24/7 via your portal dashboard. If you identify any computational discrepancies, you may formally request a ledger review. 
+                </p>
+                <p>
+                    Your data will be retained for the entire active duration of your membership. Upon a formal, cleared exit from the B&M Group, your active portal profile will be deactivated, and core ledger transactions will be securely archived for historical auditing purposes.
+                </p>
+
+                <div class="section-divider"></div>
+
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-8 mt-10 font-ui">
+                    <h3 class="text-xl font-bold text-slate-900 mb-3 flex items-center gap-2">
+                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        Questions Regarding Your Data?
+                    </h3>
+                    <p class="text-sm text-slate-600 mb-4">
+                        We take the privacy of our ecosystem incredibly seriously. If you have any questions about how your digital footprint is handled, or if you need to update critical contact and financial information, please contact us.
+                    </p>
+                    <p class="text-sm font-semibold text-slate-800">
+                        For existing members, please reach out directly to the Executive Administrators (Brian or Maximilla). External inquiries can be directed to the following contact channels: Email: <a href="mailto:info@bmgroup.com" class="text-blue-600 hover:underline">info@bmgroup.com</a>
+                    </p>
+                </div>
 
             </div>
-        </div>
+        </article>
     </main>
 
-    <footer class="bg-slate-950 text-slate-400 py-8 border-t border-slate-900 mt-12">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm">
-            &copy; 2026 B&M Group. All rights reserved. Strictly Private.
+    <footer class="bg-slate-950 text-slate-400 py-12 border-t border-slate-900 font-ui">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex items-center gap-3">
+                <div class="hidden w-8 h-8 bg-slate-800 text-slate-300 rounded flex items-center justify-center font-bold text-xs">
+                    B&M
+                </div>
+                <span class="text-sm font-medium tracking-wide">&copy; 2026 B&M Group.</span>
+            </div>
+            <div class="text-sm text-slate-500 font-medium tracking-wide">
+                Strictly Private. All Rights Reserved.
+            </div>
         </div>
     </footer>
 

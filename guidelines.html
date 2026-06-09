@@ -5,83 +5,170 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>B&M Group - Financial Guidelines</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+        .ios-shadow { box-shadow: 0 4px 24px -6px rgba(0, 0, 0, 0.04); }
+        
+        /* Matching the system-wide portal theme */
+        .nav-darker-polygon {
+            background-color: rgba(226, 232, 240, 0.90);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cpolygon points='0,0 100,50 0,100' fill='%2394a3b8' opacity='0.12'/%3E%3Cpolygon points='200,0 100,50 200,100' fill='%2394a3b8' opacity='0.08'/%3E%3Cpolygon points='100,50 200,100 100,150 0,100' fill='%2364748b' opacity='0.04'/%3E%3Cpolygon points='0,200 100,150 0,100' fill='%2394a3b8' opacity='0.12'/%3E%3Cpolygon points='200,200 100,150 200,100' fill='%2394a3b8' opacity='0.08'/%3E%3C/svg%3E");
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+    </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="bg-[#F5F5F7] text-slate-800 antialiased min-h-screen flex flex-col">
 
-    <nav class="bg-blue-900 text-white p-4 flex justify-between items-center shadow-md sticky top-0 z-50">
-        <div class="text-xl font-bold flex items-center gap-2">
-            <div class="hidden w-6 h-6 bg-white text-blue-900 rounded flex items-center justify-center font-bold text-xs"></div>
-            B&M Guidelines
+    <nav class="nav-darker-polygon h-20 px-6 md:px-10 flex justify-between items-center sticky top-0 z-50 border-b border-slate-300 shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="hidden w-10 h-10 bg-blue-900 text-white rounded-xl flex items-center justify-center font-black text-sm shadow-md">
+                B&M
+            </div>
+            <h1 class="text-xl font-bold text-slate-800 tracking-tight hidden sm:block">Group Guidelines</h1>
         </div>
-        <div class="hidden items-center space-x-4">
-            <a href="member.html" class="bg-slate-800 px-4 py-2 rounded text-sm hover:bg-slate-700 transition font-medium">&larr; Back to Portal</a>
+        <div>
+            <a href="member.html" class="flex items-center gap-2 bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-slate-50 hover:text-blue-600 transition-all shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                Back to Portal
+            </a>
         </div>
     </nav>
 
-    <main class="max-w-4xl mx-auto p-6 mt-6 space-y-8">
+    <main class="max-w-3xl mx-auto w-full p-4 md:p-8 mt-4 space-y-6 flex-grow">
         
-        <section class="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-            <h1 class="text-2xl font-bold text-gray-900 mb-4 border-b pb-2">1. Why we use clear rules</h1>
-            <p class="text-gray-600 leading-relaxed mb-4">
-                B&M Group uses simple payment rules to avoid arguments. Late payments can cause unfair treatment and stress.
+        <div class="mb-8 text-center sm:text-left">
+            <h2 class="text-3xl font-black text-slate-900 tracking-tight">Rules & Discipline</h2>
+            <p class="text-slate-500 font-medium mt-2">Clear rules protect everyone's money. Read carefully.</p>
+        </div>
+        
+        <section class="bg-white p-6 md:p-8 rounded-[4px] ios-shadow border border-slate-200">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path></svg>
+                </div>
+                <h2 class="text-xl font-bold text-slate-900 tracking-tight">1. Why Rules Matter</h2>
+            </div>
+            <p class="text-slate-600 font-medium leading-relaxed mb-4">
+                B&M Group uses strict rules to prevent arguments and keep things fair. Late payments delay group progress and cause unnecessary stress.
             </p>
-            <p class="text-gray-600 leading-relaxed">
-                The portal records payments and checks them. It does not accept excuses. This keeps the group fair and protects the money. <strong>Discipline before access.</strong>
+            <p class="text-slate-600 font-medium leading-relaxed">
+                Our system records all transactions automatically. It does not accept excuses. 
+                <span class="text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded">Discipline comes before access.</span>
             </p>
         </section>
 
-        <section class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-blue-500">
-            <h2 class="text-xl font-bold text-gray-900 mb-4">2. Payment rules</h2>
-            <div class="space-y-4 text-gray-600">
-                <p>Each member must pay <strong>KSH 70 per week</strong>, plus KSH 10 for each extra day in the month. You must pay and report the payment.</p>
-                <ol class="list-decimal list-inside space-y-2 ml-4 font-medium text-gray-700">
-                    <li>Send money to the official B&M Bank/M-Pesa account.</li>
-                    <li>Open the Member Portal right away.</li>
-                    <li>Type the exact amount and the M-Pesa transaction code.</li>
-                    <li>Send it to Admin for checking.</li>
-                </ol>
-                <div class="bg-blue-50 p-4 rounded-md mt-4 text-sm text-blue-800 border border-blue-100">
-                    <strong>The system check:</strong> The portal checks your account on the 7th and 21st of each month. If you are behind, it sends a warning.
+        <section class="bg-white p-6 md:p-8 rounded-[4px] ios-shadow border-t-4 border-t-emerald-500 border-x border-b border-slate-200 relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-4 opacity-10">
+                <svg class="w-24 h-24 text-emerald-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+            </div>
+            <div class="flex items-center gap-3 mb-6 relative z-10">
+                <div class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h2 class="text-xl font-bold text-slate-900 tracking-tight">2. How to Pay Savings</h2>
+            </div>
+            
+            <div class="space-y-5 text-slate-600 font-medium relative z-10">
+                <p class="text-lg text-slate-800">
+                    Target: <strong class="text-emerald-600">KSH 70 per week</strong>. <br>
+                    <span class="text-sm text-slate-500">(Plus KSH 10 for any extra days in long months).</span>
+                </p>
+                
+                <div class="bg-slate-50 p-5 rounded-xl border border-slate-100">
+                    <ol class="list-decimal list-inside space-y-3 text-slate-700">
+                        <li>Send your cash to the B&M Bank account via paybill <strong>542542</strong> and account number <strong>04807764506150</strong>.</li>
+                        <li>Open your Member Portal immediately.</li>
+                        <li>Enter the exact amount and M-Pesa code into the deposit form.</li>
+                        <li>Click submit. The system will verify and update your balance instantly.</li>
+                    </ol>
+                </div>
+
+                <div class="bg-amber-50 p-4 rounded-xl text-sm text-amber-800 border border-amber-200 flex gap-3 items-start">
+                    <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    <div>
+                        <strong>System Checks:</strong> The portal runs automated audits on the 7th and 21st of each month. If you are behind schedule, your account will be flagged.
+                    </div>
                 </div>
             </div>
         </section>
 
-        <section class="bg-white p-8 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-amber-500">
-            <h2 class="text-xl font-bold text-gray-900 mb-4">3. Backup reporting</h2>
-            <p class="text-gray-600 mb-4">
-                If you paid but cannot use the portal, use offline reporting. This keeps you from getting penalties.
+        <section class="bg-white p-6 md:p-8 rounded-[4px] ios-shadow border-t-4 border-t-blue-500 border-x border-b border-slate-200">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+                </div>
+                <h2 class="text-xl font-bold text-slate-900 tracking-tight">3. Offline Backup Reporting</h2>
+            </div>
+            
+            <p class="text-slate-600 font-medium mb-5">
+                If the portal is down or you have no internet, you must still report your payment to avoid late penalties.
             </p>
             
-            <div class="bg-amber-50 p-5 rounded-lg border border-amber-200 mb-4">
-                <h3 class="font-bold text-amber-900 mb-2">Offline SMS/WhatsApp format</h3>
-                <p class="text-sm text-amber-800 mb-3">Send this exact message to an Executive Admin (Brian or Maximilla):</p>
-                <div class="bg-white p-3 rounded border border-amber-300 font-mono text-sm text-gray-800 shadow-inner">
+            <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 mb-4 shadow-inner">
+                <h3 class="font-bold text-slate-300 mb-3 text-xs uppercase tracking-wider">SMS / WhatsApp Format</h3>
+                <p class="text-sm text-slate-400 mb-3">Send this exactly to Brian or Maximilla:</p>
+                <div class="bg-[#0f172a] p-4 rounded-lg font-mono text-sm text-emerald-400 border border-slate-700 leading-relaxed">
                     B&M PAYMENT REPORT<br>
                     Name: [Your Name]<br>
                     Amount: [KSH Amount]<br>
                     M-Pesa Code: [e.g., SGH1234567]
                 </div>
             </div>
-
-            <p class="text-sm text-gray-500 italic">
-                * The Admin will check the code and add the payment to your account. This stops the warning.
+            <p class="text-xs text-slate-500 font-medium">
+                * An Admin will manually verify the code and credit your account to stop the system from issuing a warning.
             </p>
         </section>
 
-        <section class="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-            <h2 class="text-xl font-bold text-gray-900 mb-4">4. Loans and leaving the group</h2>
-            <ul class="list-disc list-inside space-y-3 text-gray-600">
-                <li><strong class="text-gray-800">Borrowing limit:</strong> Members can borrow up to twice their savings if they have at least KSH 500.</li>
-                <li><strong class="text-gray-800">Interest:</strong> All loans have a flat 15% fee.</li>
-                <li><strong class="text-gray-800">Leaving:</strong> To leave the group, submit an application through the portal. No exits if you have an unpaid loan.</li>
-            </ul>
+        <section class="bg-white p-6 md:p-8 rounded-[4px] ios-shadow border-t-4 border-t-rose-500 border-x border-b border-slate-200">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center text-rose-600 shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                </div>
+                <h2 class="text-xl font-bold text-slate-900 tracking-tight">4. Loans & Exits</h2>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="flex items-start gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <div class="bg-white p-2 rounded shadow-sm border border-slate-200 mt-0.5">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-800">Borrowing Limit</h3>
+                        <p class="text-sm text-slate-600 font-medium mt-1">You can borrow up to twice your total savings. You must have saved at least <strong>KSH 500</strong> to unlock the credit facility.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <div class="bg-white p-2 rounded shadow-sm border border-slate-200 mt-0.5">
+                        <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z"></path></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-800">Fixed Interest</h3>
+                        <p class="text-sm text-slate-600 font-medium mt-1">All loans carry a flat <strong>15% system fee</strong>. Late repayments will result in daily penalties and a drop in your trust score.</p>
+                    </div>
+                </div>
+
+                <div class="flex items-start gap-4 p-4 bg-rose-50 rounded-xl border border-rose-100">
+                    <div class="bg-white p-2 rounded shadow-sm border border-rose-200 mt-0.5">
+                        <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-rose-900">Leaving the Group</h3>
+                        <p class="text-sm text-rose-700 font-medium mt-1">Submit a formal exit application through the portal. <strong>You cannot exit if you have an active loan.</strong> All debts must be fully cleared first.</p>
+                    </div>
+                </div>
+            </div>
         </section>
 
     </main>
 
-    <footer class="text-center text-sm text-gray-400 mt-12 mb-6">
-        &copy; 2026 B&M Group. Strict Financial Discipline.
+    <footer class="text-center py-8 mt-auto border-t border-slate-200 bg-white">
+        <p class="text-sm text-slate-400 font-bold tracking-wider uppercase">
+            &copy; 2026 B&M Group. Strict Financial Discipline.
+        </p>
     </footer>
 </body>
 </html>

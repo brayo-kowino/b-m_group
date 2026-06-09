@@ -14,6 +14,16 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
+// --- Helper: Format Phone Number for Daraja ---
+function formatPhoneNumber(phone) {
+    let formatted = phone.trim().replace(/\s+/g, '');
+    if (formatted.startsWith('+')) formatted = formatted.substring(1);
+    if (formatted.startsWith('07') || formatted.startsWith('01')) {
+        formatted = '254' + formatted.substring(1);
+    }
+    return formatted;
+}
+
 // Put this inside your initialization logic in member.js
 const statsRef = doc(db, "groupStats", "main");
 
@@ -99,7 +109,7 @@ function triggerDangerZone(isDanger) {
     }
 }
 
-// --- Upgraded Load Personal Loan Requests (With Penalty Math) ---
+// --- Upgraded Load Personal Loan Requests (With Detailed Financials & Penalty Math) ---
 async function loadMyLoans(uid) {
     const container = document.getElementById('myLoansList');
     const lipaSelect = document.getElementById('lipaLoanSelect');
@@ -115,10 +125,12 @@ async function loadMyLoans(uid) {
         if (snapshot.empty) {
             container.innerHTML = '<div class="text-sm text-slate-500 text-center bg-slate-50 p-3 rounded border border-slate-100">No loan history found.</div>';
             if (lipaSelect) lipaSelect.innerHTML = '<option value="">No active loans</option>';
+            triggerDangerZone(false); // Ensure danger zone is off if empty
             return;
         }
 
-        let isAnyOverdue = false;
+        // We only trigger the red banner if there is an UNFROZEN overdue loan
+        let hasActiveDailyPenalty = false;
 
         snapshot.forEach((docSnap) => {
             const loan = docSnap.data();
@@ -129,8 +141,10 @@ async function loadMyLoans(uid) {
             let extraInfo = '';
             let timeInfo = `<span>${loan.durationWeeks} Weeks</span>`;
             let penaltyAmount = 0;
+            
+            const paidSoFar = loan.amountPaidSoFar || 0;
 
-// === DATE & DUE TRACKING LOGIC ===
+            // === DATE & DUE TRACKING LOGIC ===
             if (loan.status === 'approved') {
                 const startDate = loan.approvedAt ? loan.approvedAt.toDate() : loan.createdAt.toDate();
                 const dueDate = new Date(startDate.getTime() + loan.durationWeeks * 7 * 24 * 60 * 60 * 1000);
@@ -140,14 +154,16 @@ async function loadMyLoans(uid) {
                 const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
 
                 if (daysRemaining < 0) {
-                    isAnyOverdue = true;
                     const daysLate = Math.abs(daysRemaining);
                     
                     if (loan.penaltyFrozen) {
+                        // User paid the interest, penalty is stopped. Do NOT trigger danger zone.
                         penaltyAmount = loan.frozenPenaltyAmount || 0;
                         statusBadge = '<span class="bg-rose-100 text-rose-700 border border-rose-300 px-2 py-0.5 rounded text-[10px] font-bold uppercase">PENALTY FROZEN</span>';
                         timeInfo = `<span class="text-rose-600 font-bold">${daysLate} Days Late (Frozen)</span>`;
                     } else {
+                        // Penalty is active and accumulating!
+                        hasActiveDailyPenalty = true; 
                         penaltyAmount = daysLate * 5;
                         statusBadge = '<span class="bg-red-600 text-white border border-red-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase animate-pulse">OVERDUE</span>';
                         timeInfo = `<span class="text-red-600 font-bold">${daysLate} Days Late!</span>`;
@@ -161,41 +177,63 @@ async function loadMyLoans(uid) {
                     timeInfo = `<span class="text-blue-600">${daysRemaining} Days Left</span>`;
                 }
 
-                // === MERGED INTEREST & PENALTY MATH ===
+                // === MERGED FINANCIAL MATH ===
                 const effectiveInterest = loan.interest + penaltyAmount; 
-                const totalDue = loan.amount + effectiveInterest; // Principal + New Combined Interest
-                const balance = totalDue - (loan.amountPaidSoFar || 0);
+                const totalDue = loan.amount + effectiveInterest; 
+                const balance = totalDue - paidSoFar;
 
-               // Populate Lipa Mdogo Dropdown
+                // Populate Lipa Mdogo Dropdown
                 if (lipaSelect) {
                     let dropdownText = `KSH ${loan.amount} Loan (Bal: KSH ${balance})`;
                     if (daysRemaining < 0 && !loan.penaltyFrozen) {
                         dropdownText += ` - OVERDUE! New Int: KSH ${effectiveInterest}`;
                     }
-                    // We add data-interest and data-balance so JS can read them later
                     lipaSelect.innerHTML += `<option value="${loanId}" data-interest="${effectiveInterest}" data-balance="${balance}">${dropdownText}</option>`;
                 }
 
-                // Show the merged effective interest clearly to the user
+                // Show the complete breakdown to the user
                 extraInfo = `
-                    <div class="text-xs text-slate-600 font-medium">Principal: KSH ${loan.amount}</div>
-                    <div class="text-xs font-bold ${penaltyAmount > 0 ? 'text-red-600' : 'text-slate-600'}">
-                        Interest & Fees: KSH ${effectiveInterest} 
-                        ${penaltyAmount > 0 ? `<span class="text-[10px] font-medium text-red-500">(Orig: ${loan.interest} + ${penaltyAmount} penalty)</span>` : ''}
+                    <div class="mt-2 space-y-1 bg-slate-50 p-2.5 rounded border border-slate-100">
+                        <div class="flex justify-between text-xs text-slate-600">
+                            <span>Principal:</span> <span class="font-medium">KSH ${loan.amount}</span>
+                        </div>
+                        <div class="flex justify-between text-xs ${penaltyAmount > 0 ? 'text-red-600 font-bold' : 'text-slate-600'}">
+                            <span>Interest & Fees:</span> 
+                            <span>KSH ${effectiveInterest} ${penaltyAmount > 0 ? `<span class="text-[9px] font-medium text-red-500 ml-1">(Inc. KSH ${penaltyAmount} late fee)</span>` : ''}</span>
+                        </div>
+                        <div class="flex justify-between text-xs text-slate-700 pt-1 border-t border-slate-200 mt-1">
+                            <span>Total Expected:</span> <span class="font-bold">KSH ${totalDue}</span>
+                        </div>
+                        <div class="flex justify-between text-xs text-emerald-600">
+                            <span>Paid so far:</span> <span class="font-bold">KSH ${paidSoFar}</span>
+                        </div>
+                        <div class="flex justify-between text-sm pt-1.5 border-t border-slate-200 mt-1 ${balance > 0 ? 'text-rose-600' : 'text-emerald-600'}">
+                            <span class="font-bold">Remaining Balance:</span> <span class="font-black">KSH ${balance}</span>
+                        </div>
                     </div>
                 `;
 
             } else if (loan.status === 'pending') {
-            
                 statusBadge = '<span class="bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">Pending Review</span>';
-                extraInfo = `<div class="text-xs text-slate-600 font-medium">Total Repayment: KSH ${loan.repayment}</div>`;
+                extraInfo = `<div class="mt-2 text-xs text-slate-600 font-medium bg-slate-50 p-2 rounded border border-slate-100">Total Expected Repayment: KSH ${loan.repayment}</div>`;
             } else if (loan.status === 'repaid') {
                 statusBadge = '<span class="bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">Cleared</span>';
-                extraInfo = `<div class="text-xs text-slate-600 font-medium">Total Repayment: KSH ${loan.repayment}</div>`;
+                extraInfo = `
+                    <div class="mt-2 space-y-1 bg-green-50 p-2.5 rounded border border-green-100 text-green-800">
+                        <div class="flex justify-between text-xs"><span>Total Repaid:</span> <span class="font-bold">KSH ${loan.amountPaidSoFar || loan.repayment}</span></div>
+                        <div class="text-[10px] font-medium text-green-600 mt-1">Loan successfully closed.</div>
+                    </div>
+                `;
             }
 
-            // Build UI Card
-            const cardClass = isAnyOverdue && loan.status === 'approved' && !loan.penaltyFrozen ? 'border-red-300 bg-red-50' : 'border-slate-200 bg-white';
+            // Build UI Card - dynamically style based on severity
+            let cardClass = 'border-slate-200 bg-white';
+            if (loan.status === 'approved') {
+                if (hasActiveDailyPenalty && !loan.penaltyFrozen) cardClass = 'border-red-300 bg-red-50';
+                else if (loan.penaltyFrozen) cardClass = 'border-rose-200 bg-rose-50/40';
+            } else if (loan.status === 'repaid') {
+                cardClass = 'border-green-200 bg-green-50/30 opacity-80'; 
+            }
             
             const card = document.createElement('div');
             card.className = `border rounded-md p-3 shadow-sm transition hover:shadow-md mb-3 ${cardClass}`;
@@ -213,15 +251,14 @@ async function loadMyLoans(uid) {
             container.appendChild(card);
         });
 
-        // Fire the Danger Zone if needed
-        triggerDangerZone(isAnyOverdue);
+        // Fire the Danger Zone ONLY if there is an active, accumulating penalty
+        triggerDangerZone(hasActiveDailyPenalty);
 
     } catch (error) {
         console.error("Error loading personal loans:", error);
         container.innerHTML = '<div class="text-xs text-red-500 text-center p-2 bg-red-50 rounded">Failed to load requests. Please refresh.</div>';
     }
 }
-
 // --- Auto-Prefill Lipa Mdogo Amount ---
 const lipaLoanSelect = document.getElementById('lipaLoanSelect');
 const lipaIntent = document.getElementById('lipaIntent');
@@ -270,53 +307,56 @@ if (lipaForm) {
         const statusDiv = document.getElementById('lipaStatus');
         
         const loanId = document.getElementById('lipaLoanSelect').value;
-        const intent = document.getElementById('lipaIntent').value; // Get their intent
+        const intent = document.getElementById('lipaIntent').value; 
         const amount = Number(document.getElementById('lipaAmount').value);
-        const mpesaCode = document.getElementById('lipaCode').value.trim().toUpperCase();
+        const mpesaCode = document.getElementById('lipaMpesaCode').value.toUpperCase().trim();
 
         if (!loanId) {
             statusDiv.innerHTML = "Please select a valid active loan.";
-            statusDiv.className = "mt-3 text-sm font-medium rounded p-2 bg-red-50 text-red-600";
+            statusDiv.className = "mt-3 text-sm font-medium rounded p-2 bg-red-50 text-red-600 border border-red-200";
+            statusDiv.classList.remove('hidden');
+            return;
+        }
+
+        if (mpesaCode.length < 8) {
+            statusDiv.innerHTML = "Please enter a valid M-Pesa Reference Code.";
+            statusDiv.className = "mt-3 text-sm font-medium rounded p-2 bg-red-50 text-red-600 border border-red-200";
             statusDiv.classList.remove('hidden');
             return;
         }
 
         btn.disabled = true;
-        btn.textContent = "Processing...";
+        btn.textContent = "Submitting Code...";
 
         try {
-            const uniqueClaimId = `${auth.currentUser.uid}_install_${mpesaCode}`;
-
-            // Send to Admin with the explicit 'intent' attached
-            await setDoc(doc(db, "paymentClaims", uniqueClaimId), {
+            // Using the M-Pesa code as the Doc ID prevents duplicate submissions naturally
+            await setDoc(doc(db, "paymentClaims", mpesaCode), {
                 userId: auth.currentUser.uid,
-                loanId: loanId,
-                type: intent === 'freeze_penalty' ? "penalty_freeze_request" : "repayment", 
                 amount: amount,
                 mpesaCode: mpesaCode,
-                status: "pending", 
-                createdAt: serverTimestamp() 
+                type: intent === 'freeze_penalty' ? 'penalty_freeze_request' : 'repayment',
+                loanId: loanId,
+                status: 'pending',
+                createdAt: serverTimestamp()
             });
 
-            statusDiv.innerHTML = intent === 'freeze_penalty' 
-                ? `<strong>Request Sent!</strong> Receipt ${mpesaCode} sent. The Admin will verify your interest payment and freeze the KSH 5 daily penalty.`
-                : `<strong>Installment Logged!</strong> Receipt ${mpesaCode} sent. Your balance will update upon Admin verification.`;
-            
-            statusDiv.className = "mt-3 text-sm font-medium rounded p-2 bg-green-50 text-green-700";
+            statusDiv.innerHTML = `<strong>Submission Successful!</strong> Code ${mpesaCode} has been sent to the admins for verification. Your loan balance will update once approved.`;
+            statusDiv.className = "mt-3 text-sm font-medium rounded p-2 bg-green-50 text-green-700 border border-green-200";
             statusDiv.classList.remove('hidden');
-            
-            e.target.reset(); 
+            e.target.reset();
+
         } catch (error) {
             console.error("Installment submission error:", error);
-            statusDiv.innerHTML = "System error logging payment. Please try again.";
-            statusDiv.className = "mt-3 text-sm font-medium rounded p-2 bg-red-50 text-red-600";
+            statusDiv.innerHTML = "System error submitting code. Please check your connection and try again.";
+            statusDiv.className = "mt-3 text-sm font-medium rounded p-2 bg-red-50 text-red-600 border border-red-200";
             statusDiv.classList.remove('hidden');
         } finally {
             btn.disabled = false;
-            btn.textContent = "Submit Payment";
+            btn.textContent = "Process Repayment";
         }
     });
 }
+
 // --- 2. Grievance / Support Form (IMMUNIZED) ---
 document.getElementById('grievanceForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -582,385 +622,384 @@ async function renderContributionChart(uid) {
         console.error("Error rendering trend chart:", error);
     }
 }
+let userUnsubscribe = null;
+
 async function loadUserData(uid) {
     const userRef = doc(db, "users", uid);
-    const userSnap = await getDoc(userRef);
-    let globalData = null;
+    
+    // If there's already a listener running, stop it before starting a new one
+    if (userUnsubscribe) userUnsubscribe();
 
-    if (userSnap.exists()) {
-        currentUserData = userSnap.data();
-        
-        // 1. Basic UI Updates
-        document.getElementById('memberName').textContent = currentUserData.name;
-        document.getElementById('mySavings').textContent = `KSH ${currentUserData.savings}`;
-        
-        if (currentUserData.role === 'admin') {
-            document.getElementById('adminReturnBtn').classList.remove('hidden');
-        }
+    // The Magic Eavesdropper: This runs every single time the database changes!
+    userUnsubscribe = onSnapshot(userRef, async (userSnap) => {
+        let globalData = null;
 
-        // --- NEW: Fetch Global Stats for Liquidity ---
-        let maxGroupLoanable = 0;
-        let totalLentOut = 0;
-        let globalRemainingLiquidity = 0;
-        let totalGroupCapital = 0;
-
-        try {
-            const statsRef = doc(db, "groupStats", "main");
-            const statsSnap = await getDoc(statsRef);
-            if (statsSnap.exists()) {
-                globalData = statsSnap.data();
-                totalGroupCapital = globalData.capital || 0;
-                totalLentOut = globalData.totalLoans || 0;
-                maxGroupLoanable = totalGroupCapital * 0.70; 
-                globalRemainingLiquidity = Math.max(0, maxGroupLoanable - totalLentOut);
-
-                if (globalData.announcement) {
-                    document.getElementById('alertMessage').textContent = globalData.announcement;
-                    document.getElementById('systemAlert').classList.remove('hidden');
-                }
-            }
-        } catch(e) { console.error("Could not load global stats", e); }
-
-        const personalInfoBanner = document.getElementById('personalInfoBanner');
-        if (currentUserData.infoMessage) {
-            document.getElementById('infoMessageText').textContent = currentUserData.infoMessage;
-            personalInfoBanner.classList.remove('hidden');
-        } else {
-            if(personalInfoBanner) personalInfoBanner.classList.add('hidden');
-        }
-
-        await loadMyLedger(uid);
-        await loadMyLoans(uid);
-        await renderContributionChart(uid);
-
-        const now = new Date();
-        const currentYear = now.getFullYear();
-        const currentMonth = now.getMonth();
-        
-        const joinDateObj = currentUserData.createdAt ? currentUserData.createdAt.toDate() : new Date();
-        const diffInMonths = (currentYear - joinDateObj.getFullYear()) * 12 + (currentMonth - joinDateObj.getMonth());
-        const monthsActive = Math.max(1, diffInMonths);
-        
-        let remaining = currentUserData.savings || 0;
-        let unclearedPastMonths = [];
-        let timelineHTML = '';
-        
-        let currentMonthAllocated = 0;
-        let currentMonthTarget = 0;
-        let activeTargetMonthFound = false;
-        
-        let expectedTotalSoFar = 0; 
-
-        for (let i = 0; i <= currentMonth; i++) {
-            const daysInMonth = new Date(currentYear, i + 1, 0).getDate(); 
-            const target = (Math.floor(daysInMonth / 7) * 70) + ((daysInMonth % 7) * 10);
-            const monthName = new Date(currentYear, i, 1).toLocaleString('default', { month: 'long' });
-            const shortMonthName = new Date(currentYear, i, 1).toLocaleString('default', { month: 'short' });
+        if (userSnap.exists()) {
+            currentUserData = userSnap.data();
             
-            expectedTotalSoFar += target; 
-
-            let statusBadge = '';
-            let allocated = 0;
-
-            // 1. Calculate Allocation
-            if (remaining >= target) {
-                allocated = target;
-                remaining -= target;
-                statusBadge = `<span class="bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">Cleared</span>`;
-            } else {
-                allocated = remaining;
-                remaining = 0;
-                
-                if (i === currentMonth) {
-                    statusBadge = `<span class="bg-blue-100 text-blue-700 border border-blue-200 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">In Progress</span>`;
-                } else {
-                    statusBadge = `<span class="bg-rose-100 text-rose-700 border border-rose-200 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">Arrears</span>`;
-                    unclearedPastMonths.push(monthName);
-                }
-            }
-
-            // 2. Determine if this is the "Focus" Month
-            let isFocusMonth = false;
-            if (allocated < target && !activeTargetMonthFound) {
-                isFocusMonth = true;
-                activeTargetMonthFound = true;
-            } else if (i === currentMonth && !activeTargetMonthFound) {
-                isFocusMonth = true;
-                activeTargetMonthFound = true;
-            }
-
-            // 3. Generate Gamified UI
-            if (allocated >= target && !isFocusMonth) {
-                // GAMIFIED "LEVEL PASSED" TICK
-                timelineHTML += `
-                    <div class="flex flex-col items-center justify-center gap-1.5 min-w-[50px] transition-transform hover:scale-110">
-                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-md shadow-green-500/20 text-white relative border-2 border-white">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                        </div>
-                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${shortMonthName}</span>
-                    </div>
-                `;
-            } else {
-                // DETAILED ACTION CARD (For Arrears or Current Month)
-                let ringGlow = isFocusMonth ? 'ring-2 ring-blue-400 shadow-blue-900/10' : 'border border-slate-200';
-                
-                timelineHTML += `
-                    <div class="${ringGlow} rounded-xl p-4 bg-white shadow-sm text-center flex flex-col items-center justify-center min-w-[130px]">
-                        <span class="text-sm font-black text-slate-800 mb-1 tracking-tight">${monthName}</span>
-                        <span class="text-xs text-slate-500 mb-2 font-medium">${allocated} / ${target} KSH</span>
-                        ${statusBadge}
-                    </div>
-                `;
-            }
-
-            // 4. Update the Main Progress Bar (if this is the focus month)
-            if (isFocusMonth) {
-                currentMonthAllocated = allocated;
-                currentMonthTarget = target;
-                
-                document.getElementById('monthTitle').textContent = `${monthName} Target Progress`;
-                let progressPercentage = (allocated / target) * 100;
-                if (progressPercentage > 100) progressPercentage = 100;
-
-                const progressBar = document.getElementById('monthlyProgressBar');
-                progressBar.style.width = `${progressPercentage}%`;
-                progressBar.className = "h-full rounded-full transition-all duration-1000 ease-out shadow-inner";
-                
-                if (progressPercentage === 100) {
-                    progressBar.classList.add('bg-gradient-to-r', 'from-emerald-400', 'to-green-500');
-                } else if (progressPercentage === 0) {
-                    progressBar.classList.add('bg-slate-200');
-                } else {
-                    progressBar.classList.add('bg-gradient-to-r', 'from-blue-400', 'to-blue-600');
-                }
-
-                document.getElementById('monthlyText').textContent = `${allocated} / ${target} KSH`;
-                
-                const statusText = document.getElementById('monthlyStatusText');
-                if (allocated >= target) {
-                    statusText.innerHTML = "<strong>Awesome!</strong> You have successfully met your contribution target.";
-                    statusText.className = "text-xs md:text-sm text-green-600 mt-4 font-medium";
-                } else {
-                    const diff = target - allocated;
-                    statusText.innerHTML = `You need <strong>KSH ${diff}</strong> more to clear ${monthName}. Consistent contributions will help you unlock more benefits.`;
-                    statusText.className = "text-xs md:text-sm text-slate-500 mt-4 font-medium";
-                }
-            }
-        }
-
-        // Wrap the timeline in a flex container that allows wrapping and nice spacing
-        document.getElementById('clearanceTimeline').className = "flex flex-row flex-wrap items-center gap-4 py-2";
-        document.getElementById('clearanceTimeline').innerHTML = timelineHTML;
-
-        const actualSaved = currentUserData.savings || 0;
-        const consistencyScore = expectedTotalSoFar > 0 ? Math.min(100, Math.round((actualSaved / expectedTotalSoFar) * 100)) : 50;
-
-        const savings = currentUserData.savings || 0;
-        const loansRepaid = currentUserData.loansRepaidCount || 0; 
-        const hasArrears = unclearedPastMonths.length - 1 > 0; 
-        
-        let limitStatus = "Min. KSH 500 savings required to unlock credit.";
-        let helperClass = "text-[10px] md:text-xs text-slate-400 mt-2 font-medium"; 
-        
-        // 1. Calculate Active Loans First
-        let activeLoansTotal = 0; // The principal (used for limit exposure math)
-        let actualOutstandingBalance = 0; // The REAL debt (Principal + Interest + Penalties - Paid)
-
-        try {
-            const activeLoansQuery = query(
-                collection(db, "loans"),
-                where("userId", "==", uid),
-                where("status", "in", ["pending", "approved"])
-            );
-            const activeLoansSnap = await getDocs(activeLoansQuery);
+            // 1. Basic UI Updates
+            document.getElementById('memberName').textContent = currentUserData.name;
             
-            activeLoansSnap.forEach(docSnap => {
-                const loan = docSnap.data();
-                activeLoansTotal += Number(loan.amount); // Keep principal for vault math
+            // Add a quick flash animation so the user FEELS the money drop in
+            const savingsEl = document.getElementById('mySavings');
+            savingsEl.textContent = `KSH ${currentUserData.savings}`;
+            savingsEl.classList.add('text-emerald-400', 'scale-105');
+            setTimeout(() => savingsEl.classList.remove('text-emerald-400', 'scale-105'), 500);
+            
+            if (currentUserData.role === 'admin') {
+                document.getElementById('adminReturnBtn').classList.remove('hidden');
+            }
 
-                if (loan.status === 'approved') {
-                    // Recreate the Penalty Math for the Dashboard Banner
-                    const startDate = loan.approvedAt ? loan.approvedAt.toDate() : loan.createdAt.toDate();
-                    const dueDate = new Date(startDate.getTime() + loan.durationWeeks * 7 * 24 * 60 * 60 * 1000);
-                    const today = new Date();
+            // --- Fetch Global Stats for Liquidity ---
+            let maxGroupLoanable = 0;
+            let totalLentOut = 0;
+            let globalRemainingLiquidity = 0;
+            let totalGroupCapital = 0;
+
+            try {
+                const statsRef = doc(db, "groupStats", "main");
+                // We use getDoc here because the group stats don't need to refresh the whole page
+                const statsSnap = await getDoc(statsRef);
+                if (statsSnap.exists()) {
+                    globalData = statsSnap.data();
+                    totalGroupCapital = globalData.capital || 0;
+                    totalLentOut = globalData.totalLoans || 0;
+                    maxGroupLoanable = totalGroupCapital * 0.70; 
+                    globalRemainingLiquidity = Math.max(0, maxGroupLoanable - totalLentOut);
+
+                    if (globalData.announcement) {
+                        document.getElementById('alertMessage').textContent = globalData.announcement;
+                        document.getElementById('systemAlert').classList.remove('hidden');
+                    }
+                }
+            } catch(e) { console.error("Could not load global stats", e); }
+
+            const personalInfoBanner = document.getElementById('personalInfoBanner');
+            if (currentUserData.infoMessage) {
+                document.getElementById('infoMessageText').textContent = currentUserData.infoMessage;
+                personalInfoBanner.classList.remove('hidden');
+            } else {
+                if(personalInfoBanner) personalInfoBanner.classList.add('hidden');
+            }
+
+            // Reload supporting data
+            await loadMyLedger(uid);
+            await loadMyLoans(uid);
+            await renderContributionChart(uid);
+
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth();
+            
+            const joinDateObj = currentUserData.createdAt ? currentUserData.createdAt.toDate() : new Date();
+            const diffInMonths = (currentYear - joinDateObj.getFullYear()) * 12 + (currentMonth - joinDateObj.getMonth());
+            const monthsActive = Math.max(1, diffInMonths);
+            
+            let remaining = currentUserData.savings || 0;
+            let unclearedPastMonths = [];
+            let timelineHTML = '';
+            
+            let currentMonthAllocated = 0;
+            let currentMonthTarget = 0;
+            let activeTargetMonthFound = false;
+            
+            let expectedTotalSoFar = 0; 
+
+            for (let i = 0; i <= currentMonth; i++) {
+                const daysInMonth = new Date(currentYear, i + 1, 0).getDate(); 
+                const target = (Math.floor(daysInMonth / 7) * 70) + ((daysInMonth % 7) * 10);
+                const monthName = new Date(currentYear, i, 1).toLocaleString('default', { month: 'long' });
+                const shortMonthName = new Date(currentYear, i, 1).toLocaleString('default', { month: 'short' });
+                
+                expectedTotalSoFar += target; 
+
+                let statusBadge = '';
+                let allocated = 0;
+
+                if (remaining >= target) {
+                    allocated = target;
+                    remaining -= target;
+                    statusBadge = `<span class="bg-green-100 text-green-700 border border-green-200 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">Cleared</span>`;
+                } else {
+                    allocated = remaining;
+                    remaining = 0;
                     
-                    const timeDiff = dueDate.getTime() - today.getTime();
-                    const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                    if (i === currentMonth) {
+                        statusBadge = `<span class="bg-blue-100 text-blue-700 border border-blue-200 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">In Progress</span>`;
+                    } else {
+                        statusBadge = `<span class="bg-rose-100 text-rose-700 border border-rose-200 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">Arrears</span>`;
+                        unclearedPastMonths.push(monthName);
+                    }
+                }
 
-                    let penaltyAmount = 0;
-                    if (daysRemaining < 0) {
-                        penaltyAmount = loan.penaltyFrozen ? (loan.frozenPenaltyAmount || 0) : (Math.abs(daysRemaining) * 5);
+                let isFocusMonth = false;
+                if (allocated < target && !activeTargetMonthFound) {
+                    isFocusMonth = true;
+                    activeTargetMonthFound = true;
+                } else if (i === currentMonth && !activeTargetMonthFound) {
+                    isFocusMonth = true;
+                    activeTargetMonthFound = true;
+                }
+
+                if (allocated >= target && !isFocusMonth) {
+                    timelineHTML += `
+                        <div class="flex flex-col items-center justify-center gap-1.5 min-w-[50px] transition-transform hover:scale-110">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-md shadow-green-500/20 text-white relative border-2 border-white">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            </div>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${shortMonthName}</span>
+                        </div>
+                    `;
+                } else {
+                    let ringGlow = isFocusMonth ? 'ring-2 ring-blue-400 shadow-blue-900/10' : 'border border-slate-200';
+                    
+                    timelineHTML += `
+                        <div class="${ringGlow} rounded-xl p-4 bg-white shadow-sm text-center flex flex-col items-center justify-center min-w-[130px]">
+                            <span class="text-sm font-black text-slate-800 mb-1 tracking-tight">${monthName}</span>
+                            <span class="text-xs text-slate-500 mb-2 font-medium">${allocated} / ${target} KSH</span>
+                            ${statusBadge}
+                        </div>
+                    `;
+                }
+
+                if (isFocusMonth) {
+                    currentMonthAllocated = allocated;
+                    currentMonthTarget = target;
+                    
+                    document.getElementById('monthTitle').textContent = `${monthName} Target Progress`;
+                    let progressPercentage = (allocated / target) * 100;
+                    if (progressPercentage > 100) progressPercentage = 100;
+
+                    const progressBar = document.getElementById('monthlyProgressBar');
+                    progressBar.style.width = `${progressPercentage}%`;
+                    progressBar.className = "h-full rounded-full transition-all duration-1000 ease-out shadow-inner";
+                    
+                    if (progressPercentage === 100) {
+                        progressBar.classList.add('bg-gradient-to-r', 'from-emerald-400', 'to-green-500');
+                    } else if (progressPercentage === 0) {
+                        progressBar.classList.add('bg-slate-200');
+                    } else {
+                        progressBar.classList.add('bg-gradient-to-r', 'from-blue-400', 'to-blue-600');
                     }
 
-                    const paidSoFar = loan.amountPaidSoFar || 0;
-                    const totalDue = loan.repayment + penaltyAmount; // Principal + Interest + Penalty
+                    document.getElementById('monthlyText').textContent = `${allocated} / ${target} KSH`;
                     
-                    actualOutstandingBalance += (totalDue - paidSoFar); 
-                } else if (loan.status === 'pending') {
-                    // If it's pending, they haven't paid anything yet, but they will owe the repayment amount
-                    actualOutstandingBalance += loan.repayment;
-                }
-            });
-        } catch (error) {
-            console.error("Error fetching active loans:", error);
-        }
-
-        let finalSmartLimit = 0;
-        let baseLimit = 0;
-        let trueFutureLimit = 0;
-
-        if (savings >= 500) {
-            if (hasArrears || currentUserData.status === 'restricted') {
-                limitStatus = "Credit locked due to active arrears or account restrictions.";
-                helperClass = "text-[10px] md:text-xs text-rose-500 mt-2 font-bold";
-            } 
-            else if (loansRepaid === 0) {
-                baseLimit = 600;
-                trueFutureLimit = 600;
-                limitStatus = "Repay 1st loan to unlock trust multipliers.";
-                helperClass = "text-[10px] md:text-xs text-amber-500 mt-2 font-semibold";
-            } 
-            else {
-                const equityShare = totalGroupCapital > 0 ? (savings / totalGroupCapital) : 0;
-                const allowedExposureRatio = Math.min(0.95, 0.30 + equityShare);
-                const penaltyResistance = Math.min(1.0, equityShare * 1.5); 
-
-                let earnedMultiplier = 1.0;
-                earnedMultiplier += Math.min(loansRepaid * 0.2, 0.6);
-                earnedMultiplier += (consistencyScore / 100) * 0.4;
-                earnedMultiplier += Math.min(monthsActive * 0.05, 0.5);
-                earnedMultiplier = Math.min(earnedMultiplier, 1.5); 
-
-                // === 1. CURRENT REALITY COMPUTATION ===
-                const currentVaultHealth = totalGroupCapital > 0 ? (globalRemainingLiquidity / maxGroupLoanable) : 0;
-                const currentScaledHealth = currentVaultHealth + ((1 - currentVaultHealth) * penaltyResistance);
-                const currentDynamicMultiplier = Math.max(0.8, earnedMultiplier * currentScaledHealth);
-                
-                baseLimit = Math.floor(savings * currentDynamicMultiplier);
-                let calculatedLimitBeforeVault = Math.max(0, baseLimit - activeLoansTotal);
-                
-                let currentMaxExposure = Math.max(globalRemainingLiquidity * allowedExposureRatio, savings);
-                finalSmartLimit = Math.floor(Math.min(calculatedLimitBeforeVault, globalRemainingLiquidity, currentMaxExposure));
-
-                // === 2. FUTURE SIMULATION (If debt is cleared today) ===
-                // We simulate the vault getting the money back
-                const futureTotalLentOut = Math.max(0, totalLentOut - activeLoansTotal);
-                const futureRemainingLiquidity = Math.max(0, maxGroupLoanable - futureTotalLentOut);
-                
-                // Recalculate Vault Health with the returned money
-                const futureVaultHealth = totalGroupCapital > 0 ? (futureRemainingLiquidity / maxGroupLoanable) : 0;
-                const futureScaledHealth = futureVaultHealth + ((1 - futureVaultHealth) * penaltyResistance);
-                const futureDynamicMultiplier = Math.max(0.8, earnedMultiplier * futureScaledHealth);
-                
-                const futureBaseLimit = Math.floor(savings * futureDynamicMultiplier);
-                let futureMaxExposure = Math.max(futureRemainingLiquidity * allowedExposureRatio, savings);
-                
-                trueFutureLimit = Math.floor(Math.min(futureBaseLimit, futureRemainingLiquidity, futureMaxExposure));
-
-                if (equityShare >= 0.20) { 
-                    limitStatus = `Your credit limit is healthy based on your contribution performance.`;
-                    helperClass = "text-[10px] md:text-xs text-purple-600 mt-2 font-bold";
-                } else if (currentDynamicMultiplier >= 1.2) {
-                    limitStatus = `Excellent credit limit is healthy based on group reserves.`;
-                    helperClass = "text-[10px] md:text-xs text-emerald-500 mt-2 font-bold";
-                } else {
-                    limitStatus = `Note: Multipliers are scaled slightly to protect group reserves.`;
-                    helperClass = "text-[10px] md:text-xs text-blue-500 mt-2 font-semibold italic";
+                    const statusText = document.getElementById('monthlyStatusText');
+                    if (allocated >= target) {
+                        statusText.innerHTML = "<strong>Awesome!</strong> You have successfully met your contribution target.";
+                        statusText.className = "text-xs md:text-sm text-green-600 mt-4 font-medium";
+                    } else {
+                        const diff = target - allocated;
+                        statusText.innerHTML = `You need <strong>KSH ${diff}</strong> more to clear ${monthName}. Consistent contributions will help you unlock more benefits.`;
+                        statusText.className = "text-xs md:text-sm text-slate-500 mt-4 font-medium";
+                    }
                 }
             }
-        }
 
-        if (actualOutstandingBalance > 0) {
-            finalSmartLimit = 0; 
-            limitStatus = `Clear your KSH ${actualOutstandingBalance} outstanding balance to unlock your new KSH ${trueFutureLimit} limit.`;
-            helperClass = "text-[10px] md:text-xs text-rose-600 mt-2 font-bold";
-        } else if (finalSmartLimit < (baseLimit - activeLoansTotal) && finalSmartLimit > 0) {
+            document.getElementById('clearanceTimeline').className = "flex flex-row flex-wrap items-center gap-4 py-2";
+            document.getElementById('clearanceTimeline').innerHTML = timelineHTML;
+
+            const actualSaved = currentUserData.savings || 0;
+            const consistencyScore = expectedTotalSoFar > 0 ? Math.min(100, Math.round((actualSaved / expectedTotalSoFar) * 100)) : 50;
+
+            const savings = currentUserData.savings || 0;
+            const loansRepaid = currentUserData.loansRepaidCount || 0; 
+            const hasArrears = unclearedPastMonths.length - 1 > 0; 
             
-            limitStatus = `Limit adjusted to KSH ${finalSmartLimit} because the group reserves are currently low.`;
-            helperClass = "text-[10px] md:text-xs text-orange-600 mt-2 font-bold italic";
-        } else if (globalRemainingLiquidity <= 0 && savings >= 500) {
-            limitStatus = "Loan facility temporarily paused: Group has reached its 30% reserve limit.";
-            helperClass = "text-[10px] md:text-xs text-rose-600 mt-2 font-black";
-        }
+            let limitStatus = "Min. KSH 500 savings required to unlock credit.";
+            let helperClass = "text-[10px] md:text-xs text-slate-400 mt-2 font-medium"; 
+            
+            let activeLoansTotal = 0; 
+            let actualOutstandingBalance = 0; 
 
-        // Update UI
-        document.getElementById('availableLoanLimit').textContent = `KSH ${finalSmartLimit}`;
-        document.getElementById('totalLoanLimit').textContent = activeLoansTotal > 0 ? trueFutureLimit : baseLimit; 
+            try {
+                const activeLoansQuery = query(
+                    collection(db, "loans"),
+                    where("userId", "==", uid),
+                    where("status", "in", ["pending", "approved"])
+                );
+                const activeLoansSnap = await getDocs(activeLoansQuery);
+                
+                activeLoansSnap.forEach(docSnap => {
+                    const loan = docSnap.data();
+                    activeLoansTotal += Number(loan.amount); 
 
-        document.getElementById('savingsSkeleton')?.classList.add('hidden');
-        document.getElementById('loanLimitSkeleton')?.classList.add('hidden');
+                    if (loan.status === 'approved') {
+                        const startDate = loan.approvedAt ? loan.approvedAt.toDate() : loan.createdAt.toDate();
+                        const dueDate = new Date(startDate.getTime() + loan.durationWeeks * 7 * 24 * 60 * 60 * 1000);
+                        const today = new Date();
+                        
+                        const timeDiff = dueDate.getTime() - today.getTime();
+                        const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
 
-        const limitHelper = document.getElementById('limitHelperText');
-        if(limitHelper) {
-            limitHelper.textContent = limitStatus;
-            limitHelper.className = helperClass;
-        }
+                        let penaltyAmount = 0;
+                        if (daysRemaining < 0) {
+                            penaltyAmount = loan.penaltyFrozen ? (loan.frozenPenaltyAmount || 0) : (Math.abs(daysRemaining) * 5);
+                        }
 
-        currentUserData.calculatedLimit = baseLimit;
-        currentUserData.availableLimit = finalSmartLimit;
+                        const paidSoFar = loan.amountPaidSoFar || 0;
+                        const totalDue = loan.repayment + penaltyAmount; 
+                        
+                        actualOutstandingBalance += (totalDue - paidSoFar); 
+                    } else if (loan.status === 'pending') {
+                        actualOutstandingBalance += loan.repayment;
+                    }
+                });
+            } catch (error) {
+                console.error("Error fetching active loans:", error);
+            }
 
-        const alertsList = document.getElementById('alertsList');
-        const personalAlertsBanner = document.getElementById('personalAlertsBanner');
-        let hasWarnings = false;
-        alertsList.innerHTML = ''; 
+            let finalSmartLimit = 0;
+            let baseLimit = 0;
+            let trueFutureLimit = 0;
 
-        if (unclearedPastMonths.length > 0) {
-            alertsList.innerHTML += `<li><strong>Arrears Detected:</strong> You have uncleared savings for <strong>${unclearedPastMonths.join(', ')}</strong>. Our policies require all prior balances to be fully cleared before June.</li>`;
-            hasWarnings = true;
-        }
+            if (savings >= 500) {
+                if (hasArrears || currentUserData.status === 'restricted') {
+                    limitStatus = "Credit locked due to active arrears or account restrictions.";
+                    helperClass = "text-[10px] md:text-xs text-rose-500 mt-2 font-bold";
+                } 
+                else if (loansRepaid === 0) {
+                    baseLimit = 600;
+                    trueFutureLimit = 600;
+                    limitStatus = "Repay 1st loan to unlock trust multipliers.";
+                    helperClass = "text-[10px] md:text-xs text-amber-500 mt-2 font-semibold";
+                } 
+                else {
+                    const equityShare = totalGroupCapital > 0 ? (savings / totalGroupCapital) : 0;
+                    const allowedExposureRatio = Math.min(0.95, 0.30 + equityShare);
+                    const penaltyResistance = Math.min(1.0, equityShare * 1.5); 
 
-        const today = new Date().getDate();
+                    let earnedMultiplier = 1.0;
+                    earnedMultiplier += Math.min(loansRepaid * 0.2, 0.6);
+                    earnedMultiplier += (consistencyScore / 100) * 0.4;
+                    earnedMultiplier += Math.min(monthsActive * 0.05, 0.5);
+                    earnedMultiplier = Math.min(earnedMultiplier, 1.5); 
 
-        if (currentUserData.warningMessage) {
-            alertsList.innerHTML += `<li><strong>Admin Note:</strong> ${currentUserData.warningMessage}</li>`;
-            hasWarnings = true;
-        }
+                    const currentVaultHealth = totalGroupCapital > 0 ? (globalRemainingLiquidity / maxGroupLoanable) : 0;
+                    const currentScaledHealth = currentVaultHealth + ((1 - currentVaultHealth) * penaltyResistance);
+                    const currentDynamicMultiplier = Math.max(0.8, earnedMultiplier * currentScaledHealth);
+                    
+                    baseLimit = Math.floor(savings * currentDynamicMultiplier);
+                    let calculatedLimitBeforeVault = Math.max(0, baseLimit - activeLoansTotal);
+                    
+                    let currentMaxExposure = Math.max(globalRemainingLiquidity * allowedExposureRatio, savings);
+                    finalSmartLimit = Math.floor(Math.min(calculatedLimitBeforeVault, globalRemainingLiquidity, currentMaxExposure));
 
-        if (currentUserData.status === 'restricted') {
-            alertsList.innerHTML += `<li>Your account has been restricted. You cannot access credit facilities at this time.</li>`;
-            hasWarnings = true;
-        } else if (currentUserData.status === 'suspended') {
-            alertsList.innerHTML += `<li>Your account is currently suspended pending administrative review.</li>`;
-            hasWarnings = true;
-        }
+                    const futureTotalLentOut = Math.max(0, totalLentOut - activeLoansTotal);
+                    const futureRemainingLiquidity = Math.max(0, maxGroupLoanable - futureTotalLentOut);
+                    
+                    const futureVaultHealth = totalGroupCapital > 0 ? (futureRemainingLiquidity / maxGroupLoanable) : 0;
+                    const futureScaledHealth = futureVaultHealth + ((1 - futureVaultHealth) * penaltyResistance);
+                    const futureDynamicMultiplier = Math.max(0.8, earnedMultiplier * futureScaledHealth);
+                    
+                    const futureBaseLimit = Math.floor(savings * futureDynamicMultiplier);
+                    let futureMaxExposure = Math.max(futureRemainingLiquidity * allowedExposureRatio, savings);
+                    
+                    trueFutureLimit = Math.floor(Math.min(futureBaseLimit, futureRemainingLiquidity, futureMaxExposure));
 
-        if (currentUserData.status === 'approved') {
-            if (today > 7 && currentMonthAllocated === 0) {
-                alertsList.innerHTML += `<li>You have missed the first weekly contribution deadline. Please deposit KSH 70 immediately.</li>`;
+                    if (equityShare >= 0.20) { 
+                        limitStatus = `Your credit limit is healthy based on your contribution performance.`;
+                        helperClass = "text-[10px] md:text-xs text-purple-600 mt-2 font-bold";
+                    } else if (currentDynamicMultiplier >= 1.2) {
+                        limitStatus = `Excellent credit limit is healthy based on group reserves.`;
+                        helperClass = "text-[10px] md:text-xs text-emerald-500 mt-2 font-bold";
+                    } else {
+                        limitStatus = `Note: Multipliers are scaled slightly to protect group reserves.`;
+                        helperClass = "text-[10px] md:text-xs text-blue-500 mt-2 font-semibold italic";
+                    }
+                }
+            }
+
+            if (actualOutstandingBalance > 0) {
+                finalSmartLimit = 0; 
+                limitStatus = `Clear your KSH ${actualOutstandingBalance} outstanding balance to unlock your new KSH ${trueFutureLimit} limit.`;
+                helperClass = "text-[10px] md:text-xs text-rose-600 mt-2 font-bold";
+            } else if (finalSmartLimit < (baseLimit - activeLoansTotal) && finalSmartLimit > 0) {
+                limitStatus = `Limit adjusted to KSH ${finalSmartLimit} because the group reserves are currently low.`;
+                helperClass = "text-[10px] md:text-xs text-orange-600 mt-2 font-bold italic";
+            } else if (globalRemainingLiquidity <= 0 && savings >= 500) {
+                limitStatus = "Loan facility temporarily paused: Group has reached its 30% reserve limit.";
+                helperClass = "text-[10px] md:text-xs text-rose-600 mt-2 font-black";
+            }
+
+            document.getElementById('availableLoanLimit').textContent = `KSH ${finalSmartLimit}`;
+            document.getElementById('totalLoanLimit').textContent = activeLoansTotal > 0 ? trueFutureLimit : baseLimit; 
+
+            document.getElementById('savingsSkeleton')?.classList.add('hidden');
+            document.getElementById('loanLimitSkeleton')?.classList.add('hidden');
+
+            const limitHelper = document.getElementById('limitHelperText');
+            if(limitHelper) {
+                limitHelper.textContent = limitStatus;
+                limitHelper.className = helperClass;
+            }
+
+            currentUserData.calculatedLimit = baseLimit;
+            currentUserData.availableLimit = finalSmartLimit;
+
+            const alertsList = document.getElementById('alertsList');
+            const personalAlertsBanner = document.getElementById('personalAlertsBanner');
+            let hasWarnings = false;
+            alertsList.innerHTML = ''; 
+
+            if (unclearedPastMonths.length > 0) {
+                alertsList.innerHTML += `You have uncleared savings for <strong>${unclearedPastMonths.join(', ')}</strong>. Please clear these amounts to maintain good standing.</li>`;
                 hasWarnings = true;
             }
-            if (today > 21 && currentMonthAllocated < currentMonthTarget) {
-                const deficit = currentMonthTarget - currentMonthAllocated;
-                alertsList.innerHTML += `<li><strong>Approaching Deadline:</strong> The month is ending soon. You are short KSH ${deficit}. Clear this to maintain good standing.</li>`;
+
+            const today = new Date().getDate();
+
+            if (currentUserData.warningMessage) {
+                alertsList.innerHTML += `<li><strong>Admin Note:</strong> ${currentUserData.warningMessage}</li>`;
                 hasWarnings = true;
             }
-        }
 
-        if (hasWarnings) {
-            personalAlertsBanner.classList.remove('hidden');
-        } else {
-            personalAlertsBanner.classList.add('hidden');
-        }
-        let notificationCount = 0;
-        if (globalData && globalData.announcement) notificationCount++;
-        
-        if (currentUserData.infoMessage) notificationCount++;
-        
-        const alertItems = alertsList.querySelectorAll('li').length;
-        notificationCount += alertItems;
+            if (currentUserData.status === 'restricted') {
+                alertsList.innerHTML += `<li>Your account has been restricted. You cannot access credit facilities at this time.</li>`;
+                hasWarnings = true;
+            } else if (currentUserData.status === 'suspended') {
+                alertsList.innerHTML += `<li>Your account is currently suspended pending administrative review.</li>`;
+                hasWarnings = true;
+            }
 
-        const notifBadge = document.getElementById('notifBadge');
-        if (notificationCount > 0) {
-            notifBadge.textContent = notificationCount;
-            notifBadge.classList.remove('hidden');
-            notifBadge.classList.add('flex');
-        } else {
-            notifBadge.classList.add('hidden');
-            notifBadge.classList.remove('flex');
-        }
-    } 
+            if (currentUserData.status === 'approved') {
+                if (today > 7 && currentMonthAllocated === 0) {
+                    alertsList.innerHTML += `<li>You have missed the first weekly contribution deadline. Please deposit KSH 70 immediately.</li>`;
+                    hasWarnings = true;
+                }
+                if (today > 21 && currentMonthAllocated < currentMonthTarget) {
+                    const deficit = currentMonthTarget - currentMonthAllocated;
+                    alertsList.innerHTML += `<li><strong>Approaching Deadline:</strong> The month is ending soon. You are short KSH ${deficit}. Clear this to maintain good standing.</li>`;
+                    hasWarnings = true;
+                }
+            }
+
+            if (hasWarnings) {
+                personalAlertsBanner.classList.remove('hidden');
+            } else {
+                personalAlertsBanner.classList.add('hidden');
+            }
+            let notificationCount = 0;
+            if (globalData && globalData.announcement) notificationCount++;
+            
+            if (currentUserData.infoMessage) notificationCount++;
+            
+            const alertItems = alertsList.querySelectorAll('li').length;
+            notificationCount += alertItems;
+
+            const notifBadge = document.getElementById('notifBadge');
+            if (notificationCount > 0) {
+                notifBadge.textContent = notificationCount;
+                notifBadge.classList.remove('hidden');
+                notifBadge.classList.add('flex');
+            } else {
+                notifBadge.classList.add('hidden');
+                notifBadge.classList.remove('flex');
+            }
+        } 
+    });
 }
 
 const amountInput = document.getElementById('loanAmount');
@@ -1042,7 +1081,7 @@ document.getElementById('paymentForm').addEventListener('submit', async (e) => {
     const statusDiv = document.getElementById('payStatus');
     
     const amount = Number(document.getElementById('payAmount').value);
-    const mpesaCode = document.getElementById('payCode').value.trim().toUpperCase();
+    const mpesaCode = document.getElementById('payMpesaCode').value.toUpperCase().trim();
 
     if (amount < 10) {
         statusDiv.innerHTML = "Amount must be at least KSH 10.";
@@ -1051,30 +1090,34 @@ document.getElementById('paymentForm').addEventListener('submit', async (e) => {
         return;
     }
 
+    if (mpesaCode.length < 8) {
+        statusDiv.innerHTML = "Please enter a valid M-Pesa Reference Code.";
+        statusDiv.className = "mt-3 text-sm font-medium rounded p-2 bg-red-50 text-red-600";
+        statusDiv.classList.remove('hidden');
+        return;
+    }
+
     btn.disabled = true;
-    btn.textContent = "Submitting...";
+    btn.textContent = "Submitting Code...";
 
     try {
-        // 🛡️ ANTI-SPAM: One payment claim per user per day
-        const todayString = new Date().toISOString().split('T')[0]; 
-        const uniqueClaimId = `${auth.currentUser.uid}_payment_${todayString}`;
-
-        await setDoc(doc(db, "paymentClaims", uniqueClaimId), {
+        await setDoc(doc(db, "paymentClaims", mpesaCode), {
             userId: auth.currentUser.uid,
             amount: amount,
             mpesaCode: mpesaCode,
-            status: "pending", 
-            createdAt: serverTimestamp() 
+            type: 'deposit',
+            status: 'pending',
+            createdAt: serverTimestamp()
         });
 
-        statusDiv.innerHTML = `<strong>Success!</strong> Receipt ${mpesaCode} submitted. It will reflect in your savings once verified by an Admin.`;
-        statusDiv.className = "mt-3 text-sm font-medium rounded p-2 bg-green-50 text-green-700";
+        statusDiv.innerHTML = `<strong>Submission Successful!</strong> Code ${mpesaCode} is pending admin verification. Your savings will update once approved.`;
+        statusDiv.className = "mt-3 text-sm font-medium rounded p-2 bg-green-50 text-green-700 border border-green-200";
         statusDiv.classList.remove('hidden');
-        
-        e.target.reset(); 
+        e.target.reset();
+
     } catch (error) {
         console.error("Payment submission error:", error);
-        statusDiv.innerHTML = "Error submitting payment info. Please try again.";
+        statusDiv.innerHTML = "Error submitting code. Please check your connection and try again.";
         statusDiv.className = "mt-3 text-sm font-medium rounded p-2 bg-red-50 text-red-600";
         statusDiv.classList.remove('hidden');
     } finally {

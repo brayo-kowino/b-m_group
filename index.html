@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>B&M Group | Private Savings & Credit App</title>
+    <title>B&M Group | Private Savings & Credit Portal</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
@@ -32,9 +32,9 @@
             overflow-x: hidden;
         }
 
-        /* App Mockup Gradient Frame */
-        .app-frame {
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 8px #0f172a, 0 0 0 10px #334155;
+        /* Laptop Mockup Gradient Frame */
+        .laptop-frame {
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 10px #0f172a, 0 4px 0 10px #334155;
         }
 
         /* Footer Link Hover Glow */
@@ -43,7 +43,7 @@
             transition: color 0.3s ease;
         }
         .footer-link:hover {
-            color: #60a5fa; /* Tailwind blue-400 */
+            color: #60a5fa; 
         }
     </style>
 </head>
@@ -63,7 +63,7 @@
                 
                 <div class="hidden md:flex space-x-8 items-center">
                     <div class="group relative">
-                        <a href="#about" class="text-sm font-semibold text-slate-600 hover:text-blue-700 py-2">Company</a>
+                        <a href="#about" class="text-sm font-semibold text-slate-600 hover:text-blue-700 py-2">What We Do</a>
                     </div>
                     <div class="group relative">
                         <a href="#features" class="text-sm font-semibold text-slate-600 hover:text-blue-700 py-2">Resources</a>
@@ -72,16 +72,14 @@
                         <a href="#policies" class="text-sm font-semibold text-slate-600 hover:text-blue-700 py-2">Legal</a>
                     </div>
                     <div class="group relative">
-                        <a href="#media" class="text-sm font-semibold text-slate-600 hover:text-blue-700 py-2">Media</a>
+                        <a href="contact.html" class="text-sm font-semibold text-slate-600 hover:text-blue-700 py-2">Contact</a>
                     </div>
                 </div>
 
                 <div class="flex items-center gap-4">
-                    <div class="hidden md:block">
-                        <a href="#download" class="inline-flex items-center justify-center gap-2 px-6 py-2.5 border border-transparent text-sm font-semibold rounded-full text-white bg-slate-900 hover:bg-blue-700 shadow-md hover:shadow-lg hover:shadow-blue-600/20 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600">
-                            Download App
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                        </a>
+                    <div class="hidden md:flex items-center gap-2 px-4 py-1.5 bg-slate-100 border border-slate-200 rounded-full text-xs font-bold text-slate-500 uppercase tracking-wider">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        Invite Only
                     </div>
                     
                     <button id="mobileMenuBtn" class="md:hidden text-slate-600 hover:text-blue-700 focus:outline-none p-2">
@@ -98,12 +96,12 @@
                 <a href="#about" class="mobile-link block px-4 py-3 rounded-lg text-base font-semibold text-slate-700 hover:text-blue-700 hover:bg-blue-50 transition-colors">Company</a>
                 <a href="#features" class="mobile-link block px-4 py-3 rounded-lg text-base font-semibold text-slate-700 hover:text-blue-700 hover:bg-blue-50 transition-colors">Resources</a>
                 <a href="#policies" class="mobile-link block px-4 py-3 rounded-lg text-base font-semibold text-slate-700 hover:text-blue-700 hover:bg-blue-50 transition-colors">Legal</a>
-                <a href="#media" class="mobile-link block px-4 py-3 rounded-lg text-base font-semibold text-slate-700 hover:text-blue-700 hover:bg-blue-50 transition-colors">Media</a>
-                <div class="pt-4 mt-2 border-t border-slate-100">
-                    <a href="#download" class="flex items-center justify-center gap-2 w-full text-center px-6 py-3 border border-transparent text-base font-bold rounded-xl text-white bg-slate-900 hover:bg-blue-700 shadow-md transition-all">
-                        Download App
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                    </a>
+                <a href="contact.html" class="mobile-link block px-4 py-3 rounded-lg text-base font-semibold text-slate-700 hover:text-blue-700 hover:bg-blue-50 transition-colors">Contact</a>
+                <div class="pt-4 mt-2 border-t border-slate-100 flex justify-center">
+                    <div class="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 border border-slate-200 rounded-full text-xs font-bold text-slate-500 uppercase tracking-wider">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        Invite Only Access
+                    </div>
                 </div>
             </div>
         </div>
@@ -115,40 +113,35 @@
         <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-[120px] pointer-events-none"></div>
         
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
-            <div class="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+            <div class="grid lg:grid-cols-2 gap-16 lg:gap-8 items-center">
                 
                 <div class="text-center lg:text-left" data-aos="fade-right" data-aos-duration="1000">
                     <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight mb-6 leading-tight text-white drop-shadow-2xl">
-                        Your Private Ledger, <br class="hidden lg:block"/> Now in Your Hands.
+                        Your Private Ledger, <br class="hidden lg:block"/> Securely Online.
                     </h1>
                     <p class="mt-4 max-w-xl mx-auto lg:mx-0 text-lg sm:text-xl text-slate-300 mb-10 font-light leading-relaxed">
-                        We've moved from the web to native mobile. Access your collective capital, monitor your structured savings, and manage secure internal lending 24/7 with the new B&M FINANCE Application.
+                        Access your collective capital, monitor structured savings, and manage secure internal lending 24/7. This system is highly confidential and membership is strictly by invitation only.
                     </p>
-                    
-                    <div id="download" class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="200">
-                        <a href="#" class="flex items-center justify-center gap-3 px-6 py-3.5 bg-white text-slate-900 rounded-xl hover:bg-slate-100 shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1 group">
-                            <svg class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor"><path d="M3.609 1.814L13.792 12 3.61 22.186a1.986 1.986 0 0 1-.502-1.353V3.167c0-.528.2-.996.501-1.353zM14.887 10.902l3.447-1.99c1.192-.686 1.192-1.802 0-2.488l-3.447-1.99-4.234 4.234 4.234 4.234zM14.887 13.098l-4.234-4.234-4.234 4.234 3.447 1.99c1.192.686 1.192 1.802 0 2.488l3.447-1.99z"/></svg>
-                            <div class="text-left">
-                                <div class="text-[10px] uppercase font-semibold leading-none text-slate-500 group-hover:text-slate-600">Get it on</div>
-                                <div class="text-base font-bold leading-tight">Google Play</div>
-                            </div>
-                        </a>
-                        
-                        <a href="#" class="flex items-center justify-center gap-3 px-6 py-3.5 bg-slate-800 border border-slate-700 text-white rounded-xl hover:bg-slate-700 shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1 group">
-                            <svg class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor"><path d="M16.365 1.48c-1.635.07-3.565 1.07-4.665 2.52-.98 1.28-1.72 3.09-1.48 4.83 1.82.14 3.65-.89 4.74-2.35.96-1.28 1.6-3.04 1.405-4.99zM16.925 9.17c-2.09.04-4.04 1.34-5.11 1.34-1.12 0-2.81-1.19-4.52-1.16-2.22.04-4.29 1.29-5.43 3.28-2.32 4.02-.59 9.97 1.66 13.23 1.1 1.59 2.41 3.37 4.14 3.31 1.66-.06 2.3-.1 4.21-.1s2.5.12 4.23.1c1.77-.02 2.92-1.63 4.01-3.21 1.26-1.84 1.78-3.62 1.81-3.71-.04-.02-3.48-1.34-3.54-5.35-.06-3.34 2.73-4.94 2.85-5.02-1.56-2.28-3.99-2.58-4.81-2.61z"/></svg>
-                            <div class="text-left">
-                                <div class="text-[10px] uppercase font-semibold leading-none text-slate-400 group-hover:text-slate-300">Download on the</div>
-                                <div class="text-base font-bold leading-tight">App Store</div>
-                            </div>
-                        </a>
+                    <p class="text-sm italic text-slate-400 mb-8">
+                        Please refer to our <a href="terms.html" class="text-blue-400 hover:underline">Terms & Private Charter</a> for detailed information about our operational guidelines including why membership is restricted.
+                    </p>
+                    <div class="flex justify-center lg:justify-start" data-aos="fade-up" data-aos-duration="1000" data-aos-delay="200">
+                        <div class="inline-flex items-center gap-3 px-6 py-3.5 bg-slate-800/50 backdrop-blur border border-slate-700 text-slate-300 rounded-xl shadow-lg">
+                            <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                            <span class="text-sm font-semibold tracking-wide">End-to-End Encrypted Access</span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="relative mx-auto w-full max-w-[320px] lg:max-w-[360px]" data-aos="fade-up" data-aos-duration="1200" data-aos-delay="300">
-                    <div class="relative w-full aspect-[1/2.1] bg-slate-900 rounded-[2.5rem] app-frame overflow-hidden border border-slate-700/50">
-                        <div class="absolute top-0 inset-x-0 h-6 bg-slate-900 rounded-b-xl w-32 mx-auto z-20"></div>
-                        <img src="app_screenshot.png" alt="B&M App Interface" class="absolute inset-0 w-full h-full object-cover z-10" onerror="this.src='https://images.unsplash.com/photo-1616077168079-7e09a6a38f4d?q=80&w=800&auto=format&fit=crop'">
-                        <div class="absolute inset-0 bg-gradient-to-br from-blue-900/40 to-slate-900/80 z-10 mix-blend-overlay"></div>
+                <div class="relative mx-auto w-full max-w-[600px]" data-aos="fade-up" data-aos-duration="1200" data-aos-delay="300">
+                    <div class="relative w-full aspect-[16/10] bg-slate-900 rounded-t-xl laptop-frame overflow-hidden border border-slate-700/50">
+                        <div class="absolute top-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-slate-700 rounded-full z-20"></div>
+                        
+                        <img src="bm-system.png" alt="B&M Web Portal Interface" class="absolute inset-0 mt-4 w-full h-full object-fit object-top z-10" onerror="this.src='https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1600&auto=format&fit=crop'">
+                        <div class="absolute inset-0 bg-gradient-to-br from-blue-900/10 to-slate-900/30 z-10 mix-blend-overlay pointer-events-none"></div>
+                    </div>
+                    <div class="relative w-[108%] -ml-[4%] h-4 sm:h-5 bg-slate-400 rounded-b-xl shadow-2xl border-t border-slate-300 flex justify-center">
+                        <div class="w-24 sm:w-32 h-1.5 sm:h-2 bg-slate-300 rounded-b-md"></div>
                     </div>
                 </div>
             </div>
@@ -172,7 +165,7 @@
                 </div>
                 <div data-aos="zoom-in" data-aos-delay="400">
                     <div class="text-3xl font-bold text-white mb-1">24/7</div>
-                    <div class="text-[10px] sm:text-xs font-semibold text-blue-200 uppercase tracking-wider">In-App Access</div>
+                    <div class="text-[10px] sm:text-xs font-semibold text-blue-200 uppercase tracking-wider">Web Access</div>
                 </div>
             </div>
         </div>
@@ -185,7 +178,7 @@
                     <h2 class="text-blue-700 font-bold tracking-widest uppercase text-xs mb-3">What We Do</h2>
                     <h3 class="text-3xl font-bold text-slate-900 tracking-tight sm:text-4xl mb-6 leading-tight">Save Together, Grow Together</h3>
                     <p class="text-lg text-slate-600 mb-6 leading-relaxed">
-                        B&M Group is a private savings and lending platform. We follow strict rules, keep careful records, and use a mobile app to help members save money and borrow when needed.
+                        B&M Group is a private savings and lending platform. We follow strict rules, keep careful records, and use a secure web portal to help members save money and borrow when needed.
                     </p>
                     <p class="text-lg text-slate-600 mb-8 leading-relaxed">
                         When you join, your savings combine with other members to create a fund. You can borrow from this fund, and you also earn money back from loans made by the group.
@@ -198,7 +191,7 @@
                             </div>
                             <div class="ml-4">
                                 <h4 class="text-base font-bold text-slate-900">Safe and Secure</h4>
-                                <p class="mt-1 text-sm text-slate-500">Your money records are protected with strong security in the app.</p>
+                                <p class="mt-1 text-sm text-slate-500">Your money records are protected with strong security inside the system.</p>
                             </div>
                         </div>
                         <div class="flex items-start">
@@ -207,7 +200,7 @@
                             </div>
                             <div class="ml-4">
                                 <h4 class="text-base font-bold text-slate-900">Watch Your Money Grow</h4>
-                                <p class="mt-1 text-sm text-slate-500">See your savings and earnings increase in real time on your phone.</p>
+                                <p class="mt-1 text-sm text-slate-500">See your savings and earnings increase in real time on your dashboard.</p>
                             </div>
                         </div>
                     </div>
@@ -229,7 +222,7 @@
                 <h2 class="text-blue-700 font-bold tracking-widest uppercase text-xs mb-3">How It Works</h2>
                 <h3 class="text-3xl font-bold text-slate-900 tracking-tight sm:text-4xl">4 Simple Steps</h3>
                 <p class="mt-4 max-w-2xl text-lg text-slate-600 mx-auto">
-                    Save money, borrow when you need it, and earn returns. All from your phone.
+                    Save money, borrow when you need it, and earn returns. All from your secure portal.
                 </p>
             </div>
 
@@ -239,7 +232,7 @@
                 <div class="text-center relative z-10 group" data-aos="fade-up" data-aos-delay="100">
                     <div class="w-16 h-16 bg-white text-blue-700 rounded-full flex items-center justify-center mx-auto mb-6 text-xl font-extrabold border-4 border-slate-50 shadow-lg group-hover:scale-110 group-hover:bg-blue-700 group-hover:text-white transition-all duration-300">1</div>
                     <h4 class="text-lg font-bold text-slate-900 mb-2">Save Money</h4>
-                    <p class="text-sm text-slate-600 px-4">Add money to your savings account using the app each month.</p>
+                    <p class="text-sm text-slate-600 px-4">Add money to your savings account using the portal each month.</p>
                 </div>
                 <div class="text-center relative z-10 group" data-aos="fade-up" data-aos-delay="200">
                     <div class="w-16 h-16 bg-white text-blue-700 rounded-full flex items-center justify-center mx-auto mb-6 text-xl font-extrabold border-4 border-slate-50 shadow-lg group-hover:scale-110 group-hover:bg-blue-700 group-hover:text-white transition-all duration-300">2</div>
@@ -254,13 +247,13 @@
                 <div class="text-center relative z-10 group" data-aos="fade-up" data-aos-delay="400">
                     <div class="w-16 h-16 bg-white text-blue-700 rounded-full flex items-center justify-center mx-auto mb-6 text-xl font-extrabold border-4 border-slate-50 shadow-lg group-hover:scale-110 group-hover:bg-blue-700 group-hover:text-white transition-all duration-300">4</div>
                     <h4 class="text-lg font-bold text-slate-900 mb-2">Get Money Back</h4>
-                    <p class="text-sm text-slate-600 px-4">Earn money from group loans. Your share appears in your app balance.</p>
+                    <p class="text-sm text-slate-600 px-4">Earn money from group loans. Your share appears in your portal balance.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <section id="leadership" class="py-24 bg-slate-900 text-white relative overflow-hidden">
+<section id="leadership" class="py-24 bg-slate-900 text-white relative overflow-hidden">
         <div class="absolute top-0 right-0 -mr-20 -mt-20 w-[30rem] h-[30rem] rounded-full bg-blue-600/10 blur-[100px]"></div>
         <div class="absolute bottom-0 left-0 -ml-20 -mb-20 w-[20rem] h-[20rem] rounded-full bg-blue-400/10 blur-[80px]"></div>
 
@@ -274,50 +267,60 @@
                         B&M Group was created to help regular people save money and borrow fairly, making it easier for everyone to build wealth together.
                     </p>
                     <p class="text-slate-400 mb-8 leading-relaxed text-sm">
-                        Our founders moved everything to a mobile app to keep records accurate and make sure everyone follows the rules. We focus on facts, not feelings.
+                        Our founders moved everything to a secure web portal to keep records accurate and make sure everyone follows the rules. We focus on facts, not feelings.
                     </p>
-                    <div class="inline-flex items-center gap-3 text-white font-semibold border-l-4 border-blue-500 pl-4 py-1">
-                        No Excuses. Clear Records.
-                    </div>
+                    
                 </div>
 
                 <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-6 relative mt-10 lg:mt-0">
-                    <div class="bg-slate-800/40 backdrop-blur-md p-8 rounded-2xl border border-slate-700/50 hover:bg-slate-800/80 transition-all duration-300 shadow-2xl" data-aos="fade-up" data-aos-delay="100">
-                        <div class="w-24 h-24 bg-gradient-to-br from-blue-800 to-blue-950 rounded-xl flex items-center justify-center mb-6 overflow-hidden shadow-inner ring-1 ring-white/10">
-                            <img src="brian_odhiambo.png" alt="Brian Odhiambo" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=500&auto=format&fit=crop'">
+                    
+                    <div class="relative rounded-2xl overflow-hidden group h-[420px] shadow-2xl border border-slate-700/50" data-aos="fade-up" data-aos-delay="100">
+                        <img src="brian_odhiambo.png" alt="Brian Odhiambo" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" onerror="this.src='https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=600&auto=format&fit=crop'">
+                        
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 to-transparent"></div>
+                        
+                        <div class="absolute inset-0 p-5 flex flex-col justify-end">
+                            <div class="p-6 rounded-xl bg-slate-900/40 backdrop-blur-md border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] transition-all duration-300 group-hover:bg-slate-900/60 group-hover:border-white/20">
+                                <h4 class="text-xl font-bold text-white mb-1">Brian Odhiambo</h4>
+                                <p class="text-xs text-blue-400 font-bold mb-3 tracking-widest uppercase">Co-Founder & Chair</p>
+                                <p class="text-sm text-slate-300 leading-relaxed font-light">
+                                    Makes sure the group runs fairly. Enforces our rules, sets our goals, runs meetings, and decides on big money risks.
+                                </p>
+                            </div>
                         </div>
-                        <h4 class="text-xl font-bold text-white mb-1">Brian Odhiambo</h4>
-                        <p class="text-sm text-blue-400 font-medium mb-4 tracking-wide">Co-Founder & Chair</p>
-                        <p class="text-sm text-slate-400 leading-relaxed">
-                            Makes sure the group runs fairly. Enforces our rules, sets our goals, runs meetings, and decides on big money risks.
-                        </p>
                     </div>
 
-                    <div class="bg-slate-800/40 backdrop-blur-md p-8 rounded-2xl border border-slate-700/50 hover:bg-slate-800/80 transition-all duration-300 shadow-2xl sm:translate-y-8" data-aos="fade-up" data-aos-delay="200">
-                        <div class="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center mb-6 overflow-hidden shadow-lg ring-1 ring-white/10">
-                            <img src="maximilla_aleyo2.png" alt="Maximilla Aleyo" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=500&auto=format&fit=crop'">
+                    <div class="relative rounded-2xl overflow-hidden group h-[420px] shadow-2xl border border-slate-700/50 sm:translate-y-12" data-aos="fade-up" data-aos-delay="200">
+                        <img src="maximilla_aleyo2.png" alt="Maximilla Aleyo" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" onerror="this.src='https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=600&auto=format&fit=crop'">
+                        
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 to-transparent"></div>
+                        
+                        <div class="absolute inset-0 p-5 flex flex-col justify-end">
+                            <div class="p-6 rounded-xl bg-slate-900/40 backdrop-blur-md border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] transition-all duration-300 group-hover:bg-slate-900/60 group-hover:border-white/20">
+                                <h4 class="text-xl font-bold text-white mb-1">Maximilla Aleyo</h4>
+                                <p class="text-xs text-blue-400 font-bold mb-3 tracking-widest uppercase">Co-Founder & Money Manager</p>
+                                <p class="text-sm text-slate-300 leading-relaxed font-light">
+                                    Handles all the money. Keeps track of who saved what, approves loans, sends dividends, and makes sure all numbers are correct.
+                                </p>
+                            </div>
                         </div>
-                        <h4 class="text-xl font-bold text-white mb-1">Maximilla Aleyo</h4>
-                        <p class="text-sm text-blue-400 font-medium mb-4 tracking-wide">Co-Founder & Money Manager</p>
-                        <p class="text-sm text-slate-400 leading-relaxed">
-                            Handles all the money. Keeps track of who saved what, approves loans, sends dividends, and makes sure all numbers are correct.
-                        </p>
                     </div>
+
                 </div>
             </div>
         </div>
     </section>
 
-    <section id="policies" class="py-24 bg-white">
+<section id="policies" class="py-24 bg-slate-50 border-t border-slate-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6" data-aos="fade-in">
                 <div class="max-w-2xl">
                     <h2 class="text-blue-700 font-bold tracking-widest uppercase text-xs mb-3">Governance</h2>
                     <h3 class="text-3xl font-bold text-slate-900 tracking-tight sm:text-4xl">Institutional Policies</h3>
-                    <p class="mt-4 text-lg text-slate-600">The uncompromising operational framework designed to protect our collective capital.</p>
+                    
                 </div>
                 <div>
-                    <a href="B&M_CONSTITUTION_V1.0.pdf" target="_blank" class="text-blue-600 font-semibold hover:text-blue-800 flex items-center gap-2 transition-colors px-4 py-2 rounded-lg hover:bg-blue-50 border border-blue-100 md:border-transparent">
+                    <a href="B&M_CONSTITUTION_V1.0.pdf" target="_blank" class="text-blue-600 font-semibold hover:text-white flex items-center gap-2 transition-all px-5 py-2.5 rounded-xl hover:bg-blue-700 bg-blue-50 border border-blue-200 hover:border-transparent md:shadow-sm">
                         View Full Constitution 
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
                     </a>
@@ -325,114 +328,79 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <div class="policy-card bg-slate-900 text-white p-8 rounded-2xl relative overflow-hidden shadow-xl" data-aos="fade-up" data-aos-delay="100">
-                    <div class="policy-icon absolute -right-6 -bottom-6 opacity-10">
-                        <svg class="w-40 h-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    </div>
-                    <div class="relative z-10">
-                        <h4 class="text-xl font-bold mb-4">Monthly Savings</h4>
-                        <p class="text-slate-300 text-sm leading-relaxed mb-4">All members must save money each month by the 5th. If you save late through the app, you will pay an extra fee.</p>
+                
+                <div class="relative rounded-2xl overflow-hidden group h-[450px] shadow-xl border border-slate-200" data-aos="fade-up" data-aos-delay="100">
+                    <img src="image.png" alt="Digital Vault" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+                    
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 to-transparent"></div>
+                    
+                    <div class="absolute inset-0 p-4 sm:p-5 flex flex-col justify-end">
+                        <div class="p-6 rounded-xl bg-slate-900/50 backdrop-blur-md border border-white/10 shadow-lg transition-all duration-300 group-hover:bg-slate-900/70 group-hover:border-blue-500/40 transform group-hover:-translate-y-1">
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="w-10 h-10 rounded-lg bg-blue-600/20 flex items-center justify-center border border-blue-500/30 text-blue-400">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                </div>
+                                <h4 class="text-lg font-bold text-white tracking-wide">Monthly Savings</h4>
+                            </div>
+                            <p class="text-sm text-slate-300 leading-relaxed font-light">All members must save money each month by the 5th. If you save late through the portal, you will pay an extra fee.</p>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="policy-card bg-gradient-to-br from-blue-700 to-blue-900 text-white p-8 rounded-2xl relative overflow-hidden shadow-xl" data-aos="fade-up" data-aos-delay="200">
-                    <div class="policy-icon absolute -right-6 -bottom-6 opacity-10">
-                        <svg class="w-40 h-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
-                    </div>
-                    <div class="relative z-10">
-                        <h4 class="text-xl font-bold mb-4">Borrowing Rules</h4>
-                        <p class="text-blue-100 text-sm leading-relaxed mb-4">You can borrow up to twice the amount you have saved. A group member must approve your loan request through the app.</p>
+                <div class="relative rounded-2xl overflow-hidden group h-[450px] shadow-xl border border-slate-200" data-aos="fade-up" data-aos-delay="200">
+                    <img src="bm_group_logo.png" alt="Agreement Handshake" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+                    
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 to-transparent"></div>
+                    
+                    <div class="absolute inset-0 p-4 sm:p-5 flex flex-col justify-end">
+                        <div class="p-6 rounded-xl bg-slate-900/50 backdrop-blur-md border border-white/10 shadow-lg transition-all duration-300 group-hover:bg-slate-900/70 group-hover:border-blue-500/40 transform group-hover:-translate-y-1">
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="w-10 h-10 rounded-lg bg-blue-600/20 flex items-center justify-center border border-blue-500/30 text-blue-400">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                                </div>
+                                <h4 class="text-lg font-bold text-white tracking-wide">Borrowing Rules</h4>
+                            </div>
+                            <p class="text-sm text-slate-300 leading-relaxed font-light">You can borrow up to twice the amount you have saved. A group member must approve your loan request through the portal.</p>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="policy-card bg-white text-slate-800 p-8 rounded-2xl relative overflow-hidden shadow-xl border border-slate-200" data-aos="fade-up" data-aos-delay="300">
-                    <div class="policy-icon absolute -right-6 -bottom-6 opacity-[0.03]">
-                        <svg class="w-40 h-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path></svg>
-                    </div>
-                    <div class="relative z-10">
-                        <h4 class="text-xl font-bold mb-4 text-slate-900">Missing Loan Payments</h4>
-                        <p class="text-slate-600 text-sm leading-relaxed mb-4">If you don't pay your loan on time, the person who approved it must pay instead. Extra charges will keep growing on accounts that are late.</p>
+                <div class="relative rounded-2xl overflow-hidden group h-[450px] shadow-xl border border-slate-200" data-aos="fade-up" data-aos-delay="300">
+                    <img src="late.png" alt="Hourglass Timer" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110">
+                    
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/70 to-transparent"></div>
+                    
+                    <div class="absolute inset-0 p-4 sm:p-5 flex flex-col justify-end">
+                        <div class="p-6 rounded-xl bg-rose-950/40 backdrop-blur-md border border-rose-500/20 shadow-lg transition-all duration-300 group-hover:bg-rose-950/60 group-hover:border-rose-500/40 transform group-hover:-translate-y-1">
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="w-10 h-10 rounded-lg bg-rose-500/20 flex items-center justify-center border border-rose-500/30 text-rose-400">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path></svg>
+                                </div>
+                                <h4 class="text-lg font-bold text-white tracking-wide">Missing Payments</h4>
+                            </div>
+                            <p class="text-sm text-rose-100/80 leading-relaxed font-light">If you don't pay your loan on time, the person who approved it must pay instead. Extra charges will keep growing on accounts that are late.</p>
+                        </div>
                     </div>
                 </div>
+
             </div>
         </div>
     </section>
 
-    <section id="media" class="py-24 bg-gradient-to-b from-white to-blue-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="mb-16" data-aos="fade-up">
-                <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
-                    <div class="max-w-2xl">
-                        <h2 class="text-blue-700 font-bold tracking-widest uppercase text-xs mb-3">Latest Updates</h2>
-                        <h3 class="text-3xl font-bold text-slate-900 tracking-tight sm:text-4xl mb-4">Media & Announcements</h3>
-                        <p class="text-lg text-slate-600">Stay informed with the latest news, events, and updates from B&M Group.</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                <!-- Featured Post (Large) -->
-                <div class="lg:col-span-7 bg-white rounded-2xl overflow-hidden shadow-xl border border-slate-200 hover:shadow-2xl transition-all duration-300 group" data-aos="fade-right" data-aos-delay="100">
-                    <div class="relative h-72 overflow-hidden">
-                        <img src="https://images.unsplash.com/photo-1556745757-8d76bdb6984b" alt="B&M App Launch" class="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300">
-                        <div class="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors"></div>
-                    </div>
-                    <div class="p-8">
-                        <span class="inline-block text-xs font-bold text-white bg-blue-600 uppercase tracking-wide px-3 py-1 rounded-full mb-4">News</span>
-                        <h4 class="font-bold text-2xl mb-3 text-slate-900">B&M App Official Launch</h4>
-                        <p class="text-base text-slate-600 mb-6 leading-relaxed">Our revolutionary mobile platform makes savings and loans easier than ever. Download it today and join other members growing their wealth together.</p>
-                        <a href="#" class="inline-flex items-center gap-2 text-blue-600 font-semibold hover:text-blue-800 transition-colors">Read More <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></a>
-                    </div>
-                </div>
-
-                <!-- Side Column -->
-                <div class="lg:col-span-5 space-y-6">
-                    <!-- Post 2 -->
-                    <div class="bg-white rounded-xl overflow-hidden shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 group flex flex-row h-40" data-aos="fade-left" data-aos-delay="100">
-                        <div class="relative w-40 h-40 flex-shrink-0 overflow-hidden">
-                            <img src="https://images.unsplash.com/photo-1521790797524-b2497295b8a0" alt="Quarterly Meeting" class="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300">
-                        </div>
-                        <div class="p-4 flex flex-col justify-between flex-grow">
-                            <div>
-                                <span class="text-xs font-bold text-blue-600 uppercase tracking-wide">Events</span>
-                                <h4 class="font-bold text-sm mt-1 mb-1 text-slate-900">Quarterly General Meeting</h4>
-                                <p class="text-xs text-slate-600 line-clamp-2">Members reviewed Q3 financial performance and app updates.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Post 3 -->
-                    <div class="bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-xl overflow-hidden shadow-lg border border-blue-500/30 hover:shadow-xl transition-all duration-300 group flex flex-row h-40" data-aos="fade-left" data-aos-delay="200">
-                        <div class="relative w-40 h-40 flex-shrink-0 overflow-hidden">
-                            <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c" alt="Dividend Distribution" class="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300 mix-blend-overlay">
-                        </div>
-                        <div class="p-4 flex flex-col justify-between flex-grow">
-                            <div>
-                                <span class="text-xs font-bold text-blue-100 uppercase tracking-wide">Announcements</span>
-                                <h4 class="font-bold text-sm mt-1 mb-1">Annual Dividend Distribution</h4>
-                                <p class="text-xs text-blue-100 line-clamp-2">Eligible members receive annual returns via app wallet automatically.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
 
     <footer class="bg-slate-950 text-slate-400 pt-20 pb-10 border-t border-slate-800 relative overflow-hidden">
         <div class="absolute top-0 right-1/4 w-96 h-96 bg-blue-900/10 rounded-full blur-[100px] pointer-events-none"></div>
         <div class="absolute bottom-0 left-10 w-64 h-64 bg-slate-800/20 rounded-full blur-[80px] pointer-events-none"></div>
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-12 lg:gap-8 mb-16">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 lg:gap-8 mb-16">
                 
                 <div class="lg:col-span-2">
                     <div class="flex items-center gap-3 mb-6">
                         <img src="bm_group_logo.png" alt="B&M Group Logo" class="h-10 w-auto object-contain" onerror="this.style.display='none'; document.getElementById('footerFallback').style.display='flex'">
-                        
                     </div>
                     <p class="text-sm text-slate-500 leading-relaxed max-w-sm">
-                        A private internal capital growth association committed to fostering financial discipline, secure lending, and wealth creation for its exclusive members through modern mobile solutions.
+                        A private internal capital growth association committed to fostering financial discipline, secure lending, and wealth creation for its exclusive members through modern secure web solutions.
                     </p>
                 </div>
 
@@ -442,17 +410,6 @@
                         <li><a href="#about" class="footer-link">About Us</a></li>
                         <li><a href="#leadership" class="footer-link">Leadership</a></li>
                         <li><a href="#policies" class="footer-link">Governance</a></li>
-                        <li><a href="#financials" class="footer-link">Financial Reports</a></li>
-                    </ul>
-                </div>
-
-                <div class="lg:col-span-1">
-                    <h4 class="text-white font-semibold mb-6 tracking-wider text-sm uppercase">Resources</h4>
-                    <ul class="space-y-4 text-sm font-medium">
-                        <li><a href="#download" class="footer-link">Download App</a></li>
-                        <li><a href="help.html" class="footer-link">Help Center</a></li>
-                        <li><a href="security.html" class="footer-link">Security</a></li>
-                        <li><a href="membership.html" class="footer-link">Membership Guide</a></li>
                     </ul>
                 </div>
 
@@ -481,8 +438,7 @@
                     &copy; 2026 B&M Group. All rights reserved. Strictly Private & Confidential.
                 </div>
                 <div class="flex justify-center space-x-6 text-slate-500">
-                    <a href="#" class="hover:text-blue-400 transition-colors">Support</a>
-                    <a href="#" class="hover:text-blue-400 transition-colors">Admin Portal</a>
+                    <a href="contact.html" class="hover:text-blue-400 transition-colors">Contact Us</a>
                 </div>
             </div>
         </div>

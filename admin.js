@@ -1930,6 +1930,12 @@ window.processRepayment = async function(loanId, userId, principal, interest, pe
             let loanUpdates = { amountPaidSoFar: newPaidSoFar };
             let userUpdates = {};
 
+            // 👉 THE FIX: Apply the Freeze Stamp if Admin selected "Interest Only"
+            if (repayType === 'interest' && !isFullyCleared) {
+                loanUpdates.penaltyFrozen = true;
+                loanUpdates.frozenPenaltyAmount = penaltyAmount;
+            }
+
             // If this cash payment wipes out the remaining balance
             if (isFullyCleared) {
                 loanUpdates.status = "repaid";

@@ -487,7 +487,7 @@
                 <div class="h-px grow bg-slate-200"></div>
             </header>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 max-h-[400px]">
                 <div class="bg-slate-900 rounded-[4px] ios-shadow border border-slate-800 p-6 flex flex-col justify-between admin-polygon-theme">
                     <div>
                         <div class="flex justify-between items-start mb-4">
@@ -506,7 +506,7 @@
                     </button>
                 </div>
 
-                <div class="lg:col-span-2 bg-[#0a0a0a] rounded-[4px] ios-shadow border border-slate-800 p-1 flex flex-col scanline min-w-0 w-full">
+                <div class="lg:col-span-2 bg-[#0a0a0a] rounded-[4px] ios-shadow border border-slate-800 p-1 flex flex-col scanline min-w-0 w-full max-h-[300px] overflow-y-auto">
                     <div class="bg-slate-900 flex justify-between items-center px-4 py-2 border-b border-slate-800">
                         <div class="flex items-center gap-2">
                             <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M4 18h16a2 2 0 002-2V6a2 2 0 00-2-2H4a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
@@ -545,7 +545,7 @@
             </div>
         </section>
 
-        <section id="ledger" class="bg-white rounded-[4px] ios-shadow border border-slate-200 p-6 md:p-8 mb-12">
+        <section id="ledger" class="bg-white rounded-[4px] ios-shadow border border-slate-200 p-6 md:p-8 mb-12 max-h-[500px] overflow-y-auto">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-slate-100 pb-4">
                 <h2 class="text-xl font-bold tracking-tight text-slate-900">Group Ledger</h2>
                 <button onclick="exportLedgerCSV()" class="bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-slate-800 transition-colors text-xs uppercase tracking-wider flex items-center gap-2 shadow-md shadow-slate-900/20">
