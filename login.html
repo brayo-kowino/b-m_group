@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Access | B&M Group</title>
+    <title>B&M Group Finance Portal</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -14,9 +14,14 @@
         input:focus + .icon-wrapper svg { color: #1d4ed8; }
 
         /* --- MIDNIGHT EXECUTIVE THEME --- */
-        .admin-polygon-theme {
-            background-color: #0f172a;
+        .side-polygon-theme {
+            background-color: #a3b6e0;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cpolygon points='0,0 100,50 0,100' fill='%231e293b' opacity='0.5'/%3E%3Cpolygon points='200,0 100,50 200,100' fill='%23020617' opacity='0.5'/%3E%3Cpolygon points='100,50 200,100 100,150 0,100' fill='%231e3a8a' opacity='0.4'/%3E%3Cpolygon points='0,200 100,150 0,100' fill='%231e293b' opacity='0.5'/%3E%3Cpolygon points='200,200 100,150 200,100' fill='%23020617' opacity='0.5'/%3E%3C/svg%3E");
+        }
+
+        .admin-polygon-theme {
+            background-color: rgba(255, 255, 255, 0.95);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cpolygon points='0,0 100,50 0,100' fill='%23bfdbfe' opacity='0.15'/%3E%3Cpolygon points='200,0 100,50 200,100' fill='%2393c5fd' opacity='0.1'/%3E%3Cpolygon points='100,50 200,100 100,150 0,100' fill='%2360a5fa' opacity='0.05'/%3E%3Cpolygon points='0,200 100,150 0,100' fill='%23bfdbfe' opacity='0.15'/%3E%3Cpolygon points='200,200 100,150 200,100' fill='%2393c5fd' opacity='0.1'/%3E%3C/svg%3E");
         }
     </style>
 </head>
@@ -26,15 +31,15 @@
         <div class="absolute inset-0 bg-radial-gradient from-blue-600/10 via-transparent to-transparent pointer-events-none"></div>
         
         <div class="relative z-10">
-            <img src="bm_group_logo.png" alt="B&M Group Logo" class="w-40 h-auto filter brightness-0 invert opacity-90">
+            <img src="bm_group_logo.png" alt="B&M Group Logo" class="w-40 h-auto">
         </div>
 
         <div class="max-w-xl relative z-10 my-auto py-12">
             <h2 class="text-4xl xl:text-5xl font-extrabold text-white tracking-tight leading-none mb-4">
                 <br><span class="text-blue-500">Finance Portal</span>
             </h2>
-            <p class="text-slate-400 text-base leading-relaxed font-medium max-w-md">
-                Welcome to the B&M Group. Access requires authorization and multi-factor validation.
+            <p class="text-black text-base leading-relaxed font-medium max-w-md">
+                Hello, Welcome to the B&M Group Finance Portal. Access requires authorization.
             </p>
         </div>
 
@@ -55,10 +60,10 @@
         <div class="w-full max-w-md mx-auto my-auto space-y-8">
             <div>
                 <h1 class="hidden text-2xl font-extrabold text-slate-900 tracking-tight sm:text-3xl">Let's Stop for Verification</h1>
-                <p class="text-sm text-slate-500 mt-2 font-medium">Please enter your authorized credentials to access the Finance Portal.</p>
+                <p class="text-sm text-slate-500 mt-2 font-medium">Please enter your authorized credentials to sign in.</p>
             </div>
             
-            <form id="loginForm" class="space-y-6">
+            <form id="loginForm" class="space-y-6 shadow-lg p-6 rounded-lg border border-slate-200" novalidate>
                 <div>
                     <label for="email" class="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2">Member ID</label>
                     <div class="relative group">
@@ -100,7 +105,7 @@
                 </div>
 
                 <button type="submit" id="submitBtn" class="w-full flex justify-center items-center gap-2 py-3.5 px-4 rounded-lg shadow-md shadow-blue-700/10 text-xs font-bold text-white bg-blue-700 hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-700/20 transition-all uppercase tracking-wider font-semibold">
-                    <span id="btnText">Access Portal</span>
+                    <span id="btnText">Sign In</span>
                     <svg id="btnIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                     <svg id="btnSpinner" class="w-4 h-4 animate-spin hidden" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
