@@ -14,7 +14,7 @@
 /admin              /maintenance.html   200!
 #/admin.html         /maintenance.html   200!
 
-/login              /maintenance.html   200!
+#/login              /maintenance.html   200!
 #/login.html         /maintenance.html   200!
 
 /member             /maintenance.html   200!
