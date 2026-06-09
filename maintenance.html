@@ -5,34 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>System Maintenance | B&M Group</title>
     <script src="https://cdn.tailwindcss.com"></script>
-</head>
-  <body class="bg-slate-900 flex items-center justify-center min-h-screen p-12">
-    <div class="bg-white p-2 md:p-2 rounded-xl shadow-2xl max-w-lg w-full text-center">
-  <style>
-    /* Smooth background animation */
-    body {
-      background: linear-gradient(-45deg, #0f172a, #1e293b, #020617, #0f172a);
-      background-size: 400% 400%;
-      animation: gradientMove 10s ease infinite;
-    }
+    <style>
+        /* Smooth background animation */
+        body {
+            background: linear-gradient(-45deg, #0f172a, #1e293b, #020617, #0f172a);
+            background-size: 400% 400%;
+            animation: gradientMove 10s ease infinite;
+        }
 
-    @keyframes gradientMove {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-  </style>
-<div class="flex items-center justify-center mb-1">
-  <img src="" alt="maintenance" class="w-18 h-18 animate-pulse">
-</div>
-<!-- Description -->
-<p class="text-black-300 mb-6 leading-relaxed">
-  The <span class="text-blue-400 font-semibold">B&M FINANCE Portal</span> is currently under maintenance. We are working hard to improve your experience and will be back online shortly.
-</p>
-<!-- Status badge -->
-<div class="inline-flex items-center gap-2 bg-gray-500/20 text-red-600 px-4 py-2 rounded-full text-sm mb-6">
-  <span class="w-2 h-2 bg-red-400 rounded-full animate-ping"></span>
-  Maintenance in progress
-</div>
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-6 text-slate-200 selection:bg-blue-500/30">
+
+    <div class="max-w-6xl w-full flex flex-col md:flex-row items-center justify-between gap-12 md:gap-20 px-4">
+        
+        <div class="w-full md:w-1/2 flex justify-center md:justify-end relative">
+            <div class="absolute inset-0 bg-blue-500/20 blur-2xl rounded-full animate-pulse max-w-xs mx-auto md:mr-0"></div>
+            <img src="maintanance.png" alt="maintenance" class="w-48 h-48 md:w-80 md:h-80 object-contain relative z-10 drop-shadow-2xl">
+        </div>
+
+        <div class="w-full md:w-1/2 flex flex-col items-center md:items-start text-center md:text-left">
+            
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight text-white">
+                We'll be back shortly.
+            </h1>
+
+            <p class="text-lg md:text-xl text-slate-400 mb-10 leading-relaxed max-w-lg">
+                The <span class="text-blue-400 font-semibold">B&M FINANCE Portal</span> is currently undergoing scheduled maintenance. We are working hard to improve your experience.
+            </p>
+
+           
+            
+        </div>
+    </div>
+
 </body>
 </html>
