@@ -7,7 +7,7 @@
 #/favicon.ico        /favicon.ico        200
 
 # 2. Allow the maintenance page itself to load
-/maintenance.html   /maintenance.html   200
+#/maintenance.html   /maintenance.html   200
 
 # 3. FORCE REDIRECT specific interactive pages to maintenance
 # We include both the clean URL and the .html extension to be 100% safe
