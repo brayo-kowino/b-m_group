@@ -11,20 +11,20 @@
 
 # 3. FORCE REDIRECT specific interactive pages to maintenance
 # We include both the clean URL and the .html extension to be 100% safe
-/admin              /maintenance.html   200!
-/admin.html         /maintenance.html   200!
+#/admin              /maintenance.html   200!
+#/admin.html         /maintenance.html   200!
 
-/login              /maintenance.html   200!
-/login.html         /maintenance.html   200!
+#/login              /maintenance.html   200!
+#/login.html         /maintenance.html   200!
 
-/member             /maintenance.html   200!
-/member.html        /maintenance.html   200!
+#/member             /maintenance.html   200!
+#/member.html        /maintenance.html   200!
 
-/contact            /maintenance.html   200!
-/contact.html       /maintenance.html   200!
+#/contact            /maintenance.html   200!
+#/contact.html       /maintenance.html   200!
 
-/guidelines         /maintenance.html   200!
-/guidelines.html    /maintenance.html   200!
+#/guidelines         /maintenance.html   200!
+#/guidelines.html    /maintenance.html   200!
 
 #/help               /maintenance.html   200!
 #/help.html          /maintenance.html   200!
