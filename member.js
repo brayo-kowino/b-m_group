@@ -3,7 +3,6 @@ import { doc, setDoc, getDoc, collection, serverTimestamp, query, where, getDocs
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 //import { signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 
 let currentUserData = null;
 
@@ -14,8 +13,6 @@ onAuthStateChanged(auth, async (user) => {
         window.location.href = 'login.html';
     }
 });
-
-
 
 // --- Helper: Format Phone Number for Daraja ---
 function formatPhoneNumber(phone) {
@@ -360,117 +357,37 @@ if (lipaForm) {
     });
 }
 
-const GEMINI_API_KEY = "AQ.Ab8RN6LbSJng7RCWAKShygxcaNFl6ekYqhjvvvjiJDgdGwOfsQ"; 
+// --- 2. Grievance / Support Form (IMMUNIZED) ---
+document.getElementById('grievanceForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button');
+    const text = document.getElementById('grievanceText').value;
 
-// --- AI Chatbot Logic ---
-const aiChatForm = document.getElementById('aiChatForm');
-const aiChatInput = document.getElementById('aiChatInput');
+    btn.disabled = true;
+    btn.textContent = "Sending...";
 
-// Allow Enter key to submit
-if (aiChatInput) {
-    aiChatInput.addEventListener('keypress', function (e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            aiChatForm.dispatchEvent(new Event('submit'));
-        }
-    });
-}
+    try {
+        // 🛡️ ANTI-SPAM: One message per user per day
+        const todayString = new Date().toISOString().split('T')[0];
+        const uniqueMsgId = `${auth.currentUser.uid}_msg_${todayString}`;
 
-if (aiChatForm) {
-    aiChatForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const text = aiChatInput.value.trim();
-        const chatHistory = document.getElementById('chatHistory');
-        const submitBtn = e.target.querySelector('button');
-
-        if (!text) return;
-
-        // 1. Show User Message
-        chatHistory.innerHTML += `
-            <div class="flex items-end gap-2 w-full max-w-[85%] self-end ml-auto justify-end mt-2">
-                <div class="bg-indigo-600 text-white p-3.5 rounded-2xl rounded-br-none shadow-sm text-sm font-medium leading-relaxed">
-                    ${text}
-                </div>
-            </div>
-        `;
-        
-        aiChatInput.value = '';
-        submitBtn.disabled = true;
-        chatHistory.scrollTop = chatHistory.scrollHeight;
-
-        // 2. Show Typing Indicator
-        const typingId = 'typing-' + Date.now();
-        chatHistory.innerHTML += `
-            <div id="${typingId}" class="flex items-end gap-2 w-full max-w-[85%] mt-2">
-                 <div class="w-6 h-6 shrink-0 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-[10px]">AI</div>
-                 <div class="bg-white border border-slate-200 p-3.5 rounded-2xl rounded-bl-none shadow-sm text-sm text-slate-400 italic">
-                    Thinking...
-                 </div>
-            </div>
-        `;
-        chatHistory.scrollTop = chatHistory.scrollHeight;
-
-        try {
-            // 3. Call the free Gemini REST API directly using fetch
-            const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    // Passing the AQ. key as an Authorization Bearer token fixes the 401 issue
-                    'Authorization': `Bearer ${GEMINI_API_KEY}`
-                },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: text }] }],
-                    systemInstruction: {
-                        parts: [{ text: "You are the friendly and professional AI assistant for the B&M Group, a private savings and credit investment partnership. Keep your answers brief, helpful, and directly related to finance, loans, or group policies. Format responses with short paragraphs." }]
-                    }
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            
-            // Extract response text safely from the REST layout
-            const responseText = data.candidates[0].content.parts[0].text;
-
-            // 4. Remove typing indicator and show AI response
-            document.getElementById(typingId)?.remove();
-            
-            // Replace markdown bold (**text**) with HTML for a nicer UI
-            const formattedResponse = responseText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-
-            chatHistory.innerHTML += `
-                <div class="flex items-end gap-2 w-full max-w-[85%] mt-2">
-                    <div class="w-6 h-6 shrink-0 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-[10px]">AI</div>
-                    <div class="bg-white border border-slate-200 p-3.5 rounded-2xl rounded-bl-none shadow-sm text-sm text-slate-700 font-medium leading-relaxed">
-                        ${formattedResponse}
-                    </div>
-                </div>
-            `;
-            chatHistory.scrollTop = chatHistory.scrollHeight;
-
-        } catch (error) {
-            console.error("Gemini API Error:", error);
-            document.getElementById(typingId)?.remove();
-            
-            chatHistory.innerHTML += `
-                <div class="flex items-end gap-2 w-full max-w-[85%] mt-2">
-                    <div class="w-6 h-6 shrink-0 bg-rose-100 rounded-full flex items-center justify-center text-rose-600 font-bold text-[10px]">!</div>
-                    <div class="bg-rose-50 border border-rose-200 p-3.5 rounded-2xl rounded-bl-none shadow-sm text-sm text-rose-700 font-medium">
-                        Sorry, my circuits are a bit jammed right now. Please try asking again in a moment!
-                    </div>
-                </div>
-            `;
-        } finally {
-            submitBtn.disabled = false;
-            aiChatInput.focus();
-        }
-    });
-}
+        await setDoc(doc(db, "messages", uniqueMsgId), {
+            userId: auth.currentUser.uid,
+            type: "grievance",
+            message: text,
+            status: "unread",
+            createdAt: serverTimestamp()
+        });
+        alert("Your message has been securely sent to the administrators.");
+        e.target.reset();
+    } catch (error) {
+        alert("Failed to send message.");
+        console.error(error);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "Send to Admins";
+    }
+});
 
 // --- 3. Constitution-Compliant Exit Strategy (IMMUNIZED) ---
 document.getElementById('exitForm').addEventListener('submit', async (e) => {
