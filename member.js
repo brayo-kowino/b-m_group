@@ -361,13 +361,6 @@ if (lipaForm) {
 }
 
 const GEMINI_API_KEY = "AQ.Ab8RN6LbSJng7RCWAKShygxcaNFl6ekYqhjvvvjiJDgdGwOfsQ"; 
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-
-// We use flash because it is insanely fast and has a huge free tier limit
-const model = genAI.getGenerativeModel({ 
-    model: "gemini-1.5-flash",
-    systemInstruction: "You are the friendly and professional AI assistant for the B&M Group, a private savings and credit investment partnership. Keep your answers brief, helpful, and directly related to finance, loans, or group policies. Format responses with short paragraphs."
-});
 
 // --- AI Chatbot Logic ---
 const aiChatForm = document.getElementById('aiChatForm');
@@ -419,14 +412,35 @@ if (aiChatForm) {
         chatHistory.scrollTop = chatHistory.scrollHeight;
 
         try {
-            // 3. Call the free Gemini API directly
-            const result = await model.generateContent(text);
-            const responseText = result.response.text();
+            // 3. Call the free Gemini REST API directly using fetch
+            const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Passing the AQ. key as an Authorization Bearer token fixes the 401 issue
+                    'Authorization': `Bearer ${GEMINI_API_KEY}`
+                },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: text }] }],
+                    systemInstruction: {
+                        parts: [{ text: "You are the friendly and professional AI assistant for the B&M Group, a private savings and credit investment partnership. Keep your answers brief, helpful, and directly related to finance, loans, or group policies. Format responses with short paragraphs." }]
+                    }
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            
+            // Extract response text safely from the REST layout
+            const responseText = data.candidates[0].content.parts[0].text;
 
             // 4. Remove typing indicator and show AI response
             document.getElementById(typingId)?.remove();
             
-            // Note: We use a simple regex to replace markdown bold (**text**) with HTML for a nicer UI
+            // Replace markdown bold (**text**) with HTML for a nicer UI
             const formattedResponse = responseText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
             chatHistory.innerHTML += `
