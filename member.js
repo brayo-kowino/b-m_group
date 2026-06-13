@@ -3,6 +3,7 @@ import { doc, setDoc, getDoc, collection, serverTimestamp, query, where, getDocs
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 //import { signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 let currentUserData = null;
 
@@ -14,10 +15,7 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const GEMINI_API_KEY = "AQ.Ab8RN6LbSJng7RCWAKShygxcaNFl6ekYqhjvvvjiJDgdGwOfsQ"; 
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 // --- Helper: Format Phone Number for Daraja ---
 function formatPhoneNumber(phone) {
@@ -361,6 +359,9 @@ if (lipaForm) {
         }
     });
 }
+
+const GEMINI_API_KEY = "AQ.Ab8RN6LbSJng7RCWAKShygxcaNFl6ekYqhjvvvjiJDgdGwOfsQ"; 
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 // We use flash because it is insanely fast and has a huge free tier limit
 const model = genAI.getGenerativeModel({ 
