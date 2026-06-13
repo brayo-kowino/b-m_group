@@ -19,21 +19,6 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// ==========================================
-// APP CHECK ENVIRONMENT DETECTOR
-// ==========================================
-
-// Check if the app is running on the local computer
-const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-
-if (isLocalhost) {
-    // DEV MODE: Tell Firebase to use the debug token so you don't get blocked
-    
-    self.FIREBASE_APPCHECK_DEBUG_TOKEN = "a7a119e2-6501-4276-858a-c552541b2959"; 
-    console.log("Running Locally: App Check Debug Mode Enabled");
-}
-
-// Initialize App Check (This runs for both local and live, but acts differently based on the line above)
 const appCheck = initializeAppCheck(app, {
   provider: new ReCaptchaEnterpriseProvider('6LeJPZMsAAAAAMdX6Q0G7Y2KP1HkQisYRd440k2c'),
   isTokenAutoRefreshEnabled: true 
@@ -41,4 +26,3 @@ const appCheck = initializeAppCheck(app, {
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-//export const functions = getFunctions(app);

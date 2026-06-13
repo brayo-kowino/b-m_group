@@ -1926,10 +1926,15 @@ window.processRepayment = async function(loanId, userId, principal, interest, pe
             const newPaidSoFar = paidSoFar + amount;
             isFullyCleared = newPaidSoFar >= totalDue;
 
+            // 2. Base updates
             let statsUpdates = { liquidityReserve: currentLiquidity + amount };
             let loanUpdates = { amountPaidSoFar: newPaidSoFar };
-            let userUpdates = {};
-
+            
+            // --- 🛠️ THE FIX: DEDUCT DEBT ON EVERY PAYMENT ---
+            let newActiveDebt = (userDoc.data().loansActive || 0) - amount;
+            let userUpdates = {
+                loansActive: newActiveDebt < 0 ? 0 : newActiveDebt
+            };
             
             if (repayType === 'interest' && !isFullyCleared) {
                 loanUpdates.penaltyFrozen = true;
@@ -1941,12 +1946,9 @@ window.processRepayment = async function(loanId, userId, principal, interest, pe
                 loanUpdates.status = "repaid";
                 loanUpdates.repaidAt = serverTimestamp();
 
-                // Drop active debt back down, ensuring it doesn't go negative
-                let newDebt = (userDoc.data().loansActive || 0) - (principal + interest);
-                userUpdates.loansActive = newDebt < 0 ? 0 : newDebt;
+                // Add to their success count
                 userUpdates.loansRepaidCount = (userDoc.data().loansRepaidCount || 0) + 1;
 
-                // Credit the group capital and profit with the Interest + Penalties
                 finalCapital = currentCapital + (interest + penaltyAmount);
                 finalTotalLoans = currentTotalLoans - principal;
 
@@ -1957,9 +1959,8 @@ window.processRepayment = async function(loanId, userId, principal, interest, pe
 
             transaction.update(statsRef, statsUpdates);
             transaction.update(loanRef, loanUpdates);
-            if (Object.keys(userUpdates).length > 0) {
-                transaction.update(userRef, userUpdates);
-            }
+            // Push the user updates to Firestore
+            transaction.update(userRef, userUpdates);
 
             transaction.set(transactionRef, {
                 userId: userId,
@@ -2132,7 +2133,9 @@ window.verifyPayment = async function(claimId, userId, amount, mpesaCode, userNa
                 });
 
             } else {
+                // ==========================================
                 // INSTALLMENT OR FREEZE REQUEST
+                // ==========================================
                 if (!loanId) throw new Error("Loan ID missing for repayment claim.");
                 const loanRef = doc(db, "loans", loanId);
                 const loanDoc = await transaction.get(loanRef);
@@ -2142,12 +2145,8 @@ window.verifyPayment = async function(claimId, userId, amount, mpesaCode, userNa
                 let currentPenalty = 0;
 
                 if (type === 'penalty_freeze_request') {
-                    // YOUR NEW LOGIC: If they are requesting a freeze, we trust the exact cash they sent.
-                    // Penalty paid = (Total Cash Sent) - (Original System Interest)
-                    // E.g., If they send 155, and interest is 150, the penalty they are clearing is exactly 5.
                     currentPenalty = Math.max(0, amount - loanData.interest);
                 } else {
-                    // Standard recalculation for normal mdogo mdogo installments
                     const startDate = loanData.approvedAt ? loanData.approvedAt.toDate() : loanData.createdAt.toDate();
                     const dueDate = new Date(startDate.getTime() + loanData.durationWeeks * 7 * 24 * 60 * 60 * 1000);
                     const timeDiff = dueDate.getTime() - new Date().getTime();
@@ -2162,14 +2161,31 @@ window.verifyPayment = async function(claimId, userId, amount, mpesaCode, userNa
                 const newPaidSoFar = paidSoFar + amount;
                 const totalDue = loanData.repayment + currentPenalty;
 
-                // 2. Add cash to Group Liquidity
+                // 2. Base updates
                 let statsUpdates = { liquidityReserve: currentLiquidity + amount };
                 let loanUpdates = { amountPaidSoFar: newPaidSoFar };
+                
+                const userSavings = userDoc.data().savings || 0;
+                const loanPrincipal = loanData.amount;
 
+                // --- 🛠️ THE FIX: DEDUCT DEBT ON EVERY PAYMENT ---
+                // Lower the user's active debt by the exact amount they just paid
+                let newActiveDebt = (userDoc.data().loansActive || 0) - amount;
+                let userUpdates = {
+                    loansActive: newActiveDebt < 0 ? 0 : newActiveDebt
+                };
+
+                // --- 🛡️ THE NEW SAFEGUARD: AGGRESSIVE PROFIT LOGGING ---
                 if (type === 'penalty_freeze_request') {
-                    // Freeze the penalty right now
                     loanUpdates.penaltyFrozen = true;
                     loanUpdates.frozenPenaltyAmount = currentPenalty;
+
+                    // Check if member's savings can fully cover the outstanding principal
+                    if (userSavings >= loanPrincipal) {
+                        statsUpdates.capital = currentCapital + amount;
+                        statsUpdates.totalProfit = currentProfit + amount;
+                        loanUpdates.profitAlreadyExtracted = (loanData.profitAlreadyExtracted || 0) + amount;
+                    }
                 }
 
                 // 3. Did this payment clear the loan?
@@ -2177,18 +2193,22 @@ window.verifyPayment = async function(claimId, userId, amount, mpesaCode, userNa
                     loanUpdates.status = "repaid";
                     loanUpdates.repaidAt = serverTimestamp();
                     
-                    // Decrease active debt for user
-                    let newActiveDebt = (userDoc.data().loansActive || 0) - loanData.repayment;
-                    transaction.update(userRef, { 
-                        loansActive: newActiveDebt < 0 ? 0 : newActiveDebt,
-                        loansRepaidCount: (userDoc.data().loansRepaidCount || 0) + 1
-                    });
+                    // Increment their success count ONLY when fully cleared
+                    userUpdates.loansRepaidCount = (userDoc.data().loansRepaidCount || 0) + 1;
 
-                    // Update Group Capital & Profit with the Interest + Penalty collected
+                    const previouslyExtracted = loanUpdates.profitAlreadyExtracted || loanData.profitAlreadyExtracted || 0;
+                    const totalProfitEarned = (loanData.interest + currentPenalty) - previouslyExtracted;
+
                     statsUpdates.totalLoans = currentTotalLoans - loanData.amount;
-                    statsUpdates.capital = currentCapital + (loanData.interest + currentPenalty);
-                    statsUpdates.totalProfit = currentProfit + (loanData.interest + currentPenalty);
+                    
+                    if (totalProfitEarned > 0) {
+                        statsUpdates.capital = (statsUpdates.capital || currentCapital) + totalProfitEarned;
+                        statsUpdates.totalProfit = (statsUpdates.totalProfit || currentProfit) + totalProfitEarned;
+                    }
                 }
+
+                // Apply the user updates we created above
+                transaction.update(userRef, userUpdates);
 
                 transaction.update(loanRef, loanUpdates);
                 transaction.update(statsRef, statsUpdates);
@@ -2198,7 +2218,6 @@ window.verifyPayment = async function(claimId, userId, amount, mpesaCode, userNa
                     createdAt: serverTimestamp(), description: `Verified Installment (Ref: ${mpesaCode})`
                 });
             }
-
             // Finally, clear the pending claim
             transaction.update(claimRef, { status: "verified", resolvedAt: serverTimestamp() });
         });
