@@ -14,6 +14,11 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+const GEMINI_API_KEY = "AQ.Ab8RN6LbSJng7RCWAKShygxcaNFl6ekYqhjvvvjiJDgdGwOfsQ"; 
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+
 // --- Helper: Format Phone Number for Daraja ---
 function formatPhoneNumber(phone) {
     let formatted = phone.trim().replace(/\s+/g, '');
@@ -357,37 +362,100 @@ if (lipaForm) {
     });
 }
 
-// --- 2. Grievance / Support Form (IMMUNIZED) ---
-document.getElementById('grievanceForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = e.target.querySelector('button');
-    const text = document.getElementById('grievanceText').value;
-
-    btn.disabled = true;
-    btn.textContent = "Sending...";
-
-    try {
-        // 🛡️ ANTI-SPAM: One message per user per day
-        const todayString = new Date().toISOString().split('T')[0];
-        const uniqueMsgId = `${auth.currentUser.uid}_msg_${todayString}`;
-
-        await setDoc(doc(db, "messages", uniqueMsgId), {
-            userId: auth.currentUser.uid,
-            type: "grievance",
-            message: text,
-            status: "unread",
-            createdAt: serverTimestamp()
-        });
-        alert("Your message has been securely sent to the administrators.");
-        e.target.reset();
-    } catch (error) {
-        alert("Failed to send message.");
-        console.error(error);
-    } finally {
-        btn.disabled = false;
-        btn.textContent = "Send to Admins";
-    }
+// We use flash because it is insanely fast and has a huge free tier limit
+const model = genAI.getGenerativeModel({ 
+    model: "gemini-1.5-flash",
+    systemInstruction: "You are the friendly and professional AI assistant for the B&M Group, a private savings and credit investment partnership. Keep your answers brief, helpful, and directly related to finance, loans, or group policies. Format responses with short paragraphs."
 });
+
+// --- AI Chatbot Logic ---
+const aiChatForm = document.getElementById('aiChatForm');
+const aiChatInput = document.getElementById('aiChatInput');
+
+// Allow Enter key to submit
+if (aiChatInput) {
+    aiChatInput.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            aiChatForm.dispatchEvent(new Event('submit'));
+        }
+    });
+}
+
+if (aiChatForm) {
+    aiChatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const text = aiChatInput.value.trim();
+        const chatHistory = document.getElementById('chatHistory');
+        const submitBtn = e.target.querySelector('button');
+
+        if (!text) return;
+
+        // 1. Show User Message
+        chatHistory.innerHTML += `
+            <div class="flex items-end gap-2 w-full max-w-[85%] self-end ml-auto justify-end mt-2">
+                <div class="bg-indigo-600 text-white p-3.5 rounded-2xl rounded-br-none shadow-sm text-sm font-medium leading-relaxed">
+                    ${text}
+                </div>
+            </div>
+        `;
+        
+        aiChatInput.value = '';
+        submitBtn.disabled = true;
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+
+        // 2. Show Typing Indicator
+        const typingId = 'typing-' + Date.now();
+        chatHistory.innerHTML += `
+            <div id="${typingId}" class="flex items-end gap-2 w-full max-w-[85%] mt-2">
+                 <div class="w-6 h-6 shrink-0 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-[10px]">AI</div>
+                 <div class="bg-white border border-slate-200 p-3.5 rounded-2xl rounded-bl-none shadow-sm text-sm text-slate-400 italic">
+                    Thinking...
+                 </div>
+            </div>
+        `;
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+
+        try {
+            // 3. Call the free Gemini API directly
+            const result = await model.generateContent(text);
+            const responseText = result.response.text();
+
+            // 4. Remove typing indicator and show AI response
+            document.getElementById(typingId)?.remove();
+            
+            // Note: We use a simple regex to replace markdown bold (**text**) with HTML for a nicer UI
+            const formattedResponse = responseText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+            chatHistory.innerHTML += `
+                <div class="flex items-end gap-2 w-full max-w-[85%] mt-2">
+                    <div class="w-6 h-6 shrink-0 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-[10px]">AI</div>
+                    <div class="bg-white border border-slate-200 p-3.5 rounded-2xl rounded-bl-none shadow-sm text-sm text-slate-700 font-medium leading-relaxed">
+                        ${formattedResponse}
+                    </div>
+                </div>
+            `;
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
+        } catch (error) {
+            console.error("Gemini API Error:", error);
+            document.getElementById(typingId)?.remove();
+            
+            chatHistory.innerHTML += `
+                <div class="flex items-end gap-2 w-full max-w-[85%] mt-2">
+                    <div class="w-6 h-6 shrink-0 bg-rose-100 rounded-full flex items-center justify-center text-rose-600 font-bold text-[10px]">!</div>
+                    <div class="bg-rose-50 border border-rose-200 p-3.5 rounded-2xl rounded-bl-none shadow-sm text-sm text-rose-700 font-medium">
+                        Sorry, my circuits are a bit jammed right now. Please try asking again in a moment!
+                    </div>
+                </div>
+            `;
+        } finally {
+            submitBtn.disabled = false;
+            aiChatInput.focus();
+        }
+    });
+}
 
 // --- 3. Constitution-Compliant Exit Strategy (IMMUNIZED) ---
 document.getElementById('exitForm').addEventListener('submit', async (e) => {
