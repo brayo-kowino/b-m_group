@@ -1,8 +1,6 @@
 import { auth, db } from './firebase.js';
-import { doc, setDoc, getDoc, collection, serverTimestamp, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { doc, setDoc, getDoc, collection, serverTimestamp, query, where, getDocs, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-//import { signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
 let currentUserData = null;
 
@@ -14,7 +12,6 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-// --- Helper: Format Phone Number for Daraja ---
 function formatPhoneNumber(phone) {
     let formatted = phone.trim().replace(/\s+/g, '');
     if (formatted.startsWith('+')) formatted = formatted.substring(1);
@@ -24,25 +21,16 @@ function formatPhoneNumber(phone) {
     return formatted;
 }
 
-// Put this inside your initialization logic in member.js
 const statsRef = doc(db, "groupStats", "main");
 
 onSnapshot(statsRef, async (docSnap) => {
     if (docSnap.exists() && docSnap.data().maintenanceMode === true) {
-        // The admin just flipped the switch! 
-        // 1. Instantly sign the user out
         await signOut(auth);
-        
         alert("The system has been placed into emergency maintenance mode by the Administrator. You are being logged out.");
         window.location.href = "login.html"; 
     }
 });
 
-// ==========================================
-// NEW FEATURE LOGIC: LEDGER, SUPPORT & EXIT
-// ==========================================
-
-// --- 1. Load Personal Ledger ---
 async function loadMyLedger(uid) {
     const tableBody = document.getElementById('myLedgerBody');
     tableBody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-slate-500">Loading records...</td></tr>';
@@ -65,12 +53,12 @@ async function loadMyLedger(uid) {
             const data = docSnap.data();
             const dateStr = data.createdAt ? data.createdAt.toDate().toLocaleDateString() : 'Pending';
             
-            // Color code the transaction type
             let typeStyle = 'text-slate-600';
             if (data.type === 'deposit') typeStyle = 'text-green-600 font-medium';
+            if (data.type === 'emergency_deposit') typeStyle = 'text-emerald-500 font-bold';
             if (data.type === 'loan') typeStyle = 'text-blue-600 font-medium';
             if (data.type === 'repayment') typeStyle = 'text-purple-600 font-medium';
-            if (data.type === 'penalty') typeStyle = 'text-red-600 font-medium';
+            if (data.type === 'penalty' || data.type === 'emergency_payout') typeStyle = 'text-red-600 font-medium';
 
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -87,29 +75,23 @@ async function loadMyLedger(uid) {
     }
 }
 
-// --- Theme Switching Logic ---
 function triggerDangerZone(isDanger) {
     const dangerBanner = document.getElementById('dangerBanner');
-    const nav = document.querySelector('nav');
+    const nav = document.querySelector('header');
     
     if (isDanger) {
         document.body.classList.replace('bg-[#F5F5F7]', 'bg-red-50');
         dangerBanner.classList.remove('hidden');
-        
-        // Turn Nav Red
-        nav.classList.remove('nav-polygon-theme', 'bg-white/85');
+        nav.classList.remove('nav-darker-polygon');
         nav.classList.add('bg-red-100', 'border-red-300');
     } else {
         document.body.classList.replace('bg-red-50', 'bg-[#F5F5F7]');
         dangerBanner.classList.add('hidden');
-        
-        // Restore normal Nav
-        nav.classList.add('nav-polygon-theme');
+        nav.classList.add('nav-darker-polygon');
         nav.classList.remove('bg-red-100', 'border-red-300');
     }
 }
 
-// --- Upgraded Load Personal Loan Requests (With Detailed Financials & Penalty Math) ---
 async function loadMyLoans(uid) {
     const container = document.getElementById('myLoansList');
     const lipaSelect = document.getElementById('lipaLoanSelect');
@@ -125,11 +107,10 @@ async function loadMyLoans(uid) {
         if (snapshot.empty) {
             container.innerHTML = '<div class="text-sm text-slate-500 text-center bg-slate-50 p-3 rounded border border-slate-100">No loan history found.</div>';
             if (lipaSelect) lipaSelect.innerHTML = '<option value="">No active loans</option>';
-            triggerDangerZone(false); // Ensure danger zone is off if empty
+            triggerDangerZone(false); 
             return;
         }
 
-        // We only trigger the red banner if there is an UNFROZEN overdue loan
         let hasActiveDailyPenalty = false;
 
         snapshot.forEach((docSnap) => {
@@ -144,7 +125,6 @@ async function loadMyLoans(uid) {
             
             const paidSoFar = loan.amountPaidSoFar || 0;
 
-            // === DATE & DUE TRACKING LOGIC ===
             if (loan.status === 'approved') {
                 const startDate = loan.approvedAt ? loan.approvedAt.toDate() : loan.createdAt.toDate();
                 const dueDate = new Date(startDate.getTime() + loan.durationWeeks * 7 * 24 * 60 * 60 * 1000);
@@ -155,20 +135,16 @@ async function loadMyLoans(uid) {
 
                 if (daysRemaining < 0) {
                     const daysLate = Math.abs(daysRemaining);
-                    
                     if (loan.penaltyFrozen) {
-                        // User paid the interest, penalty is stopped. Do NOT trigger danger zone.
                         penaltyAmount = loan.frozenPenaltyAmount || 0;
                         statusBadge = '<span class="bg-rose-100 text-rose-700 border border-rose-300 px-2 py-0.5 rounded text-[10px] font-bold uppercase">PENALTY FROZEN</span>';
                         timeInfo = `<span class="text-rose-600 font-bold">${daysLate} Days Late (Frozen)</span>`;
                     } else {
-                        // Penalty is active and accumulating!
                         hasActiveDailyPenalty = true; 
                         penaltyAmount = daysLate * 5;
                         statusBadge = '<span class="bg-red-600 text-white border border-red-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase animate-pulse">OVERDUE</span>';
                         timeInfo = `<span class="text-red-600 font-bold">${daysLate} Days Late!</span>`;
                     }
-
                 } else if (daysRemaining <= 3) {
                     statusBadge = '<span class="bg-amber-100 text-amber-700 border border-amber-300 px-2 py-0.5 rounded text-[10px] font-bold uppercase">DUE SOON</span>';
                     timeInfo = `<span class="text-amber-600 font-bold">${daysRemaining} Days Left</span>`;
@@ -177,12 +153,10 @@ async function loadMyLoans(uid) {
                     timeInfo = `<span class="text-blue-600">${daysRemaining} Days Left</span>`;
                 }
 
-                // === MERGED FINANCIAL MATH ===
                 const effectiveInterest = loan.interest + penaltyAmount; 
                 const totalDue = loan.amount + effectiveInterest; 
                 const balance = totalDue - paidSoFar;
 
-                // Populate Lipa Mdogo Dropdown
                 if (lipaSelect) {
                     let dropdownText = `KSH ${loan.amount} Loan (Bal: KSH ${balance})`;
                     if (daysRemaining < 0 && !loan.penaltyFrozen) {
@@ -191,28 +165,19 @@ async function loadMyLoans(uid) {
                     lipaSelect.innerHTML += `<option value="${loanId}" data-interest="${effectiveInterest}" data-balance="${balance}">${dropdownText}</option>`;
                 }
 
-                // Show the complete breakdown to the user
                 extraInfo = `
                     <div class="mt-2 space-y-1 bg-slate-50 p-2.5 rounded border border-slate-100">
-                        <div class="flex justify-between text-xs text-slate-600">
-                            <span>Principal:</span> <span class="font-medium">KSH ${loan.amount}</span>
-                        </div>
+                        <div class="flex justify-between text-xs text-slate-600"><span>Principal:</span> <span class="font-medium">KSH ${loan.amount}</span></div>
                         <div class="flex justify-between text-xs ${penaltyAmount > 0 ? 'text-red-600 font-bold' : 'text-slate-600'}">
-                            <span>Interest & Fees:</span> 
-                            <span>KSH ${effectiveInterest} ${penaltyAmount > 0 ? `<span class="text-[9px] font-medium text-red-500 ml-1">(Inc. KSH ${penaltyAmount} late fee)</span>` : ''}</span>
+                            <span>Interest & Fees:</span> <span>KSH ${effectiveInterest} ${penaltyAmount > 0 ? `<span class="text-[9px] font-medium text-red-500 ml-1">(Inc. KSH ${penaltyAmount} late fee)</span>` : ''}</span>
                         </div>
-                        <div class="flex justify-between text-xs text-slate-700 pt-1 border-t border-slate-200 mt-1">
-                            <span>Total Expected:</span> <span class="font-bold">KSH ${totalDue}</span>
-                        </div>
-                        <div class="flex justify-between text-xs text-emerald-600">
-                            <span>Paid so far:</span> <span class="font-bold">KSH ${paidSoFar}</span>
-                        </div>
+                        <div class="flex justify-between text-xs text-slate-700 pt-1 border-t border-slate-200 mt-1"><span>Total Expected:</span> <span class="font-bold">KSH ${totalDue}</span></div>
+                        <div class="flex justify-between text-xs text-emerald-600"><span>Paid so far:</span> <span class="font-bold">KSH ${paidSoFar}</span></div>
                         <div class="flex justify-between text-sm pt-1.5 border-t border-slate-200 mt-1 ${balance > 0 ? 'text-rose-600' : 'text-emerald-600'}">
                             <span class="font-bold">Remaining Balance:</span> <span class="font-black">KSH ${balance}</span>
                         </div>
                     </div>
                 `;
-
             } else if (loan.status === 'pending') {
                 statusBadge = '<span class="bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">Pending Review</span>';
                 extraInfo = `<div class="mt-2 text-xs text-slate-600 font-medium bg-slate-50 p-2 rounded border border-slate-100">Total Expected Repayment: KSH ${loan.repayment}</div>`;
@@ -226,86 +191,60 @@ async function loadMyLoans(uid) {
                 `;
             }
 
-            // Build UI Card - dynamically style based on severity
             let cardClass = 'border-slate-200 bg-white';
             if (loan.status === 'approved') {
                 if (hasActiveDailyPenalty && !loan.penaltyFrozen) cardClass = 'border-red-300 bg-red-50';
                 else if (loan.penaltyFrozen) cardClass = 'border-rose-200 bg-rose-50/40';
-            } else if (loan.status === 'repaid') {
-                cardClass = 'border-green-200 bg-green-50/30 opacity-80'; 
-            }
+            } else if (loan.status === 'repaid') cardClass = 'border-green-200 bg-green-50/30 opacity-80'; 
             
             const card = document.createElement('div');
             card.className = `border rounded-md p-3 shadow-sm transition hover:shadow-md mb-3 ${cardClass}`;
             card.innerHTML = `
-                <div class="flex justify-between items-start mb-1.5">
-                    <div class="font-bold text-slate-800 text-sm">KSH ${loan.amount}</div>
-                    ${statusBadge}
-                </div>
-                <div class="flex justify-between items-center text-xs text-slate-500 mb-1">
-                    <span>${dateStr}</span>
-                    ${timeInfo}
-                </div>
+                <div class="flex justify-between items-start mb-1.5"><div class="font-bold text-slate-800 text-sm">KSH ${loan.amount}</div>${statusBadge}</div>
+                <div class="flex justify-between items-center text-xs text-slate-500 mb-1"><span>${dateStr}</span>${timeInfo}</div>
                 ${extraInfo}
             `;
             container.appendChild(card);
         });
 
-        // Fire the Danger Zone ONLY if there is an active, accumulating penalty
         triggerDangerZone(hasActiveDailyPenalty);
-
     } catch (error) {
         console.error("Error loading personal loans:", error);
         container.innerHTML = '<div class="text-xs text-red-500 text-center p-2 bg-red-50 rounded">Failed to load requests. Please refresh.</div>';
     }
 }
-// --- Auto-Prefill Lipa Mdogo Amount ---
+
 const lipaLoanSelect = document.getElementById('lipaLoanSelect');
 const lipaIntent = document.getElementById('lipaIntent');
 const lipaAmount = document.getElementById('lipaAmount');
 
 function handlePrefillAmount() {
     if (!lipaLoanSelect || !lipaIntent || !lipaAmount) return;
-
-    // Grab the currently selected option element
     const selectedOption = lipaLoanSelect.options[lipaLoanSelect.selectedIndex];
-    
-    // If they haven't selected a valid loan, clear it and bail out
     if (!selectedOption || !selectedOption.value) {
         lipaAmount.value = '';
         return;
     }
-
     const intent = lipaIntent.value;
     const exactInterest = selectedOption.getAttribute('data-interest');
     const exactBalance = selectedOption.getAttribute('data-balance');
 
-    if (intent === 'freeze_penalty') {
-        // Prefill the exact interest + penalties
-        lipaAmount.value = exactInterest;
-    } else if (intent === 'full_balance') { 
-        // If you ever add a 'full balance' option, this covers it
-        lipaAmount.value = exactBalance;
-    } else {
-        // Otherwise (mdogo mdogo), clear it so they can type
-        lipaAmount.value = '';
-    }
+    if (intent === 'freeze_penalty') lipaAmount.value = exactInterest;
+    else if (intent === 'full_balance') lipaAmount.value = exactBalance;
+    else lipaAmount.value = '';
 }
 
-// Watch both dropdowns for changes
 if (lipaLoanSelect && lipaIntent) {
     lipaLoanSelect.addEventListener('change', handlePrefillAmount);
     lipaIntent.addEventListener('change', handlePrefillAmount);
 }
 
-// --- Handle Lipa Mdogo Mdogo Submission ---
 const lipaForm = document.getElementById('lipaMdogoForm');
 if (lipaForm) {
     lipaForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('lipaSubmitBtn');
         const statusDiv = document.getElementById('lipaStatus');
-        
         const loanId = document.getElementById('lipaLoanSelect').value;
         const intent = document.getElementById('lipaIntent').value; 
         const amount = Number(document.getElementById('lipaAmount').value);
@@ -329,7 +268,6 @@ if (lipaForm) {
         btn.textContent = "Submitting Code...";
 
         try {
-            // Using the M-Pesa code as the Doc ID prevents duplicate submissions naturally
             await setDoc(doc(db, "paymentClaims", mpesaCode), {
                 userId: auth.currentUser.uid,
                 amount: amount,
@@ -344,10 +282,9 @@ if (lipaForm) {
             statusDiv.className = "mt-3 text-sm font-medium rounded p-2 bg-green-50 text-green-700 border border-green-200";
             statusDiv.classList.remove('hidden');
             e.target.reset();
-
         } catch (error) {
             console.error("Installment submission error:", error);
-            statusDiv.innerHTML = "System error submitting code. Please check your connection and try again.";
+            statusDiv.innerHTML = "System error submitting code. Please try again.";
             statusDiv.className = "mt-3 text-sm font-medium rounded p-2 bg-red-50 text-red-600 border border-red-200";
             statusDiv.classList.remove('hidden');
         } finally {
@@ -357,20 +294,15 @@ if (lipaForm) {
     });
 }
 
-// --- 2. Grievance / Support Form (IMMUNIZED) ---
 document.getElementById('grievanceForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector('button');
     const text = document.getElementById('grievanceText').value;
 
     btn.disabled = true;
-    btn.textContent = "Sending...";
-
     try {
-        // 🛡️ ANTI-SPAM: One message per user per day
         const todayString = new Date().toISOString().split('T')[0];
         const uniqueMsgId = `${auth.currentUser.uid}_msg_${todayString}`;
-
         await setDoc(doc(db, "messages", uniqueMsgId), {
             userId: auth.currentUser.uid,
             type: "grievance",
@@ -382,23 +314,18 @@ document.getElementById('grievanceForm').addEventListener('submit', async (e) =>
         e.target.reset();
     } catch (error) {
         alert("Failed to send message.");
-        console.error(error);
     } finally {
         btn.disabled = false;
-        btn.textContent = "Send to Admins";
     }
 });
 
-// --- 3. Constitution-Compliant Exit Strategy (IMMUNIZED) ---
 document.getElementById('exitForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const errorDiv = document.getElementById('exitError');
     errorDiv.classList.add('hidden');
-
     const exitType = document.getElementById('exitType').value;
     const exitReason = document.getElementById('exitReason').value;
 
-    // RULE ENFORCEMENT: Sec 13.1 - Member must clear all loans before voluntary exit
     if (exitType === 'voluntary') {
         const loansQuery = query(
             collection(db, "loans"),
@@ -421,9 +348,7 @@ document.getElementById('exitForm').addEventListener('submit', async (e) => {
     btn.textContent = "Processing...";
 
     try {
-        // 🛡️ ANTI-SPAM: User can only have ONE exit request document ever
         const uniqueExitId = `${auth.currentUser.uid}_exit_request`;
-
         await setDoc(doc(db, "exitRequests", uniqueExitId), {
             userId: auth.currentUser.uid,
             type: exitType,
@@ -431,44 +356,18 @@ document.getElementById('exitForm').addEventListener('submit', async (e) => {
             status: "pending_review",
             createdAt: serverTimestamp()
         });
-        
         alert("Official exit request submitted. The founders will review this application shortly.");
         e.target.reset();
     } catch (error) {
         errorDiv.textContent = "System error processing exit request.";
         errorDiv.classList.remove('hidden');
-        console.error(error);
     } finally {
         btn.disabled = false;
         btn.textContent = "Submit Official Exit Request";
     }
 });
 
-// Logout Logic
-document.getElementById('logoutBtn').addEventListener('click', async () => {
-    await signOut(auth);
-});
-
-// Helper: Calculate Target
-function getMonthlyTarget() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth(); 
-    const monthName = now.toLocaleString('default', { month: 'long' });
-    
-    const daysInMonth = new Date(year, month + 1, 0).getDate(); 
-    const fullWeeks = Math.floor(daysInMonth / 7);
-    const extraDays = daysInMonth % 7;
-    
-    const target = (fullWeeks * 70) + (extraDays * 10);
-    return { target, monthName, year, month };
-}
-
-// Helper: Get 1st of month
-function getStartOfMonth() {
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), 1);
-}
+document.getElementById('logoutBtn').addEventListener('click', async () => { await signOut(auth); });
 
 let contributionChartInstance = null;
 
@@ -480,10 +379,7 @@ async function renderContributionChart(uid) {
             where("type", "==", "deposit"),
             orderBy("createdAt", "asc")
         );
-        
         const snapshot = await getDocs(q);
-
-        // Group data by month
         const groupedData = {};
         
         snapshot.forEach(docSnap => {
@@ -491,15 +387,11 @@ async function renderContributionChart(uid) {
             if (data.createdAt) {
                 const date = data.createdAt.toDate();
                 const monthYear = date.toLocaleString('default', { month: 'short', year: 'numeric' });
-                
-                if (!groupedData[monthYear]) {
-                    groupedData[monthYear] = 0;
-                }
+                if (!groupedData[monthYear]) groupedData[monthYear] = 0;
                 groupedData[monthYear] += Number(data.amount);
             }
         });
 
-        // If empty, add a placeholder
         if (Object.keys(groupedData).length === 0) {
             const currentMonth = new Date().toLocaleString('default', { month: 'short', year: 'numeric' });
             groupedData[currentMonth] = 0;
@@ -508,139 +400,67 @@ async function renderContributionChart(uid) {
         const labels = Object.keys(groupedData);
         const monthlyDeposits = [];
         const cumulativeSavings = [];
-        
         let runningTotal = 0;
 
-        // Build the arrays for the chart
         labels.forEach(month => {
             const monthAmount = groupedData[month];
             monthlyDeposits.push(monthAmount);
-            
             runningTotal += monthAmount;
             cumulativeSavings.push(runningTotal);
         });
 
         const ctx = document.getElementById('contributionChart').getContext('2d');
-        
-        if (contributionChartInstance) {
-            contributionChartInstance.destroy();
-        }
+        if (contributionChartInstance) contributionChartInstance.destroy();
 
         contributionChartInstance = new Chart(ctx, {
-            // We set the base type to bar, but override the line dataset below
             type: 'bar', 
             data: {
                 labels: labels,
                 datasets: [
                     {
-                        type: 'line',
-                        label: 'Total Savings (KSH)',
-                        data: cumulativeSavings,
-                        borderColor: '#10b981', // Tailwind emerald-500 (Green means money!)
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        borderWidth: 3,
-                        tension: 0.4,
-                        fill: true,
-                        yAxisID: 'y', // Bind to main Y axis
-                        pointBackgroundColor: '#ffffff',
-                        pointBorderColor: '#10b981',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        order: 1 // Draws line on top of bars
+                        type: 'line', label: 'Total Savings (KSH)', data: cumulativeSavings,
+                        borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 3, tension: 0.4, fill: true, yAxisID: 'y', 
+                        pointBackgroundColor: '#ffffff', pointBorderColor: '#10b981',
+                        pointBorderWidth: 2, pointRadius: 4, order: 1
                     },
                     {
-                        type: 'bar',
-                        label: 'Monthly Deposit (KSH)',
-                        data: monthlyDeposits,
-                        backgroundColor: '#3b82f6', // Tailwind blue-500
-                        borderRadius: 4, // Rounded tops on the bars
-                        barThickness: 'flex',
-                        maxBarThickness: 40,
-                        order: 2
+                        type: 'bar', label: 'Monthly Deposit (KSH)', data: monthlyDeposits,
+                        backgroundColor: '#3b82f6', borderRadius: 4, barThickness: 'flex',
+                        maxBarThickness: 40, order: 2
                     }
                 ]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index', // Hovering shows both line and bar data together!
-                    intersect: false,
-                },
+                responsive: true, maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
                 plugins: {
-                    legend: { 
-                        display: true, 
-                        position: 'top',
-                        labels: {
-                            usePointStyle: true,
-                            boxWidth: 8,
-                            font: { family: "'Inter', sans-serif", size: 12 }
-                        }
-                    }, 
-                    tooltip: {
-                        backgroundColor: '#1e293b',
-                        padding: 12,
-                        cornerRadius: 8,
-                        titleFont: { size: 13, family: "'Inter', sans-serif" },
-                        bodyFont: { size: 12, family: "'Inter', sans-serif" },
-                        callbacks: {
-                            label: function(context) {
-                                return `${context.dataset.label}: ${context.parsed.y}`;
-                            }
-                        }
-                    }
+                    legend: { display: true, position: 'top', labels: { usePointStyle: true, boxWidth: 8 } }, 
                 },
                 scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: { 
-                            borderDash: [4, 4], 
-                            color: '#e2e8f0' 
-                        },
-                        ticks: { 
-                            font: { size: 11, family: "'Inter', sans-serif" }, 
-                            color: '#64748b' 
-                        },
-                        border: { display: false }
-                    },
-                    x: {
-                        grid: { display: false },
-                        ticks: { 
-                            font: { size: 11, family: "'Inter', sans-serif" }, 
-                            color: '#64748b' 
-                        },
-                        border: { display: false }
-                    }
+                    y: { beginAtZero: true, grid: { borderDash: [4, 4], color: '#e2e8f0' }, border: { display: false } },
+                    x: { grid: { display: false }, border: { display: false } }
                 }
             }
         });
 
         document.getElementById('chartSkeleton')?.classList.add('hidden');
-
-    } catch (error) {
-        console.error("Error rendering trend chart:", error);
-    }
+    } catch (error) { console.error("Error rendering trend chart:", error); }
 }
+
 let userUnsubscribe = null;
 
 async function loadUserData(uid) {
     const userRef = doc(db, "users", uid);
-    
-    // If there's already a listener running, stop it before starting a new one
     if (userUnsubscribe) userUnsubscribe();
 
-    // The Magic Eavesdropper: This runs every single time the database changes!
     userUnsubscribe = onSnapshot(userRef, async (userSnap) => {
         let globalData = null;
 
         if (userSnap.exists()) {
             currentUserData = userSnap.data();
-            
-            // 1. Basic UI Updates
             document.getElementById('memberName').textContent = currentUserData.name;
             
-            // Add a quick flash animation so the user FEELS the money drop in
             const savingsEl = document.getElementById('mySavings');
             savingsEl.textContent = `KSH ${currentUserData.savings}`;
             savingsEl.classList.add('text-emerald-400', 'scale-105');
@@ -650,15 +470,36 @@ async function loadUserData(uid) {
                 document.getElementById('adminReturnBtn').classList.remove('hidden');
             }
 
-            // --- Fetch Global Stats for Liquidity ---
+            // 🚨 EMERGENCY VAULT SNAPSHOT SYNC
+            const emBal = currentUserData.emergencySavings || 0;
+            const emStatus = currentUserData.emergencyStatus || 'active';
+
+            document.getElementById('myEmergencyBalance').textContent = `KSH ${emBal}`;
+            const sosStatusEl = document.getElementById('sosStatusText');
+            const sosBtnEl = document.getElementById('btnPullSOS');
+
+            if(emStatus === 'suspended') {
+                sosStatusEl.textContent = "Status: ⚠️ SUSPENDED BY BOARD";
+                sosStatusEl.className = "text-[10px] font-bold text-rose-500";
+                if(sosBtnEl) {
+                    sosBtnEl.disabled = true;
+                    sosBtnEl.classList.add('opacity-40', 'cursor-not-allowed');
+                }
+            } else {
+                sosStatusEl.textContent = "Status: Safe & Active";
+                sosStatusEl.className = "text-[10px] font-bold text-emerald-400";
+                if(sosBtnEl) {
+                    sosBtnEl.disabled = false;
+                    sosBtnEl.classList.remove('opacity-40', 'cursor-not-allowed');
+                }
+            }
+
             let maxGroupLoanable = 0;
             let totalLentOut = 0;
             let globalRemainingLiquidity = 0;
             let totalGroupCapital = 0;
 
             try {
-                const statsRef = doc(db, "groupStats", "main");
-                // We use getDoc here because the group stats don't need to refresh the whole page
                 const statsSnap = await getDoc(statsRef);
                 if (statsSnap.exists()) {
                     globalData = statsSnap.data();
@@ -672,7 +513,7 @@ async function loadUserData(uid) {
                         document.getElementById('systemAlert').classList.remove('hidden');
                     }
                 }
-            } catch(e) { console.error("Could not load global stats", e); }
+            } catch(e) {}
 
             const personalInfoBanner = document.getElementById('personalInfoBanner');
             if (currentUserData.infoMessage) {
@@ -682,7 +523,6 @@ async function loadUserData(uid) {
                 if(personalInfoBanner) personalInfoBanner.classList.add('hidden');
             }
 
-            // Reload supporting data
             await loadMyLedger(uid);
             await loadMyLoans(uid);
             await renderContributionChart(uid);
@@ -690,7 +530,6 @@ async function loadUserData(uid) {
             const now = new Date();
             const currentYear = now.getFullYear();
             const currentMonth = now.getMonth();
-            
             const joinDateObj = currentUserData.createdAt ? currentUserData.createdAt.toDate() : new Date();
             const diffInMonths = (currentYear - joinDateObj.getFullYear()) * 12 + (currentMonth - joinDateObj.getMonth());
             const monthsActive = Math.max(1, diffInMonths);
@@ -698,11 +537,9 @@ async function loadUserData(uid) {
             let remaining = currentUserData.savings || 0;
             let unclearedPastMonths = [];
             let timelineHTML = '';
-            
             let currentMonthAllocated = 0;
             let currentMonthTarget = 0;
             let activeTargetMonthFound = false;
-            
             let expectedTotalSoFar = 0; 
 
             for (let i = 0; i <= currentMonth; i++) {
@@ -710,7 +547,6 @@ async function loadUserData(uid) {
                 const target = (Math.floor(daysInMonth / 7) * 70) + ((daysInMonth % 7) * 10);
                 const monthName = new Date(currentYear, i, 1).toLocaleString('default', { month: 'long' });
                 const shortMonthName = new Date(currentYear, i, 1).toLocaleString('default', { month: 'short' });
-                
                 expectedTotalSoFar += target; 
 
                 let statusBadge = '';
@@ -723,20 +559,15 @@ async function loadUserData(uid) {
                 } else {
                     allocated = remaining;
                     remaining = 0;
-                    
-                    if (i === currentMonth) {
-                        statusBadge = `<span class="bg-blue-100 text-blue-700 border border-blue-200 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">In Progress</span>`;
-                    } else {
+                    if (i === currentMonth) statusBadge = `<span class="bg-blue-100 text-blue-700 border border-blue-200 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">In Progress</span>`;
+                    else {
                         statusBadge = `<span class="bg-rose-100 text-rose-700 border border-rose-200 px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">Arrears</span>`;
                         unclearedPastMonths.push(monthName);
                     }
                 }
 
                 let isFocusMonth = false;
-                if (allocated < target && !activeTargetMonthFound) {
-                    isFocusMonth = true;
-                    activeTargetMonthFound = true;
-                } else if (i === currentMonth && !activeTargetMonthFound) {
+                if ((allocated < target && !activeTargetMonthFound) || (i === currentMonth && !activeTargetMonthFound)) {
                     isFocusMonth = true;
                     activeTargetMonthFound = true;
                 }
@@ -744,17 +575,14 @@ async function loadUserData(uid) {
                 if (allocated >= target && !isFocusMonth) {
                     timelineHTML += `
                         <div class="flex flex-col items-center justify-center gap-1.5 min-w-[50px] transition-transform hover:scale-110">
-                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-md shadow-green-500/20 text-white relative border-2 border-white">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
-                                </svg>
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center shadow-md text-white relative border-2 border-white">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                             </div>
                             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${shortMonthName}</span>
                         </div>
                     `;
                 } else {
                     let ringGlow = isFocusMonth ? 'ring-2 ring-blue-400 shadow-blue-900/10' : 'border border-slate-200';
-                    
                     timelineHTML += `
                         <div class="${ringGlow} rounded-xl p-4 bg-white shadow-sm text-center flex flex-col items-center justify-center min-w-[130px]">
                             <span class="text-sm font-black text-slate-800 mb-1 tracking-tight">${monthName}</span>
@@ -767,7 +595,6 @@ async function loadUserData(uid) {
                 if (isFocusMonth) {
                     currentMonthAllocated = allocated;
                     currentMonthTarget = target;
-                    
                     document.getElementById('monthTitle').textContent = `${monthName} Target Progress`;
                     let progressPercentage = (allocated / target) * 100;
                     if (progressPercentage > 100) progressPercentage = 100;
@@ -776,13 +603,9 @@ async function loadUserData(uid) {
                     progressBar.style.width = `${progressPercentage}%`;
                     progressBar.className = "h-full rounded-full transition-all duration-1000 ease-out shadow-inner";
                     
-                    if (progressPercentage === 100) {
-                        progressBar.classList.add('bg-gradient-to-r', 'from-emerald-400', 'to-green-500');
-                    } else if (progressPercentage === 0) {
-                        progressBar.classList.add('bg-slate-200');
-                    } else {
-                        progressBar.classList.add('bg-gradient-to-r', 'from-blue-400', 'to-blue-600');
-                    }
+                    if (progressPercentage === 100) progressBar.classList.add('bg-gradient-to-r', 'from-emerald-400', 'to-green-500');
+                    else if (progressPercentage === 0) progressBar.classList.add('bg-slate-200');
+                    else progressBar.classList.add('bg-gradient-to-r', 'from-blue-400', 'to-blue-600');
 
                     document.getElementById('monthlyText').textContent = `${allocated} / ${target} KSH`;
                     
@@ -792,25 +615,22 @@ async function loadUserData(uid) {
                         statusText.className = "text-xs md:text-sm text-green-600 mt-4 font-medium";
                     } else {
                         const diff = target - allocated;
-                        statusText.innerHTML = `You need <strong>KSH ${diff}</strong> more to clear ${monthName}. Consistent contributions will help you unlock more benefits.`;
+                        statusText.innerHTML = `You need <strong>KSH ${diff}</strong> more to clear ${monthName}.`;
                         statusText.className = "text-xs md:text-sm text-slate-500 mt-4 font-medium";
                     }
                 }
             }
 
-            document.getElementById('clearanceTimeline').className = "flex flex-row flex-wrap items-center gap-4 py-2";
             document.getElementById('clearanceTimeline').innerHTML = timelineHTML;
 
             const actualSaved = currentUserData.savings || 0;
             const consistencyScore = expectedTotalSoFar > 0 ? Math.min(100, Math.round((actualSaved / expectedTotalSoFar) * 100)) : 50;
-
             const savings = currentUserData.savings || 0;
             const loansRepaid = currentUserData.loansRepaidCount || 0; 
             const hasArrears = unclearedPastMonths.length - 1 > 0; 
             
             let limitStatus = "Min. KSH 500 savings required to unlock credit.";
             let helperClass = "text-[10px] md:text-xs text-slate-400 mt-2 font-medium"; 
-            
             let activeLoansTotal = 0; 
             let actualOutstandingBalance = 0; 
 
@@ -830,7 +650,6 @@ async function loadUserData(uid) {
                         const startDate = loan.approvedAt ? loan.approvedAt.toDate() : loan.createdAt.toDate();
                         const dueDate = new Date(startDate.getTime() + loan.durationWeeks * 7 * 24 * 60 * 60 * 1000);
                         const today = new Date();
-                        
                         const timeDiff = dueDate.getTime() - today.getTime();
                         const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
 
@@ -841,15 +660,10 @@ async function loadUserData(uid) {
 
                         const paidSoFar = loan.amountPaidSoFar || 0;
                         const totalDue = loan.repayment + penaltyAmount; 
-                        
                         actualOutstandingBalance += (totalDue - paidSoFar); 
-                    } else if (loan.status === 'pending') {
-                        actualOutstandingBalance += loan.repayment;
-                    }
+                    } else if (loan.status === 'pending') actualOutstandingBalance += loan.repayment;
                 });
-            } catch (error) {
-                console.error("Error fetching active loans:", error);
-            }
+            } catch (error) {}
 
             let finalSmartLimit = 0;
             let baseLimit = 0;
@@ -859,14 +673,11 @@ async function loadUserData(uid) {
                 if (hasArrears || currentUserData.status === 'restricted') {
                     limitStatus = "Credit locked due to active arrears or account restrictions.";
                     helperClass = "text-[10px] md:text-xs text-rose-500 mt-2 font-bold";
-                } 
-                else if (loansRepaid === 0) {
-                    baseLimit = 600;
-                    trueFutureLimit = 600;
+                } else if (loansRepaid === 0) {
+                    baseLimit = 600; trueFutureLimit = 600;
                     limitStatus = "Repay 1st loan to unlock trust multipliers.";
                     helperClass = "text-[10px] md:text-xs text-amber-500 mt-2 font-semibold";
-                } 
-                else {
+                } else {
                     const equityShare = totalGroupCapital > 0 ? (savings / totalGroupCapital) : 0;
                     const allowedExposureRatio = Math.min(0.95, 0.30 + equityShare);
                     const penaltyResistance = Math.min(1.0, equityShare * 1.5); 
@@ -889,14 +700,12 @@ async function loadUserData(uid) {
 
                     const futureTotalLentOut = Math.max(0, totalLentOut - activeLoansTotal);
                     const futureRemainingLiquidity = Math.max(0, maxGroupLoanable - futureTotalLentOut);
-                    
                     const futureVaultHealth = totalGroupCapital > 0 ? (futureRemainingLiquidity / maxGroupLoanable) : 0;
                     const futureScaledHealth = futureVaultHealth + ((1 - futureVaultHealth) * penaltyResistance);
                     const futureDynamicMultiplier = Math.max(0.8, earnedMultiplier * futureScaledHealth);
                     
                     const futureBaseLimit = Math.floor(savings * futureDynamicMultiplier);
                     let futureMaxExposure = Math.max(futureRemainingLiquidity * allowedExposureRatio, savings);
-                    
                     trueFutureLimit = Math.floor(Math.min(futureBaseLimit, futureRemainingLiquidity, futureMaxExposure));
 
                     if (equityShare >= 0.20) { 
@@ -927,9 +736,6 @@ async function loadUserData(uid) {
             document.getElementById('availableLoanLimit').textContent = `KSH ${finalSmartLimit}`;
             document.getElementById('totalLoanLimit').textContent = activeLoansTotal > 0 ? trueFutureLimit : baseLimit; 
 
-            document.getElementById('savingsSkeleton')?.classList.add('hidden');
-            document.getElementById('loanLimitSkeleton')?.classList.add('hidden');
-
             const limitHelper = document.getElementById('limitHelperText');
             if(limitHelper) {
                 limitHelper.textContent = limitStatus;
@@ -945,7 +751,7 @@ async function loadUserData(uid) {
             alertsList.innerHTML = ''; 
 
             if (unclearedPastMonths.length > 0) {
-                alertsList.innerHTML += `You have uncleared savings for <strong>${unclearedPastMonths.join(', ')}</strong>. Please clear these amounts to maintain good standing.</li>`;
+                alertsList.innerHTML += `<li>You have uncleared savings for <strong>${unclearedPastMonths.join(', ')}</strong>. Please clear these amounts.</li>`;
                 hasWarnings = true;
             }
 
@@ -959,35 +765,15 @@ async function loadUserData(uid) {
             if (currentUserData.status === 'restricted') {
                 alertsList.innerHTML += `<li>Your account has been restricted. You cannot access credit facilities at this time.</li>`;
                 hasWarnings = true;
-            } else if (currentUserData.status === 'suspended') {
-                alertsList.innerHTML += `<li>Your account is currently suspended pending administrative review.</li>`;
-                hasWarnings = true;
             }
 
-            if (currentUserData.status === 'approved') {
-                if (today > 7 && currentMonthAllocated === 0) {
-                    alertsList.innerHTML += `<li>You have missed the first weekly contribution deadline. Please deposit KSH 70 immediately.</li>`;
-                    hasWarnings = true;
-                }
-                if (today > 21 && currentMonthAllocated < currentMonthTarget) {
-                    const deficit = currentMonthTarget - currentMonthAllocated;
-                    alertsList.innerHTML += `<li><strong>Approaching Deadline:</strong> The month is ending soon. You are short KSH ${deficit}. Clear this to maintain good standing.</li>`;
-                    hasWarnings = true;
-                }
-            }
+            if (hasWarnings) personalAlertsBanner.classList.remove('hidden');
+            else personalAlertsBanner.classList.add('hidden');
 
-            if (hasWarnings) {
-                personalAlertsBanner.classList.remove('hidden');
-            } else {
-                personalAlertsBanner.classList.add('hidden');
-            }
             let notificationCount = 0;
             if (globalData && globalData.announcement) notificationCount++;
-            
             if (currentUserData.infoMessage) notificationCount++;
-            
-            const alertItems = alertsList.querySelectorAll('li').length;
-            notificationCount += alertItems;
+            notificationCount += alertsList.querySelectorAll('li').length;
 
             const notifBadge = document.getElementById('notifBadge');
             if (notificationCount > 0) {
@@ -1011,16 +797,13 @@ amountInput.addEventListener('input', (e) => {
     if (amount > 0) {
         calcInterest.textContent = (amount * 0.15).toFixed(2); 
         interestPreview.classList.remove('hidden');
-    } else {
-        interestPreview.classList.add('hidden');
-    }
+    } else interestPreview.classList.add('hidden');
 });
 
 document.getElementById('loanForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const errorDiv = document.getElementById('loanError');
     errorDiv.classList.add('hidden');
-
     const amount = Number(document.getElementById('loanAmount').value);
     const duration = document.getElementById('loanDuration').value;
 
@@ -1042,8 +825,6 @@ document.getElementById('loanForm').addEventListener('submit', async (e) => {
 
     try {
         const interest = amount * 0.15;
-        
-        // 🛡️ ANTI-SPAM: One loan request per user per day
         const todayString = new Date().toISOString().split('T')[0];
         const uniqueLoanId = `${auth.currentUser.uid}_loan_${todayString}`;
 
@@ -1060,13 +841,9 @@ document.getElementById('loanForm').addEventListener('submit', async (e) => {
         alert("Loan request sent to admin for approval.");
         document.getElementById('loanForm').reset();
         interestPreview.classList.add('hidden');
-        
-        // Refresh the UI to show the new pending request immediately
         if (typeof loadMyLoans === 'function') loadMyLoans(auth.currentUser.uid);
-        
     } catch (error) {
         errorDiv.textContent = "Error submitting request. Please try again.";
-        console.error("Firebase Error: ", error);
         errorDiv.classList.remove('hidden');
     } finally {
         submitBtn.disabled = false;
@@ -1074,14 +851,13 @@ document.getElementById('loanForm').addEventListener('submit', async (e) => {
     }
 });
 
-// --- Handle Payment Proof Submission (IMMUNIZED) ---
 document.getElementById('paymentForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('paySubmitBtn');
     const statusDiv = document.getElementById('payStatus');
-    
     const amount = Number(document.getElementById('payAmount').value);
     const mpesaCode = document.getElementById('payMpesaCode').value.toUpperCase().trim();
+    const destination = document.getElementById('payDestination').value; 
 
     if (amount < 10) {
         statusDiv.innerHTML = "Amount must be at least KSH 10.";
@@ -1105,18 +881,17 @@ document.getElementById('paymentForm').addEventListener('submit', async (e) => {
             userId: auth.currentUser.uid,
             amount: amount,
             mpesaCode: mpesaCode,
-            type: 'deposit',
+            type: destination, 
             status: 'pending',
             createdAt: serverTimestamp()
         });
 
-        statusDiv.innerHTML = `<strong>Submission Successful!</strong> Code ${mpesaCode} is pending admin verification. Your savings will update once approved.`;
+        const destName = destination === 'emergency_deposit' ? 'Emergency Vault' : 'Standard Savings';
+        statusDiv.innerHTML = `<strong>Submission Successful!</strong> Code ${mpesaCode} for ${destName} is pending verification.`;
         statusDiv.className = "mt-3 text-sm font-medium rounded p-2 bg-green-50 text-green-700 border border-green-200";
         statusDiv.classList.remove('hidden');
         e.target.reset();
-
     } catch (error) {
-        console.error("Payment submission error:", error);
         statusDiv.innerHTML = "Error submitting code. Please check your connection and try again.";
         statusDiv.className = "mt-3 text-sm font-medium rounded p-2 bg-red-50 text-red-600";
         statusDiv.classList.remove('hidden');
@@ -1125,3 +900,47 @@ document.getElementById('paymentForm').addEventListener('submit', async (e) => {
         btn.textContent = "Submit for Verification";
     }
 });
+
+// ==========================================
+// 🚨 REAL-TIME SOS REQUEST ENGINE
+// ==========================================
+window.requestSOS = async function() {
+    if(!currentUserData) return;
+    
+    if(currentUserData.emergencyStatus === 'suspended') {
+        alert("Action Blocked: Your access to the Emergency Vault has been suspended by the Board.");
+        return;
+    }
+
+    if((currentUserData.emergencySavings || 0) < 100) {
+        alert("Request Denied: You need at least KSH 100 saved in your Emergency Vault to request an instant lifeline payout.");
+        return;
+    }
+
+    const reason = prompt("STATE YOUR EMERGENCY:\n(Be 100% honest. Executive Board reviews these logs in real-time.)");
+    if(!reason || reason.trim() === "") return;
+
+    const btn = document.getElementById('btnPullSOS');
+    btn.disabled = true;
+    btn.innerText = "Transmitting SOS...";
+
+    try {
+        const claimId = `SOS-${auth.currentUser.uid.substring(0,5)}-${Date.now().toString().slice(-4)}`;
+        
+        await setDoc(doc(db, "sosRequests", claimId), {
+            userId: auth.currentUser.uid,
+            userName: currentUserData.name,
+            amount: 100,
+            reason: reason.trim(),
+            status: 'pending',
+            createdAt: serverTimestamp()
+        });
+
+        alert("🚨 SOS BROADCASTED TO ADMIN TERMINAL. Stand by for real-time M-Pesa disbursement.");
+    } catch(e) {
+        alert("Failed to transmit SOS signal. Check connection.");
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<span class="material-symbols-outlined text-[18px]">emergency</span> REQUEST SOS (100/-)`;
+    }
+};
