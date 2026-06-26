@@ -1239,12 +1239,6 @@ window.requestSOS = async function() {
     }
 };
 
-// ==========================================
-// MISTRAL AI CHAT ASSISTANT ENGINE
-// ==========================================
-
-const MISTRAL_API_KEY = 'b2hehoa5XLQ1TDkktz8BtWpg5okdjGKr';
-
 const openChatBtn = document.getElementById('openAiChatBtn');
 const closeChatBtn = document.getElementById('closeAiChatBtn');
 const chatDrawer = document.getElementById('aiChatDrawer');
