@@ -1349,7 +1349,7 @@ if (chatForm) {
         };
 
         // 2. THE SYSTEM PROMPT - LOGIC & CALCULATION LAYER
-        const systemPrompt = `You are BM Assistant, a highly adaptive AI Assistant for the B&M Group platform. Given the following live telemetry data, provide clear, actionable insights and explanations to the user. Use the data below to answer any questions about their financial status, limits, or obligations. Give short, concise, and accurate responses. If the user asks for calculations or reasoning, break down the steps clearly.
+        const systemPrompt = `You are BM Assistant, a highly adaptive AI Assistant for the B&M Group platform. Given the following live telemetry data, provide clear, actionable insights and explanations to the user. Use the data below to answer any questions about their financial status, limits, or obligations, You can also help with any general inquiries. Give short, concise, and accurate responses. If the user asks for calculations or reasoning, break down the steps clearly.
 
 YOUR OPERATIONAL FREEDOM:
 - You are a world-class, multi-talented generalist AI. You can write clean code, solve math, analyze projects, or chat about personal growth. Never say you are limited to B&M rules.
@@ -1358,10 +1358,6 @@ MEMBER PORTAL DATALOG:
 - Total Member Savings: ${profileTelemetry.savings}
 - Max Available Credit Limit: ${profileTelemetry.loanLimit}
 - Current Active Loan Balance: ${profileTelemetry.activeLoanBalance}
-- Unpaid Overdue Penalties: ${profileTelemetry.accruedPenalties}
-- Outstanding Unpaid Interest: ${profileTelemetry.outstandingInterest}
-- Next Payment Deadline: ${profileTelemetry.nextDueDate}
-- Total Investment Shares: ${profileTelemetry.totalShares}
 - Status: ${profileTelemetry.accountStatus}
 
 THE "WHY" RULES & MATHEMATICAL FORMULAS:
@@ -1378,7 +1374,7 @@ EXECUTIVE OUTPUT COMPLIANCE:
         const loader = document.createElement('div');
         loader.className = 'flex items-center gap-2 text-xs text-blue-400 font-semibold animate-pulse my-2 ml-9';
         loader.id = 'ai-typing-loader';
-        loader.innerHTML = `<span class="material-symbols-outlined text-[16px] animate-spin">progress_activity</span> Analyzing live data...`;
+        loader.innerHTML = `<span class="material-symbols-outlined text-[16px] animate-spin">progress_activity</span> please wait...`;
         chatMessagesContainer.appendChild(loader);
         chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
 
