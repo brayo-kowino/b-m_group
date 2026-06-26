@@ -113,6 +113,7 @@ export async function loadMembers() {
             const safeName = (user.name || '').replace(/'/g, "\\'").replace(/"/g, "&quot;");
             const safeWarning = (user.warningMessage || '').replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/(\r\n|\n|\r)/gm, "\\n");
             const safeInfo = (user.infoMessage || '').replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/(\r\n|\n|\r)/gm, "\\n");
+            const emState = user.emergencyStatus || 'active';
 
             // --- 4. BUILD THE ROW ---
             const row = document.createElement('tr');
@@ -166,8 +167,6 @@ export async function loadMembers() {
                     <button onclick="issueUpdate('${userId}', '${safeName}', '${safeInfo}')" class="text-xs bg-emerald-50 text-emerald-600 border border-emerald-200 px-2 py-1.5 rounded hover:bg-emerald-100 font-bold transition block w-full text-left mt-1 shadow-sm">
                         ${user.infoMessage ? 'Edit Update' : 'Send Update'}
                     </button>
-
-                    const emState = user.emergencyStatus || 'active';
 
                     <button onclick="toggleSOSAccess('${userId}', '${emState}')" class="text-[10px] w-full text-left font-bold px-2 py-1.5 rounded mt-1 border ${emState === 'suspended' ? 'bg-amber-50 text-amber-700 border-amber-300' : 'bg-slate-100 text-slate-600 border-slate-300'}">
                         ${emState === 'suspended' ? 'Restore ED Access' : 'Suspend EF Access'}
