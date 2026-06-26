@@ -674,21 +674,79 @@ async function loadUserData(uid) {
                 }
             } catch(e) { console.error("Could not load global stats", e); }
 
+            // =========================================================
+            // --- SMART SOS LIQUIDITY & QUOTA ENGINE ---
+            // =========================================================
             const emBal = currentUserData.emergencySavings || 0;
             const emStatus = currentUserData.emergencyStatus || 'active';
+            const totalSosPool = globalData ? (globalData.sosVaultTotal || 0) : 0;
 
-            document.getElementById('myEmergencyBalance').textContent = `KSH ${emBal}`;
-            const statusEl = document.getElementById('sosStatusText');
-            const sosBtn = document.getElementById('btnPullSOS');
+            // 1. Check Monthly Quota (Max 2 per calendar month)
+            let monthlySosCount = 0;
+            try {
+                const now = new Date();
+                const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                const sosQ = query(collection(db, "sosRequests"), where("userId", "==", uid));
+                const sosSnaps = await getDocs(sosQ);
+                
+                sosSnaps.forEach(doc => {
+                    const d = doc.data();
+                    if (d.createdAt && d.status !== 'rejected') {
+                        if (d.createdAt.toDate() >= startOfMonth) monthlySosCount++;
+                    }
+                });
+            } catch(e) { console.error("Quota check failed", e); }
 
-            if(emStatus === 'suspended') {
-                statusEl.textContent = "Status: SUSPENDED BY ADMIN";
-                statusEl.className = "block text-[10px] font-bold text-rose-600 mt-0.5";
-                sosBtn.disabled = true;
-                sosBtn.classList.add('opacity-40', 'cursor-not-allowed');
+            // 2. The Smart Algorithm
+            let smartAmount = 0;
+            let lockReason = "";
+
+            if (emStatus === 'suspended') {
+                lockReason = "VAULT ACCESS SUSPENDED BY BOARD";
+            } else if (emBal < 100) {
+                lockReason = `MIN. KSH 100 SAVINGS REQUIRED (YOU HAVE KSH ${emBal})`;
+            } else if (monthlySosCount >= 2) {
+                lockReason = "MONTHLY QUOTA EXHAUSTED (2/2 USED)";
             } else {
-                statusEl.textContent = "Status: Safe & Active";
-                statusEl.className = "block text-[10px] font-bold text-emerald-600 mt-0.5";
+                const basePersonalCap = Math.min(emBal, 250);
+                const maxSafePoolDrain = Math.floor(totalSosPool * 0.40); // Never let 1 draw eat >40% of master pool
+
+                smartAmount = Math.floor(Math.min(basePersonalCap, maxSafePoolDrain));
+
+                // Floor rescue: If pool math pushed them below 100, but vault actually holds >=100, grant 100
+                if (smartAmount < 100 && totalSosPool >= 100) smartAmount = 100;
+                else if (smartAmount < 100 && totalSosPool < 100) {
+                    smartAmount = 0;
+                    lockReason = "GROUP VAULT LIQUIDITY TOO LOW";
+                }
+            }
+
+            // Expose globally so the button function can read it
+            window.activeSmartSOS = smartAmount;
+
+            // 3. Drive UI
+            const emBalEl = document.getElementById('myEmergencyBalance');
+            if (emBalEl) emBalEl.textContent = `KSH ${emBal}`;
+
+            const sosBtn = document.getElementById('btnPullSOS');
+            const statusEl = document.getElementById('sosStatusText');
+
+            if (sosBtn && statusEl) {
+                if (smartAmount <= 0) {
+                    sosBtn.disabled = true;
+                    sosBtn.innerText = lockReason;
+                    sosBtn.className = "w-auto py-3.5 px-4 bg-transparent border border-slate-300 text-slate-200 font-bold rounded-[2px] cursor-not-allowed text-xs uppercase tracking-wider transition";
+                    statusEl.textContent = "Not eligible for emergency request at this time.";
+                    statusEl.className = "block text-[10px] font-bold text-rose-300 mt-1.5 text-center";
+                } else {
+                    sosBtn.disabled = false;
+                    sosBtn.innerText = `REQUEST EMERGENCY (KSH ${smartAmount})`;
+                    sosBtn.className = "w-auto py-3.5 px-4 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-xl shadow-lg shadow-rose-600/25 active:scale-95 transition text-xs uppercase tracking-wider";
+                    
+                    const reqLeft = 2 - monthlySosCount;
+                    statusEl.innerHTML = `Ready • <strong>${reqLeft} request${reqLeft > 1 ? 's' : ''} left</strong> this month (Max limit: KSH 250)`;
+                    statusEl.className = "block text-[10px] font-bold text-emerald-600 mt-1.5 text-center";
+                }
             }
 
             const personalInfoBanner = document.getElementById('personalInfoBanner');
@@ -1146,20 +1204,15 @@ document.getElementById('paymentForm').addEventListener('submit', async (e) => {
 });
 
 window.requestSOS = async function() {
-    if(!currentUserData) return;
-    
-    if(currentUserData.emergencyStatus === 'suspended') {
-        alert("Your access to the Emergency Fund has been suspended by the Board.");
+    const dynamicAmount = window.activeSmartSOS || 0;
+
+    if (dynamicAmount < 100) {
+        alert("Emergency request currently unavailable based on group safety parameters.");
         return;
     }
 
-    if((currentUserData.emergencySavings || 0) < 100) {
-        alert("Request Denied: You need at least KSH 100 saved in your Emergency Fund to request an emergency payout.");
-        return;
-    }
-
-    const reason = prompt("STATE YOUR EMERGENCY:\n(Be 100% honest. We audit these in real-time.)");
-    if(!reason || reason.trim() === "") return;
+    const reason = prompt(`STATE YOUR EMERGENCY FOR KSH ${dynamicAmount}:\n(Be 100% honest. We audit these in real-time.)`);
+    if (!reason || reason.trim() === "") return;
 
     const btn = document.getElementById('btnPullSOS');
     btn.disabled = true;
@@ -1171,17 +1224,201 @@ window.requestSOS = async function() {
         await setDoc(doc(db, "sosRequests", claimId), {
             userId: auth.currentUser.uid,
             userName: currentUserData.name,
-            amount: 100,
+            amount: dynamicAmount,
             reason: reason.trim(),
             status: 'pending',
             createdAt: serverTimestamp()
         });
 
-        alert("Request Sent! We will review your request and respond shortly. Please check your notifications for updates.");
+        alert(`Request for KSH ${dynamicAmount} transmitted to the Board.`);
     } catch(e) {
         alert("Failed to send request.");
     } finally {
         btn.disabled = false;
-        btn.innerText = "REQUEST EF (100/-)";
+        btn.innerText = `REQUEST EMERGENCY (KSH ${dynamicAmount})`;
     }
 };
+
+// ==========================================
+// MISTRAL AI CHAT ASSISTANT ENGINE
+// ==========================================
+
+const MISTRAL_API_KEY = 'b2hehoa5XLQ1TDkktz8BtWpg5okdjGKr';
+
+const openChatBtn = document.getElementById('openAiChatBtn');
+const closeChatBtn = document.getElementById('closeAiChatBtn');
+const chatDrawer = document.getElementById('aiChatDrawer');
+const chatForm = document.getElementById('aiChatForm');
+const chatInput = document.getElementById('aiChatInput');
+const chatMessagesContainer = document.getElementById('aiChatMessages');
+
+// Chat Drawer Controls
+if (openChatBtn && chatDrawer) {
+    openChatBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        chatDrawer.classList.remove('hidden');
+        setTimeout(() => {
+            chatDrawer.classList.remove('translate-x-full');
+        }, 10);
+        if (window.innerWidth < 768 && typeof toggleSidebar === 'function') {
+            toggleSidebar(); 
+        }
+    });
+}
+
+if (closeChatBtn && chatDrawer) {
+    closeChatBtn.addEventListener('click', () => {
+        chatDrawer.classList.add('translate-x-full');
+        setTimeout(() => {
+            chatDrawer.classList.add('hidden');
+        }, 300);
+    });
+}
+
+// Executive Glass Markdown Parser v2.0
+function formatAiText(rawText) {
+    let text = rawText
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+    text = text.replace(/```([\s\S]*?)```/g, '<pre class="block bg-black/60 border border-white/10 p-3 rounded-xl my-2.5 font-mono text-[11px] overflow-x-auto text-emerald-400 shadow-inner"><code>$1</code></pre>');
+    text = text.replace(/`([^`]+)`/g, '<code class="bg-purple-950/60 border border-purple-500/30 text-purple-200 px-1.5 py-0.5 rounded font-mono text-[11px]">$1</code>');
+    text = text.replace(/^## (.*$)/gim, '<strong class="block text-sm font-extrabold text-blue-400 mt-3.5 mb-1 tracking-wide uppercase">$1</strong>');
+    text = text.replace(/^### (.*$)/gim, '<strong class="block text-xs font-bold text-purple-300 mt-2.5 mb-1 tracking-wide">$1</strong>');
+    text = text.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-white">$1</strong>');
+    text = text.replace(/\*(.*?)\*/g, '<em class="italic text-slate-300">$1</em>');
+    text = text.replace(/^\s*[-*]\s+(.*$)/gim, '<li class="ml-4 list-disc marker:text-purple-400 my-0.5 pl-1">$1</li>');
+    text = text.replace(/^\s*(\d+)\.\s+(.*$)/gim, '<li class="ml-4 list-decimal marker:text-blue-400 marker:font-bold my-0.5 pl-1">$2</li>');
+
+    text = text.replace(/\n/g, '<br>');
+    text = text.replace(/(<\/li>)<br>/g, '$1');
+    text = text.replace(/<br>(<li)/g, '$1');
+    text = text.replace(/(<\/pre>)<br>/g, '$1');
+    text = text.replace(/<br>(<pre)/g, '$1');
+
+    return text;
+}
+
+// Helper to safely extract clean string metrics from DOM elements
+function getPortalMetric(elementId, fallback = 'KSH 0') {
+    const el = document.getElementById(elementId);
+    return el ? el.textContent.trim() : fallback;
+}
+
+// Append Chat Bubbles to UI
+function appendChatMessage(sender, text) {
+    const messageRow = document.createElement('div');
+    messageRow.className = sender === 'user' 
+        ? 'flex items-start gap-2.5 max-w-[85%] ml-auto justify-end' 
+        : 'flex items-start gap-2.5 max-w-[88%]';
+
+    const avatar = sender === 'user'
+        ? `<div class="w-7 h-7 shrink-0 bg-slate-800 text-slate-400 border border-slate-700 rounded-full flex items-center justify-center text-[10px] font-bold uppercase shadow-sm">ME</div>`
+        : `<div class="w-7 h-7 shrink-0 bg-gradient-to-br from-blue-600/30 to-blue-600/30 text-blue-400 border border-blue-500/40 rounded-full flex items-center justify-center text-[10px] font-black uppercase shadow-sm">BM</div>`;
+
+    const bubbleClass = sender === 'user'
+        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 border border-blue-500/40 text-white rounded-2xl rounded-tr-none shadow-md'
+        : 'bg-slate-900/80 backdrop-blur-md border border-white/10 text-slate-200 rounded-2xl rounded-tl-none shadow-lg';
+
+    const formattedText = sender === 'ai' ? formatAiText(text) : text;
+
+    messageRow.innerHTML = sender === 'user' 
+        ? `<div class="${bubbleClass} p-3.5 text-xs leading-relaxed">${formattedText}</div>${avatar}`
+        : `${avatar}<div class="${bubbleClass} p-3.5 text-xs leading-relaxed overflow-x-auto w-full">${formattedText}</div>`;
+
+    chatMessagesContainer.appendChild(messageRow);
+    chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+}
+
+// Handle AI Queries
+if (chatForm) {
+    chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const queryText = chatInput.value.trim();
+        if (!queryText) return;
+
+        appendChatMessage('user', queryText);
+        chatInput.value = '';
+
+        // 1. EXTRACT EXTENSIVE PORTAL DATA TELEMETRY
+        // (Ensure these IDs match the actual balance cards in your HTML layout)
+        const profileTelemetry = {
+            savings: getPortalMetric('mySavings', 'KSH 0'),
+            loanLimit: getPortalMetric('availableLoanLimit', 'KSH 0'),
+            activeLoanBalance: getPortalMetric('activeLoanBalance', 'KSH 0'),
+            accruedPenalties: getPortalMetric('overduePenalties', 'KSH 0'),
+            outstandingInterest: getPortalMetric('outstandingInterest', 'KSH 0'),
+            nextDueDate: getPortalMetric('paymentDueDate', 'None Active'),
+            totalShares: getPortalMetric('myTotalShares', '0 Shares'),
+            accountStatus: getPortalMetric('userAccountStatus', 'Active Member')
+        };
+
+        // 2. THE SYSTEM PROMPT - LOGIC & CALCULATION LAYER
+        const systemPrompt = `You are BM Assistant, a highly adaptive AI Assistant for the B&M Group platform. Given the following live telemetry data, provide clear, actionable insights and explanations to the user. Use the data below to answer any questions about their financial status, limits, or obligations. Give short, concise, and accurate responses. If the user asks for calculations or reasoning, break down the steps clearly.
+
+YOUR OPERATIONAL FREEDOM:
+- You are a world-class, multi-talented generalist AI. You can write clean code, solve math, analyze projects, or chat about personal growth. Never say you are limited to B&M rules.
+
+MEMBER PORTAL DATALOG:
+- Total Member Savings: ${profileTelemetry.savings}
+- Max Available Credit Limit: ${profileTelemetry.loanLimit}
+- Current Active Loan Balance: ${profileTelemetry.activeLoanBalance}
+- Unpaid Overdue Penalties: ${profileTelemetry.accruedPenalties}
+- Outstanding Unpaid Interest: ${profileTelemetry.outstandingInterest}
+- Next Payment Deadline: ${profileTelemetry.nextDueDate}
+- Total Investment Shares: ${profileTelemetry.totalShares}
+- Status: ${profileTelemetry.accountStatus}
+
+THE "WHY" RULES & MATHEMATICAL FORMULAS:
+If a user asks why their numbers are the way they are, use these structural calculations to explain step-by-step:
+1. Loan Limit Allocation: A member's maximum credit potential is derived algorithmically from their Total Savings profile and tier multipliers, minus any active principal balances. If savings are low, the limit scales down proportionally to manage liquidity risk.
+2. The 15% flat rule: All loans attract a fixed 15% flat interest fee applied directly to the borrowed principal amount upon approval.
+3. Penalty Accrual: If a loan goes past its 'Next Payment Deadline', an automated statutory fee of KSH 5 handles compound overhead per day. This penalty can ONLY be frozen by clearing the current accrued outstanding interest first.
+4. Exit Policy (Section 13): A user's account cannot be deactivated or funds fully withdrawn voluntarily if 'Active Loan Balance' is greater than KSH 0.
+
+EXECUTIVE OUTPUT COMPLIANCE:
+- Analyze their live telemetry context directly whenever they ask about their portfolio status, limits, or financial health.
+- Break down multi-step arithmetic transparently using clean lists or headers so they understand exactly how their balances are calculated.`;
+
+        const loader = document.createElement('div');
+        loader.className = 'flex items-center gap-2 text-xs text-blue-400 font-semibold animate-pulse my-2 ml-9';
+        loader.id = 'ai-typing-loader';
+        loader.innerHTML = `<span class="material-symbols-outlined text-[16px] animate-spin">progress_activity</span> Analyzing live data...`;
+        chatMessagesContainer.appendChild(loader);
+        chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+
+        try {
+            const response = await fetch('/.netlify/functions/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: 'mistral-small-latest', 
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        { role: 'user', content: queryText }
+                    ],
+                    temperature: 0.6,
+                    max_tokens: 1000 
+                })
+            });
+
+            const data = await response.json();
+            document.getElementById('ai-typing-loader')?.remove();
+
+            if (data.choices && data.choices[0]) {
+                const aiReply = data.choices[0].message.content;
+                appendChatMessage('ai', aiReply);
+            } else {
+                appendChatMessage('ai', 'I lost the connection. Drop your prompt one more time.');
+            }
+
+        } catch (error) {
+            console.error('AI Comms Fail:', error);
+            document.getElementById('ai-typing-loader')?.remove();
+            appendChatMessage('ai', 'Communication failure. Serverless endpoint couldn\'t resolve request.');
+        }
+    });
+}

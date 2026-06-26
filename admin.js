@@ -74,12 +74,14 @@ async function loadGroupStats() {
 }
 
 export async function loadMembers() {
+    const totalMembersCount = document.getElementById('totalMembersCount');
     const tableBody = document.getElementById('membersTableBody');
     tableBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">Loading members...</td></tr>';
 
     try {
         const querySnapshot = await getDocs(collection(db, "users"));
         tableBody.innerHTML = ''; 
+        totalMembersCount.textContent = querySnapshot.size;
 
         querySnapshot.forEach((userDoc) => {
             const user = userDoc.data();
@@ -113,12 +115,18 @@ export async function loadMembers() {
             const safeName = (user.name || '').replace(/'/g, "\\'").replace(/"/g, "&quot;");
             const safeWarning = (user.warningMessage || '').replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/(\r\n|\n|\r)/gm, "\\n");
             const safeInfo = (user.infoMessage || '').replace(/'/g, "\\'").replace(/"/g, "&quot;").replace(/(\r\n|\n|\r)/gm, "\\n");
+            
+            const emBalance = user.emergencySavings || 0;
             const emState = user.emergencyStatus || 'active';
-
+            const sosBtnClass = emState === 'suspended' ? 'bg-amber-50 text-amber-700 border-amber-300' : 'bg-slate-50 text-slate-600 border-slate-300';
+            const sosBtnText = emState === 'suspended' ? 'Restore EF Access' : 'Suspend EF';
             // --- 4. BUILD THE ROW ---
             const row = document.createElement('tr');
+
+            row.className = 'divide-x divide-slate-200';
+
             row.innerHTML = `
-                <td class="p-4 align-top">
+                <td class="p-4 align-top border-b border-slate-200">
                     <div class="font-bold text-slate-800 text-base">${user.name}</div>
                     <div class="text-xs text-slate-500 mt-0.5">${user.email}</div>
                     <div class="flex items-center gap-2 mt-2">
@@ -126,11 +134,13 @@ export async function loadMembers() {
                         <span class="text-[10px] text-slate-400 font-semibold tracking-wide">Joined: ${joinDateString}</span>
                     </div>
                 </td>
-                <td class="p-4 align-top">
+                
+                <td class="p-4 align-top border-b border-slate-200">
                     <div class="flex gap-6 mb-2.5">
                         <div>
                             <div class="text-[9px] text-slate-400 uppercase font-bold tracking-widest mb-0.5">Savings</div>
                             <div class="text-sm font-bold text-emerald-600">KSH ${user.savings || 0}</div>
+                            <div class="text-[9px] text-emerald-800 font-bold tracking-wide">EMERGENCY BAL: KSH ${emBalance}</div>
                         </div>
                         <div>
                             <div class="text-[9px] text-slate-400 uppercase font-bold tracking-widest mb-0.5">Active Debt</div>
@@ -139,10 +149,11 @@ export async function loadMembers() {
                     </div>
                     <div class="flex gap-2">
                         <span class="bg-blue-50 text-blue-600 border border-blue-100 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">Score: ${consistencyScore}%</span>
-                        <span class="bg-purple-50 text-purple-600 border border-purple-100 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wide">Repaid: ${repaidCount}</span>
+                        <span class="bg-blue-50 text-blue-600 border border-blue-100 text-[9px] px-1.5 py-0.5 rounded font-bold italic uppercase tracking-wide">Loans Repaid: ${repaidCount}</span>
                     </div>
                 </td>
-                <td class="p-4 align-top">
+                
+                <td class="p-4 align-top border-b border-slate-200">
                     <div class="flex flex-col gap-1.5 items-start">
                         ${statusBadge}
                         ${verifiedBadge}
@@ -151,7 +162,8 @@ export async function loadMembers() {
                             : `<span class="bg-emerald-50 text-emerald-600 border border-emerald-200 text-[9px] px-2 py-0.5 rounded font-bold uppercase tracking-wide mt-1">No Arrears</span>`}
                     </div>
                 </td>
-                <td class="p-4 align-top w-48">
+                
+                <td class="p-4 align-top w-48 border-b border-slate-200">
                     <select onchange="handleStatusChange('${userId}', this.value)" class="text-xs border border-slate-200 rounded shadow-sm focus:ring-blue-500 focus:border-blue-500 p-1.5 mb-2 block w-full bg-slate-50 font-medium text-slate-700">
                         <option value="" disabled selected>Change Status...</option>
                         <option value="approved">Approve</option>
@@ -168,8 +180,8 @@ export async function loadMembers() {
                         ${user.infoMessage ? 'Edit Update' : 'Send Update'}
                     </button>
 
-                    <button onclick="toggleSOSAccess('${userId}', '${emState}')" class="text-[10px] w-full text-left font-bold px-2 py-1.5 rounded mt-1 border ${emState === 'suspended' ? 'bg-amber-50 text-amber-700 border-amber-300' : 'bg-slate-100 text-slate-600 border-slate-300'}">
-                        ${emState === 'suspended' ? 'Restore ED Access' : 'Suspend EF Access'}
+                    <button onclick="toggleSOSAccess('${userId}', '${emState}')" class="text-[10px] w-full text-left font-bold px-2 py-1.5 rounded mt-1 border ${sosBtnClass} hover:bg-slate-200 transition shadow-sm">
+                        ${sosBtnText}
                     </button>
                 </td>
             `;
@@ -440,7 +452,7 @@ export async function loadVisualAnalytics() {
                     datasets: [{
                         label: 'KSH',
                         data: [capital, profit],
-                        backgroundColor: ['#3b82f6', '#8b5cf6'],
+                        backgroundColor: ['#6ea2f5', '#078efd'],
                         borderRadius: 6
                     }]
                 },
@@ -461,6 +473,7 @@ export async function loadVisualAnalytics() {
         document.getElementById('liquidityReserveSkeleton')?.classList.add('hidden');
         document.getElementById('capitalDoughnutSkeleton')?.classList.add('hidden');
         document.getElementById('wealthBarSkeleton')?.classList.add('hidden');
+        document.getElementById('sosReserveSkeleton')?.classList.add('hidden');
 
     } catch (error) {
         console.error("Error loading visual analytics:", error);
@@ -690,7 +703,7 @@ try {
 
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td class="p-3">
+                <td class="p-3 border border-slate-200">
                     <div class="font-bold text-slate-800 text-sm">${userName}</div>
                     <div class="flex gap-1.5 mt-1 mb-1">
                         ${ageBadge}
@@ -699,19 +712,19 @@ try {
                     <div class="text-[10px] text-slate-500 font-medium">Savings: KSH ${savings} | Repaid: ${repaidCount}</div>
                     ${adminNote}
                 </td>
-                <td class="p-3 font-semibold ${isFraudulent ? 'text-red-600' : 'text-blue-600'}">
+                <td class="p-3 font-semibold ${isFraudulent ? 'text-red-600' : 'text-blue-600'} border border-slate-200">
                     KSH ${loan.amount}
                     <div class="mt-1">${warningHTML}</div>
                 </td>
-                <td class="p-3 bg-slate-50/50">
+                <td class="p-3 bg-slate-50/50 border border-slate-200">
                     <div class="font-bold ${trueLimit >= loan.amount ? 'text-emerald-600' : 'text-red-500'}">KSH ${trueLimit}</div>
                     <div class="text-[10px] text-slate-400 font-bold tracking-wide mt-0.5 uppercase">
                         Score: ${consistencyScore}%
                     </div>
                 </td>
-                <td class="p-3 text-red-500 font-medium text-sm">KSH ${loan.interest}</td>
-                <td class="p-3 text-slate-600 font-medium text-sm">${loan.durationWeeks} Weeks</td>
-                <td class="p-3 flex gap-2">
+                <td class="p-3 text-red-500 font-medium text-sm border border-slate-200">KSH ${loan.interest}</td>
+                <td class="p-3 text-slate-600 font-medium text-sm border border-slate-200">${loan.durationWeeks} Weeks</td>
+                <td class="p-3 flex gap-2 border border-slate-200">
                     <button onclick="approveLoan('${loanDoc.id}', this)" 
                         class="px-3 py-1.5 rounded text-xs transition shadow-sm font-bold ${isFraudulent || hasActiveLoan ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-emerald-500 text-white hover:bg-emerald-600'}"
                         ${isFraudulent || hasActiveLoan ? 'disabled' : ''}>
@@ -1007,7 +1020,7 @@ export async function loadContributionTracker() {
 
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td class="p-4 w-1/4">
+                <td class="p-4 w-1/4 border border-slate-200">
                     <div class="font-semibold text-gray-800">${user.name}</div>
                     <div class="w-full bg-slate-200 rounded-full h-1.5 mt-2">
                         <div class="${barColor} h-1.5 rounded-full transition-all duration-500" style="width: ${progressPercentage}%"></div>
@@ -1017,10 +1030,10 @@ export async function loadContributionTracker() {
                     </div>
                 </td>
                 
-                <td class="p-4 w-1/4">${arrearsHTML}</td>
-                <td class="p-4 text-green-600 font-bold" id="savings-${userId}">KSH ${user.savings || 0}</td>
+                <td class="p-4 w-1/4 border border-slate-200">${arrearsHTML}</td>
+                <td class="p-4 text-green-600 font-bold border border-slate-200" id="savings-${userId}">KSH ${user.savings || 0}</td>
                 
-                <td class="p-4">
+                <td class="p-4 border border-slate-200">
                     <div class="flex items-center space-x-2">
                         <input type="number" id="depositAmount-${userId}" placeholder="Amt (e.g. 70)" class="w-24 px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-blue-500 focus:border-blue-500">
                         <button onclick="handleDeposit('${userId}')" class="bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 text-xs font-bold shadow-sm transition">
@@ -1821,28 +1834,28 @@ export async function loadActiveLoans() {
 
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td class="p-3">
+                <td class="p-3 border border-slate-200">
                     <div class="font-bold text-slate-800">${userName}</div>
                     ${timeBadge}
                 </td>
-                <td class="p-3 text-slate-600">
+                <td class="p-3 text-slate-600 border border-slate-200">
                     <div>Principal: KSH ${loan.amount}</div>
                     <div class="text-xs ${penaltyAmount > 0 ? 'text-red-600 font-bold' : 'text-slate-500 font-medium'}">
                         + Int: KSH ${effectiveInterest}
                         ${penaltyAmount > 0 ? `<div class="text-[9px] bg-red-50 px-1 rounded inline-block mt-0.5 text-red-500">Incl. KSH ${penaltyAmount} late fee</div>` : ''}
                     </div>
                 </td>
-                <td class="p-3">
+                <td class="p-3 border border-slate-200">
                     <div class="text-xs text-slate-500">Paid: KSH ${paidSoFar}</div>
                     <div class="font-bold ${currentBalance > 0 ? 'text-rose-600' : 'text-emerald-600'}">Bal: KSH ${currentBalance}</div>
                 </td>
-                <td class="p-3 flex gap-2 flex-wrap items-center">
+                <td class="p-3 flex gap-2 flex-wrap items-center border border-slate-200">
                     <select id="repayType-${loanDoc.id}" class="text-xs border border-slate-200 rounded p-1.5 bg-slate-50 focus:ring-purple-500 font-medium text-slate-700">
                         <option value="full">Full Balance</option>
                         <option value="interest">Interest Only</option>
                         <option value="mdogo">Mdogo Mdogo (Custom)</option>
                     </select>
-                    <button onclick="processRepayment('${loanDoc.id}', '${loan.userId}', ${loan.amount}, ${loan.interest}, ${penaltyAmount}, ${paidSoFar}, '${safeName}', this, document.getElementById('repayType-${loanDoc.id}').value)" class="bg-purple-600 text-white px-3 py-1.5 rounded hover:bg-purple-700 text-xs font-bold shadow-sm transition">
+                    <button onclick="processRepayment('${loanDoc.id}', '${loan.userId}', ${loan.amount}, ${loan.interest}, ${penaltyAmount}, ${paidSoFar}, '${safeName}', this, document.getElementById('repayType-${loanDoc.id}').value)" class="bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 text-xs font-bold shadow-sm transition">
                         Clear
                     </button>
                 </td>
@@ -2004,7 +2017,7 @@ window.processRepayment = async function(loanId, userId, principal, interest, pe
                 });
             }
         } else {
-            alert(`📉 Installment of KSH ${amount} logged successfully. Remaining balance is KSH ${totalDue - (paidSoFar + amount)}.`);
+            alert(`Installment of KSH ${amount} logged successfully. Remaining balance is KSH ${totalDue - (paidSoFar + amount)}.`);
             await logAdminAction(auth.currentUser?.email || "System Admin", `Manual partial installment for: ${userId} | Cash: KSH ${amount}`, "INFO");
         }
         
@@ -2055,18 +2068,20 @@ export async function loadPendingPayments() {
                 typeBadge = '<span class="bg-rose-100 text-rose-700 border border-rose-200 text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wide">Freeze Request (Interest)</span>';
             } else if (claim.type === 'repayment') {
                 typeBadge = '<span class="bg-blue-100 text-blue-700 border border-blue-200 text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wide">Loan Installment</span>';
+            } else if (claim.type === 'emergency_deposit') {
+                typeBadge = '<span class="bg-blue-200 text-blue-700 border border-blue-200 text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wide">Emergency Fund Deposit</span>';
             }
 
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td class="p-3 font-bold text-slate-800">
+                <td class="p-3 font-bold text-slate-800 border border-slate-200">
                     ${userName}
                     <div class="mt-1">${typeBadge}</div>
                 </td>
-                <td class="p-3 font-mono text-xs bg-slate-100 rounded px-2">${claim.mpesaCode}</td>
-                <td class="p-3 font-bold text-slate-800">KSH ${claim.amount}</td>
-                <td class="p-3 flex gap-2">
-                    <button onclick="verifyPayment('${docSnap.id}', '${claim.userId}', ${claim.amount}, '${claim.mpesaCode}', '${userName}', '${claim.type || 'deposit'}', '${claim.loanId || ''}')" class="bg-emerald-600 text-white px-3 py-1.5 rounded hover:bg-emerald-700 text-xs font-bold transition shadow-sm">
+                <td class="p-3 font-mono text-xs bg-slate-100 rounded px-2 border border-slate-200">${claim.mpesaCode}</td>
+                <td class="p-3 font-bold text-slate-800 border border-slate-200">KSH ${claim.amount}</td>
+                <td class="p-3 flex gap-2 border border-slate-200">
+                    <button onclick="verifyPayment('${docSnap.id}', '${claim.userId}', ${claim.amount}, '${claim.mpesaCode}', '${userName}', '${claim.type || 'deposit'}', '${claim.loanId || ''}')" class="bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 text-xs font-bold transition shadow-sm">
                         Verify
                     </button>
                     <button onclick="rejectPayment('${docSnap.id}', '${claim.userId}', '${claim.mpesaCode}')" class="bg-white border border-red-200 text-red-600 px-3 py-1.5 rounded hover:bg-red-50 text-xs font-bold transition shadow-sm">
@@ -2141,10 +2156,12 @@ window.verifyPayment = async function(claimId, userId, amount, mpesaCode, userNa
 
                 } else if (type === 'emergency_deposit') {
                 const currentEm = userDoc.data().emergencySavings || 0;
+                const currentSosVault = statsDoc.data().sosVaultTotal || 0;
                 
                 transaction.update(userRef, { emergencySavings: currentEm + amount });
                 transaction.update(statsRef, { 
-                    liquidityReserve: currentLiquidity + amount 
+                    //liquidityReserve: currentLiquidity + amount 
+                    sosVaultTotal: currentSosVault + amount
                 });
                 
                 transaction.set(newTransactionRef, {
@@ -2273,21 +2290,24 @@ export function listenToSOSRequests() {
             if (change.type === "added") {
                 const sos = change.doc.data();
                 const id = change.doc.id;
+                const payoutValue = sos.amount || 100;
                 
                 const accept = confirm(
-                    `EMERGENCY REQUEST\n\n` +
+                    `EMERGENCY FUNDS REQUEST\n\n` +
                     `Member: ${sos.userName}\n` +
+                    `Requested Amount: KSH ${payoutValue}\n` +
                     `Reason: "${sos.reason}"\n\n` +
-                    `Click OK to approve KSH 100 deduction & disburse.`
+                    `Click OK to Approve payout.\nClick Cancel to Deny.`
                 );
 
-                if(accept) executeSOSPayout(id, sos.userId, sos.userName);
+                if(accept) executeSOSPayout(id, sos.userId, sos.userName, payoutValue);
+                else rejectSOSRequest(id, sos.userId, sos.userName);
             }
         });
     });
 }
 
-window.executeSOSPayout = async function(reqId, userId, userName) {
+async function executeSOSPayout(reqId, userId, userName, approvedAmount) {
     const userRef = doc(db, "users", userId);
     const statsRef = doc(db, "groupStats", "main");
     const reqRef = doc(db, "sosRequests", reqId);
@@ -2300,31 +2320,60 @@ window.executeSOSPayout = async function(reqId, userId, userName) {
             
             const currentEm = uDoc.data().emergencySavings || 0;
             const currentLiq = sDoc.data().liquidityReserve || 0;
+            const currentSosVault = sDoc.data().sosVaultTotal || 0;
 
-            if(currentEm < 100) throw new Error("Member withdrew funds before approval!");
+            if(currentEm < approvedAmount) throw new Error("Member withdrew funds before approval!");
 
-            t.update(userRef, { emergencySavings: currentEm - 100 });
-            t.update(statsRef, { liquidityReserve: currentLiq - 100 });
+            t.update(userRef, { emergencySavings: currentEm - approvedAmount });
+            t.update(statsRef, { 
+                liquidityReserve: currentLiq - approvedAmount,
+                sosVaultTotal: currentSosVault - approvedAmount
+            });
             t.update(reqRef, { status: "disbursed", resolvedAt: serverTimestamp() });
             
             t.set(txRef, {
-                userId: userId, type: "emergency_payout", amount: 100, status: "completed",
-                description: "Approved instant SOS Lifeline", createdAt: serverTimestamp()
+                userId: userId, type: "emergency_payout", amount: approvedAmount, status: "completed",
+                description: `Approved emergency payout (${approvedAmount}/-)`, createdAt: serverTimestamp()
             });
         });
 
-        alert(`KSH 100 deducted from ${userName}'s vault. Send them the M-Pesa right now.`);
+        alert(`KSH ${approvedAmount} deducted from ${userName}'s vault. Disburse M-Pesa immediately.`);
+        await logAdminAction(auth.currentUser?.email || "System Admin", `Disbursed KSH ${approvedAmount} SOS to ${userId}`, "WARN");
+        
+        loadGroupStats();
         loadMembers(); 
+        loadMasterLedger();
     } catch(e) {
-        alert("SOS Execution failed: " + e.message);
+        alert("EMERGENCY Execution failed: " + e.message);
     }
+}
+
+window.rejectSOSRequest = async function(reqId, userId, userName) {
+    const reason = prompt("Enter reason for declining EMERGENCY request (Member will see this):");
+    if(reason === null) return;
+    
+    await updateDoc(doc(db, "sosRequests", reqId), {
+        status: "rejected",
+        rejectReason: reason,
+        resolvedAt: serverTimestamp()
+    });
+    
+    await updateDoc(doc(db, "users", userId), {
+        warningMessage: `EMERGENCY REQUEST DECLINED: ${reason}`
+    });
+    
+    alert(`EMERGENCY Request for ${userName} Rejected.`);
 }
 
 window.toggleSOSAccess = async function(userId, currentState) {
     const nextState = currentState === 'suspended' ? 'active' : 'suspended';
-    if(!confirm(`Change member's Emergency Vault status to ${nextState.toUpperCase()}?`)) return;
+    if(!confirm(`Change member's Emergency Funds access to ${nextState.toUpperCase()}?`)) return;
 
-    await updateDoc(doc(db, "users", userId), { emergencyStatus: nextState });
-    await logAdminAction(auth.currentUser.email, `Set emergency status of ${userId} to ${nextState}`, "WARN");
-    loadMembers();
+    try {
+        await updateDoc(doc(db, "users", userId), { emergencyStatus: nextState });
+        await logAdminAction(auth.currentUser?.email || "System Admin", `Set Emergency Funds status of ${userId} to ${nextState}`, "WARN");
+        loadMembers();
+    } catch (e) {
+        alert("Failed to change Emergency Funds status.");
+    }
 };

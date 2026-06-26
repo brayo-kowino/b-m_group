@@ -44,16 +44,22 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
         
-        .admin-polygon-theme {
-            background-color: #0f172a; 
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cpolygon points='0,0 100,50 0,100' fill='%231e293b' opacity='0.5'/%3E%3Cpolygon points='200,0 100,50 200,100' fill='%23020617' opacity='0.5'/%3E%3Cpolygon points='100,50 200,100 100,150 0,100' fill='%231e3a8a' opacity='0.4'/%3E%3Cpolygon points='0,200 100,150 0,100' fill='%231e293b' opacity='0.5'/%3E%3Cpolygon points='200,200 100,150 200,100' fill='%23020617' opacity='0.5'/%3E%3C/svg%3E");
-            color: white;
-            border-right: 1px solid rgba(255, 255, 255, 0.05);
+        /* HARMONIZED SIDEBAR & HEADER THEME */
+        .sidebar-light-theme {
+            background-color: #ffffff;
+            border-right: 1px solid #e2e8f0;
+            box-shadow: 4px 0 24px -6px rgba(0, 0, 0, 0.02);
         }
-        .admin-glow {
-            box-shadow: 0 0 20px rgba(37, 99, 235, 0.4);
-            border: 1px solid rgba(96, 165, 250, 0.3);
+        
+        .header-light-theme {
+            background-color: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
         }
+
+        .active-nav-glow {
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+
         .scanline { position: relative; overflow: hidden; }
         .scanline::after {
             content: '';
@@ -69,94 +75,96 @@
     </style>
 </head>
 
-<body class="bg-[#F5F5F7] md:flex md:flex-row text-slate-800 min-h-screen">
-    <header class="fixed top-0 left-0 md:hidden admin-polygon-theme p-4 flex justify-between items-center w-full z-30 shadow-lg shadow-slate-900/20">
+<body class="bg-[#F1F5F9] md:flex md:flex-row text-slate-800 min-h-screen">
+    <header class="fixed top-0 left-0 md:hidden header-light-theme p-4 flex justify-between items-center w-full z-30 shadow-sm">
         <div class="flex items-center gap-3">
-            <div class="hidden w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-xs shadow-md">B&M</div>
-            <span class="font-bold text-white tracking-wide uppercase">B&MGroup Admin</span>
+            <img src="bm_group_logo.png" alt="B&M Logo" class="h-8 w-auto object-contain">
         </div>
-        <button id="mobileMenuBtn" class="focus:outline-none text-slate-300 hover:text-white transition bg-white/10 p-2 rounded-full backdrop-blur-sm border border-white/10">
+        <button id="mobileMenuBtn" class="focus:outline-none text-slate-500 hover:text-slate-800 transition bg-slate-100 p-2 rounded-full border border-slate-200">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
             </svg>
         </button>
     </header>
 
-    <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 hidden md:hidden transition-opacity"></div>
-        <aside id="sidebar" class="fixed md:sticky md:top-0 inset-y-0 left-0 z-50 w-72 h-screen transition-transform duration-300 ease-in-out transform -translate-x-full admin-polygon-theme flex flex-col shadow-2xl md:relative md:translate-x-0 md:h-screen">  
-        <div class="p-6 flex justify-between items-center gap-3 mt-4 border-b border-white/5 pb-6">
-            <div class="flex items-center gap-3">
-                <div class="hidden w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center font-bold text-sm shadow-lg shadow-blue-900/50 border border-blue-400/30">B&M</div>
-                <div>
-                    <h2 class="font-bold text-white tracking-tight leading-tight uppercase">B&MGROUP Admin</h2>
-                </div>
+    <div id="sidebarOverlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 hidden md:hidden transition-opacity"></div>
+        
+    <aside id="sidebar" class="fixed md:sticky md:top-0 inset-y-0 left-0 z-50 w-72 h-screen transition-transform duration-300 ease-in-out transform -translate-x-full sidebar-light-theme flex flex-col md:relative md:translate-x-0 md:h-screen">  
+        
+            <div class="p-2 flex justify-between items-center gap-3 mt-2 border-b border-slate-100 pb-6">
+            <div class="relative inline-block mt-0">
+                <img src="bm_group_logo.png" alt="B&M Group Logo" class="h-16 w-auto object-contain">
+                
+                <span class="absolute top-0 right-0 transform -translate-y-0 translate-x-2 text-[9px] font-extrabold uppercase tracking-widest text-blue-600 px-1.5 py-0.5 pointer-events-none">
+                    Admin
+                </span>
             </div>
-            <button id="closeSidebarBtn" class="md:hidden focus:outline-none text-slate-400 hover:text-white bg-white/5 p-2 rounded-full border border-white/5">
+            
+            <button id="closeSidebarBtn" class="md:hidden focus:outline-none text-slate-400 hover:text-slate-700 bg-slate-100 p-2 rounded-full border border-slate-200">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
             </button>
         </div>
         
-       <nav id="side-nav" class="flex-1 px-4 py-2 flex flex-col gap-1 overflow-y-auto font-medium text-sm">
-    <p class="hidden px-4 text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-2">Main Menu</p>
-    
-    <a href="#group-analytics" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-600/90 text-white admin-glow font-semibold tracking-wide transition-all">
-        <span class="material-symbols-outlined text-[20px]">analytics</span>
-        Overview
-    </a>
-    
-    <a href="#members" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition-colors tracking-wide">
-        <span class="material-symbols-outlined text-[20px]">group</span>
-        Members
-    </a>
-    
-    <a href="#add-members" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition-colors tracking-wide">
-        <span class="material-symbols-outlined text-[20px]">person_add</span>
-        Add Member
-    </a>
-    
-    <a href="#contributions" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition-colors tracking-wide">
-        <span class="material-symbols-outlined text-[20px]">payments</span>
-        Contributions
-    </a>
-    
-    <a href="#pendingPayments" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition-colors tracking-wide">
-        <span class="material-symbols-outlined text-[20px]">fact_check</span>
-        Payment Verifications
-    </a>
-    
-    <a href="#pending-loans" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition-colors tracking-wide">
-        <span class="material-symbols-outlined text-[20px]">credit_score</span>
-        Loans
-    </a>
-    
-    <a href="#system-health" class="flex justify-between items-center px-4 py-3 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition-colors tracking-wide">
-        <div class="flex items-center gap-3">
-            <span class="material-symbols-outlined text-[20px]">monitor_heart</span>
-            System Logs
-        </div>
-    </a>
-    
-    <a href="#ledger" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition-colors tracking-wide">
-        <span class="material-symbols-outlined text-[20px]">receipt_long</span>
-        Group Ledger
-    </a>
-    
-    <a href="#adminInbox" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:bg-white/10 hover:text-white transition-colors tracking-wide">
-        <span class="material-symbols-outlined text-[20px]">inbox</span>
-        Inbox & Exits
-    </a>    
-</nav>
-        <div class="mt-1 p-2 border-t border-white/5">
-                <a href="member.html" class="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-blue-300 bg-blue-900/30 hover:bg-blue-900/60 border border-blue-500/20 font-semibold transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-                    Member Portal
-                </a>
-        </div>
-        <div class="p-2 border-t border-white/5 bg-slate-900/30">
-            <button onclick="logout()" class="flex items-center justify-center gap-2 w-full py-3 px-4 bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500 hover:text-white rounded-xl font-bold transition-all tracking-wide">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+        <nav id="side-nav" class="flex-1 px-4 py-4 flex flex-col gap-1.5 overflow-y-auto font-medium text-sm">
+            <p class="px-4 text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Main Menu</p>
+            
+            <a href="#group-analytics" class="flex items-center gap-3 px-4 py-3 rounded-xl border border-blue-200 bg-white text-blue-600 active-nav-glow font-semibold tracking-wide transition-all">
+                <span class="material-symbols-outlined text-[20px]">analytics</span>
+                Overview
+            </a>
+            
+            <a href="#members" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors tracking-wide">
+                <span class="material-symbols-outlined text-[20px]">group</span>
+                Members
+            </a>
+            
+            <a href="#add-members" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors tracking-wide">
+                <span class="material-symbols-outlined text-[20px]">person_add</span>
+                Add Member
+            </a>
+            
+            <a href="#contributions" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors tracking-wide">
+                <span class="material-symbols-outlined text-[20px]">payments</span>
+                Contributions
+            </a>
+            
+            <a href="#pendingPayments" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors tracking-wide">
+                <span class="material-symbols-outlined text-[20px]">fact_check</span>
+                Payment Verifications
+            </a>
+            
+            <a href="#pending-loans" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors tracking-wide">
+                <span class="material-symbols-outlined text-[20px]">credit_score</span>
+                Loans
+            </a>
+            
+            <a href="#system-health" class="flex justify-between items-center px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors tracking-wide">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-[20px]">monitor_heart</span>
+                    System Logs
+                </div>
+            </a>
+            
+            <a href="#ledger" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors tracking-wide">
+                <span class="material-symbols-outlined text-[20px]">receipt_long</span>
+                Group Ledger
+            </a>
+            
+            <a href="#adminInbox" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors tracking-wide">
+                <span class="material-symbols-outlined text-[20px]">inbox</span>
+                Inbox & Exits
+            </a>    
+        </nav>
+
+        <div class="mt-auto p-4 flex flex-col gap-2 border-t border-slate-100 bg-slate-50/50">
+            <a href="member.html" class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200/60 font-semibold text-xs transition-colors shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                Member Portal
+            </a>
+            <button onclick="logout()" class="flex items-center justify-center gap-2 w-full py-2.5 px-4 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-xl font-bold text-xs transition-all tracking-wide shadow-sm">
+                <svg class="hidden w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                 Sign Out
             </button>
         </div>
@@ -167,11 +175,11 @@
         navLinks.forEach(link => {
             link.addEventListener('click', function() {
                 navLinks.forEach(l => {
-                    l.classList.remove('bg-blue-600/90', 'text-white', 'admin-glow', 'font-semibold');
-                    l.classList.add('text-slate-300', 'hover:bg-white/10', 'hover:text-white');
+                    l.classList.remove('bg-blue-600', 'text-white', 'active-nav-glow', 'font-semibold', 'border', 'border-blue-200', 'bg-white', 'text-blue-600');
+                    l.classList.add('text-slate-600', 'hover:bg-slate-50', 'hover:text-blue-600');
                 });
-                this.classList.add('bg-blue-600/90', 'text-white', 'admin-glow', 'font-semibold');
-                this.classList.remove('text-slate-300', 'hover:bg-white/10', 'hover:text-white');
+                this.classList.add('border', 'border-blue-200', 'bg-white', 'text-blue-600', 'active-nav-glow', 'font-semibold');
+                this.classList.remove('text-slate-600', 'hover:bg-slate-50', 'hover:text-blue-600');
             });
         });
 
@@ -184,14 +192,14 @@
 
     <main class="flex-1 p-2 pt-24 md:pt-10 md:px-10 w-full max-w-7xl mx-auto">
         <header class="mb-8 flex items-center gap-4">
-            <div class="h-1 grow bg-blue-300"></div>
+            <div class="h-1 grow bg-blue-400"></div>
             <h1 id="group-analytics" class="shrink-0 text-3xl font-bold tracking-tight text-slate-900">
                 Group Overview
             </h1>
-            <div class="h-1 grow bg-blue-300"></div>
+            <div class="h-1 grow bg-blue-400"></div>
         </header>
 
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5 mb-8 md:mb-10">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-auto md:gap-5 mb-8 md:mb-10">
             <div class="bg-white p-4 md:p-6 rounded-[4px] md:rounded-[4px] ios-shadow border border-slate-200 flex flex-col justify-center relative overflow-hidden">
                 <div id="totalCapitalSkeleton" class="absolute inset-0 bg-white z-10 p-4 md:p-6 flex flex-col justify-center">
                     <div class="flex items-center gap-2 mb-1 md:mb-2 ml-2">
@@ -230,6 +238,21 @@
                 <p id="activeLoans" class="text-xl md:text-3xl font-bold text-rose-600 tracking-tight mt-1 ml-2">KSH 0</p>
                 <p class="text-[10px] text-slate-400 font-medium ml-2 mt-1">(Max 70%)</p>
             </div>
+
+            <div class="col-span-2 md:col-span-1 bg-white p-2 md:p-6 rounded-[4px] md:rounded-[4px] ios-shadow border border-slate-200 flex flex-col justify-center relative overflow-hidden">
+                <div id="sosReserveSkeleton" class="absolute inset-0 bg-white z-10 p-4 md:p-6 flex flex-col justify-center">
+                    <div class="flex items-center gap-2 mb-1 md:mb-2 ml-2">
+                        <div class="hidden md:flex w-6 h-6 md:w-8 md:h-8 rounded-full bg-slate-200 relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                        <div class="h-4 w-32 bg-slate-200 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                    </div>
+                    <div class="h-8 md:h-10 w-32 bg-slate-200 rounded mt-1 ml-2 relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                </div>
+
+             <div class="bg-rose-20 rounded-[4px] md:rounded-[4px] ios-shadow flex flex-col justify-center relative overflow-hidden">
+                    <h3 class="text-slate-500 text-xs md:text-sm font-bold uppercase tracking-wider leading-tight">Emergency Funds</h3>
+                <p id="sosVaultTotal" class="text-xl md:text-3xl font-black text-rose-700 tracking-tight mt-2">KSH 0</p>
+             </div>
+            </div>  
 
             <div class="col-span-2 md:col-span-1 bg-white p-4 md:p-6 rounded-[4px] md:rounded-[4px] ios-shadow border border-slate-200 flex flex-col justify-center relative overflow-hidden">
                 <div id="liquidityReserveSkeleton" class="absolute inset-0 bg-white z-10 p-4 md:p-6 flex flex-col justify-center">
@@ -290,24 +313,24 @@
         <section id="members" class="bg-white rounded-[4px] ios-shadow border border-slate-200 p-6 mb-10 overflow-hidden">
             <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-2 border-b border-slate-100 pb-4">
                 <h2 class="text-xl font-bold tracking-tight text-slate-900">Member Management</h2>
-                <div class="text-[8px] uppercase tracking-wider font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-[2px] border border-slate-200">
-                    Closed to new members until Jan 2027
+                <div class="text-xs uppercase tracking-wider font-normal text-slate-800">
+                    <span id="totalMembersCount">0</span> Members
                 </div>
             </div>
 
             <div class="overflow-x-auto -mx-6 px-6">
-                <table class="min-w-full text-left text-sm whitespace-nowrap">
-                    <thead class="text-xs text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-100 bg-slate-50/50">
-                        <tr>
-                            <th class="py-3 px-4 font-bold">Member Details</th>
-                            <th class="py-3 px-4 font-bold">Financial Standing</th>
-                            <th class="py-3 px-4 font-bold">Account Status</th>
-                            <th class="py-3 px-4 font-bold">Actions</th>
+                <table class="min-w-full text-left text-sm whitespace-nowrap border border-slate-200 rounded-[4px] border-separate border-spacing-0">
+                    <thead class="text-xs text-slate-400 uppercase tracking-wider font-semibold bg-slate-50/50">
+                        <tr class="divide-x divide-slate-200">
+                            <th class="py-3 px-4 font-bold border-b border-slate-200">Member Details</th>
+                            <th class="py-3 px-4 font-bold border-b border-slate-200">Financial Standing</th>
+                            <th class="py-3 px-4 font-bold border-b border-slate-200">Account Status</th>
+                            <th class="py-3 px-4 font-bold border-b border-slate-200">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="membersTableBody" class="divide-y divide-slate-100">
-                        <tr>
-                            <td colspan="4" class="p-4">
+                        <tr class="divide-x divide-slate-100">
+                            <td colspan="4" class="p-4 border-b border-slate-200">
                                 <div class="flex flex-col gap-3">
                                     <div class="h-12 w-full bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
                                     <div class="h-12 w-full bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
@@ -321,99 +344,99 @@
         </section>
 
         <section id="contributions" class="bg-white rounded-[4px] ios-shadow border border-slate-200 p-6 mb-10 overflow-hidden relative">
-            <div class="absolute top-0 left-0 w-full h-1"></div>
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 mt-2 border-b border-slate-100 pb-4">
-                <div>
-                    <h2 class="text-xl font-bold tracking-tight text-slate-900">Monthly Contribution Tracker</h2>
-                    <p id="monthTargetText" class="text-sm font-bold text-blue-600 mt-1">
-                        Calculating target...
-                    </p>
-                </div>
-            </div>
-            
-            <div class="overflow-x-auto -mx-6 px-6">
-                <table class="min-w-full text-left text-sm whitespace-nowrap">
-                    <thead class="text-xs text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-100 bg-slate-50/50">
-                        <tr>
-                            <th class="py-3 px-2 font-bold">Member</th>
-                            <th class="py-3 px-2 font-bold">Arrears / Status</th> 
-                            <th class="py-3 px-2 font-bold">Total Savings</th>
-                            <th class="py-3 px-2 font-bold">Record Payment</th>
-                        </tr>
-                    </thead>
-                    <tbody id="contributionsTableBody" class="divide-y divide-slate-100">
-                        <tr>
-                            <td colspan="4" class="p-4">
-                                <div class="flex flex-col gap-3">
-                                    <div class="h-10 w-full bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
-                                    <div class="h-10 w-full bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
+    <div class="absolute top-0 left-0 w-full h-1"></div>
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 mt-2 border-b border-slate-100 pb-4">
+        <div>
+            <h2 class="text-xl font-bold tracking-tight text-slate-900">Monthly Contribution Tracker</h2>
+            <p id="monthTargetText" class="text-sm font-bold text-blue-600 mt-1">
+                Calculating target...
+            </p>
+        </div>
+    </div>
+    
+    <div class="overflow-x-auto -mx-6 px-6">
+        <table class="min-w-full text-left text-sm whitespace-nowrap border border-slate-200 border-collapse rounded-[4px]">
+            <thead class="text-xs text-slate-400 uppercase tracking-wider font-semibold bg-slate-50/50">
+                <tr class="divide-x divide-slate-200 border-b border-slate-200">
+                    <th class="py-3 px-3 font-bold">Member</th>
+                    <th class="py-3 px-3 font-bold">Arrears / Status</th> 
+                    <th class="py-3 px-3 font-bold">Total Savings</th>
+                    <th class="py-3 px-3 font-bold">Record Payment</th>
+                </tr>
+            </thead>
+            <tbody id="contributionsTableBody" class="divide-y divide-slate-200">
+                <tr class="divide-x divide-slate-200">
+                    <td colspan="4" class="p-4">
+                        <div class="flex flex-col gap-3">
+                            <div class="h-10 w-full bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                            <div class="h-10 w-full bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
 
         <section id="pendingPayments" class="bg-white rounded-[4px] ios-shadow border border-slate-200 p-6 mb-10 relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-1"></div>
-            <div class="flex flex-row sm:flex-row sm:justify-between sm:items-center mb-6 mt-2 gap-2 border-b border-slate-100 pb-4">
-                <h2 class="text-xl font-bold tracking-tight text-slate-900">Pending Verifications</h2>
-                <span class="bg-amber-100 text-amber-700 border border-amber-200 text-[9px] uppercase px-3 py-1.5 rounded-full font-bold tracking-wider shadow-sm">Action Required</span>
-            </div>
-            <div class="overflow-x-auto -mx-6 px-6">
-                <table class="min-w-full text-left text-sm whitespace-nowrap">
-                    <thead class="text-xs text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-100 bg-slate-50/50">
-                        <tr>
-                            <th class="py-3 px-2 font-bold">Member</th>
-                            <th class="py-3 px-2 font-bold">M-Pesa Code</th>
-                            <th class="py-3 px-2 font-bold">Claimed Amount</th>
-                            <th class="py-3 px-2 font-bold">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="pendingPaymentsTable" class="divide-y divide-slate-100">
-                        <tr>
-                            <td colspan="4" class="p-4">
-                                <div class="flex flex-col gap-3">
-                                    <div class="h-10 w-full bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
-                                    <div class="h-10 w-full bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
+    <div class="absolute top-0 left-0 w-full h-1"></div>
+    <div class="flex flex-row sm:flex-row sm:justify-between sm:items-center mb-6 mt-2 gap-2 border-b border-slate-100 pb-4">
+        <h2 class="text-xl font-bold tracking-tight text-slate-900">Pending Verifications</h2>
+        <span class="bg-blue-100 text-blue-700 border border-blue-200 text-[9px] uppercase px-3 py-1.5 rounded-full font-bold tracking-wider shadow-sm">Verify promptly to keep the system updated</span>
+    </div>
+    <div class="overflow-x-auto -mx-6 px-6">
+        <table class="min-w-full text-left text-sm whitespace-nowrap border border-slate-200 border-collapse rounded-[4px]">
+            <thead class="text-xs text-slate-400 uppercase tracking-wider font-semibold bg-slate-50/50">
+                <tr class="divide-x divide-slate-200 border-b border-slate-200">
+                    <th class="py-3 px-3 font-bold">Member</th>
+                    <th class="py-3 px-3 font-bold">M-Pesa Code</th>
+                    <th class="py-3 px-3 font-bold">Claimed Amount</th>
+                    <th class="py-3 px-3 font-bold">Action</th>
+                </tr>
+            </thead>
+            <tbody id="pendingPaymentsTable" class="divide-y divide-slate-200">
+                <tr class="divide-x divide-slate-200">
+                    <td colspan="4" class="p-4">
+                        <div class="flex flex-col gap-3">
+                            <div class="h-10 w-full bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                            <div class="h-10 w-full bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
 
-        <section id="active-loans" class="bg-white rounded-[4px] ios-shadow border border-slate-200 p-6 mb-10 overflow-hidden relative">
-            <div class="absolute top-0 left-0 w-full h-1"></div>
-            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 mt-2 gap-2 border-b border-slate-100 pb-4">
-                <h2 class="text-xl font-bold tracking-tight text-slate-900">Active Loans & Repayments</h2>
-                <span class="bg-purple-100 text-purple-700 border border-purple-200 text-[9px] uppercase px-3 py-1.5 rounded-[2px] font-bold tracking-wider shadow-sm">Awaiting Payment</span>
-            </div>
-            <div class="overflow-x-auto -mx-6 px-6">
-                <table class="min-w-full text-left text-sm whitespace-nowrap">
-                    <thead class="text-xs text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-100 bg-slate-50/50">
-                        <tr>
-                            <th class="py-3 px-2 font-bold">Borrower</th>
-                            <th class="py-3 px-2 font-bold">Principal Issued</th>
-                            <th class="py-3 px-2 font-bold">Interest (15%)</th>
-                            <th class="py-3 px-2 font-bold">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="activeLoansTableBody" class="divide-y divide-slate-100">
-                        <tr>
-                            <td colspan="5" class="p-4">
-                                <div class="flex flex-col gap-3">
-                                    <div class="h-10 w-full bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
-                                    <div class="h-10 w-full bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
+<section id="active-loans" class="bg-white rounded-[4px] ios-shadow border border-slate-200 p-6 mb-10 overflow-hidden relative">
+    <div class="absolute top-0 left-0 w-full h-1"></div>
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 mt-2 gap-2 border-b border-slate-100 pb-4">
+        <h2 class="text-xl font-bold tracking-tight text-slate-900">Active Loans & Repayments</h2>
+        <span class="bg-blue-100 text-blue-700 border border-blue-200 text-[9px] uppercase px-3 py-1.5 rounded-[2px] font-bold tracking-wider shadow-sm">Awaiting Payment</span>
+    </div>
+    <div class="overflow-x-auto -mx-6 px-6">
+        <table class="min-w-full text-left text-sm whitespace-nowrap border border-slate-200 border-collapse rounded-[4px]">
+            <thead class="text-xs text-slate-400 uppercase tracking-wider font-semibold bg-slate-50/50">
+                <tr class="divide-x divide-slate-200 border-b border-slate-200">
+                    <th class="py-3 px-3 font-bold">Borrower</th>
+                    <th class="py-3 px-3 font-bold">Principal Issued</th>
+                    <th class="py-3 px-3 font-bold">Interest (15%)</th>
+                    <th class="py-3 px-3 font-bold">Action</th>
+                </tr>
+            </thead>
+            <tbody id="activeLoansTableBody" class="divide-y divide-slate-200">
+                <tr class="divide-x divide-slate-200">
+                    <td colspan="4" class="p-4"> 
+                        <div class="flex flex-col gap-3">
+                            <div class="h-10 w-full bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                            <div class="h-10 w-full bg-slate-100 rounded relative overflow-hidden"><div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer"></div></div>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
 
         <section class="bg-white rounded-lg shadow-sm border border-slate-200 p-6 mb-8">
             <h2 class="text-xl font-bold text-gray-800 mb-4 tracking-tight">Pending Loan Requests</h2>
@@ -442,12 +465,12 @@
             </div>
         </section>
 
-        <div class="hidden bg-slate-900 border border-slate-800 p-6 md:p-8 rounded-[4px] mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 shadow-xl shadow-slate-900/10 admin-polygon-theme">
+        <div class="hidden bg-slate-900 border border-slate-800 p-6 md:p-8 rounded-[4px] mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 shadow-xl shadow-slate-900/10">
             <div>
                 <h3 class="text-white font-bold text-lg tracking-tight">Annual Profit Distribution Engine</h3>
                 <p class="text-sm text-slate-400 mt-1">Execute the year-end dividend split algorithm for all approved members.</p>
             </div>
-            <button onclick="distributeAnnualProfit()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-blue-900/50 transition-all whitespace-nowrap text-sm border border-blue-500/50 admin-glow">
+            <button onclick="distributeAnnualProfit()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-blue-900/50 transition-all whitespace-nowrap text-sm border border-blue-500/50">
                 Run Distribution System
             </button>
         </div>
@@ -527,7 +550,7 @@
             </header>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 max-h-[400px]">
-                <div class="bg-slate-900 rounded-[4px] ios-shadow border border-slate-800 p-6 flex flex-col justify-between admin-polygon-theme">
+                <div class="bg-slate-900 rounded-[4px] ios-shadow border border-slate-800 p-6 flex flex-col justify-between">
                     <div>
                         <div class="flex justify-between items-start mb-4">
                             <h3 class="font-bold text-lg text-white">Emergency Controls</h3>
