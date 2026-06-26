@@ -674,6 +674,23 @@ async function loadUserData(uid) {
                 }
             } catch(e) { console.error("Could not load global stats", e); }
 
+            const emBal = currentUserData.emergencySavings || 0;
+            const emStatus = currentUserData.emergencyStatus || 'active';
+
+            document.getElementById('myEmergencyBalance').textContent = `KSH ${emBal}`;
+            const statusEl = document.getElementById('sosStatusText');
+            const sosBtn = document.getElementById('btnPullSOS');
+
+            if(emStatus === 'suspended') {
+                statusEl.textContent = "Status: SUSPENDED BY ADMIN";
+                statusEl.className = "block text-[10px] font-bold text-rose-600 mt-0.5";
+                sosBtn.disabled = true;
+                sosBtn.classList.add('opacity-40', 'cursor-not-allowed');
+            } else {
+                statusEl.textContent = "Status: Safe & Active";
+                statusEl.className = "block text-[10px] font-bold text-emerald-600 mt-0.5";
+            }
+
             const personalInfoBanner = document.getElementById('personalInfoBanner');
             if (currentUserData.infoMessage) {
                 document.getElementById('infoMessageText').textContent = currentUserData.infoMessage;
@@ -1101,11 +1118,13 @@ document.getElementById('paymentForm').addEventListener('submit', async (e) => {
     btn.textContent = "Submitting Code...";
 
     try {
+        const destination = document.getElementById('payDestination').value; 
+
         await setDoc(doc(db, "paymentClaims", mpesaCode), {
             userId: auth.currentUser.uid,
             amount: amount,
             mpesaCode: mpesaCode,
-            type: 'deposit',
+            type: destination, 
             status: 'pending',
             createdAt: serverTimestamp()
         });
@@ -1125,3 +1144,44 @@ document.getElementById('paymentForm').addEventListener('submit', async (e) => {
         btn.textContent = "Submit for Verification";
     }
 });
+
+window.requestSOS = async function() {
+    if(!currentUserData) return;
+    
+    if(currentUserData.emergencyStatus === 'suspended') {
+        alert("Your access to the Emergency Fund has been suspended by the Board.");
+        return;
+    }
+
+    if((currentUserData.emergencySavings || 0) < 100) {
+        alert("Request Denied: You need at least KSH 100 saved in your Emergency Fund to request an emergency payout.");
+        return;
+    }
+
+    const reason = prompt("STATE YOUR EMERGENCY:\n(Be 100% honest. We audit these in real-time.)");
+    if(!reason || reason.trim() === "") return;
+
+    const btn = document.getElementById('btnPullSOS');
+    btn.disabled = true;
+    btn.innerText = "Sending Request...";
+
+    try {
+        const claimId = `SOS-${auth.currentUser.uid.substring(0,5)}-${Date.now().toString().slice(-4)}`;
+        
+        await setDoc(doc(db, "sosRequests", claimId), {
+            userId: auth.currentUser.uid,
+            userName: currentUserData.name,
+            amount: 100,
+            reason: reason.trim(),
+            status: 'pending',
+            createdAt: serverTimestamp()
+        });
+
+        alert("Request Sent! We will review your request and respond shortly. Please check your notifications for updates.");
+    } catch(e) {
+        alert("Failed to send request.");
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "REQUEST EF (100/-)";
+    }
+};

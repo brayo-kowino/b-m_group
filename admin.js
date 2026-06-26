@@ -166,6 +166,12 @@ export async function loadMembers() {
                     <button onclick="issueUpdate('${userId}', '${safeName}', '${safeInfo}')" class="text-xs bg-emerald-50 text-emerald-600 border border-emerald-200 px-2 py-1.5 rounded hover:bg-emerald-100 font-bold transition block w-full text-left mt-1 shadow-sm">
                         ${user.infoMessage ? 'Edit Update' : 'Send Update'}
                     </button>
+
+                    const emState = user.emergencyStatus || 'active';
+
+                    <button onclick="toggleSOSAccess('${userId}', '${emState}')" class="text-[10px] w-full text-left font-bold px-2 py-1.5 rounded mt-1 border ${emState === 'suspended' ? 'bg-amber-50 text-amber-700 border-amber-300' : 'bg-slate-100 text-slate-600 border-slate-300'}">
+                        ${emState === 'suspended' ? 'Restore ED Access' : 'Suspend EF Access'}
+                    </button>
                 </td>
             `;
             tableBody.appendChild(row);
@@ -602,6 +608,8 @@ window.fixDataIntegrity = async function() {
             
             if (!data.createdAt) updates.createdAt = serverTimestamp();
             if (data.loansRepaidCount === undefined) updates.loansRepaidCount = 0;
+            if (data.emergencySavings === undefined) updates.emergencySavings = 0;
+            if (data.emergencyStatus === undefined) updates.emergencyStatus = 'active';
             
             if (Object.keys(updates).length > 0) {
                 batch.update(u.ref, updates);
@@ -1973,7 +1981,7 @@ window.processRepayment = async function(loanId, userId, principal, interest, pe
         });
         
         if (isFullyCleared) {
-            alert(`✅ Success! KSH ${amount} recorded. ${userName}'s loan is FULLY CLEARED. Group capital grew by KSH ${interest + penaltyAmount}.`);
+            alert(`Success! KSH ${amount} recorded. ${userName}'s loan is FULLY CLEARED. Group capital grew by KSH ${interest + penaltyAmount}.`);
             await logAdminAction(auth.currentUser?.email || "System Admin", `Manually cleared loan for: ${userId} | Final Cash: KSH ${amount}`, "INFO");
             
             if(confirm("Would you like to print the official Repayment Clearance letter for this member?")) {
@@ -2132,6 +2140,19 @@ window.verifyPayment = async function(claimId, userId, amount, mpesaCode, userNa
                     createdAt: serverTimestamp(), description: `Verified Deposit (Ref: ${mpesaCode})`
                 });
 
+                } else if (type === 'emergency_deposit') {
+                const currentEm = userDoc.data().emergencySavings || 0;
+                
+                transaction.update(userRef, { emergencySavings: currentEm + amount });
+                transaction.update(statsRef, { 
+                    liquidityReserve: currentLiquidity + amount 
+                });
+                
+                transaction.set(newTransactionRef, {
+                    userId: userId, type: "emergency_deposit", amount: amount, status: "completed",
+                    createdAt: serverTimestamp(), description: `Verified EF Contribution (Ref: ${mpesaCode})`
+                });
+
             } else {
                 // ==========================================
                 // INSTALLMENT OR FREEZE REQUEST
@@ -2244,3 +2265,67 @@ function getMonthsActive(timestamp) {
     const diff = (now.getFullYear() - join.getFullYear()) * 12 + (now.getMonth() - join.getMonth());
     return Math.max(1, diff); 
 }
+
+export function listenToSOSRequests() {
+    const q = query(collection(db, "sosRequests"), where("status", "==", "pending"));
+    
+    onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === "added") {
+                const sos = change.doc.data();
+                const id = change.doc.id;
+                
+                const accept = confirm(
+                    `EMERGENCY REQUEST\n\n` +
+                    `Member: ${sos.userName}\n` +
+                    `Reason: "${sos.reason}"\n\n` +
+                    `Click OK to approve KSH 100 deduction & disburse.`
+                );
+
+                if(accept) executeSOSPayout(id, sos.userId, sos.userName);
+            }
+        });
+    });
+}
+
+window.executeSOSPayout = async function(reqId, userId, userName) {
+    const userRef = doc(db, "users", userId);
+    const statsRef = doc(db, "groupStats", "main");
+    const reqRef = doc(db, "sosRequests", reqId);
+    const txRef = doc(collection(db, "transactions"));
+
+    try {
+        await runTransaction(db, async (t) => {
+            const uDoc = await t.get(userRef);
+            const sDoc = await t.get(statsRef);
+            
+            const currentEm = uDoc.data().emergencySavings || 0;
+            const currentLiq = sDoc.data().liquidityReserve || 0;
+
+            if(currentEm < 100) throw new Error("Member withdrew funds before approval!");
+
+            t.update(userRef, { emergencySavings: currentEm - 100 });
+            t.update(statsRef, { liquidityReserve: currentLiq - 100 });
+            t.update(reqRef, { status: "disbursed", resolvedAt: serverTimestamp() });
+            
+            t.set(txRef, {
+                userId: userId, type: "emergency_payout", amount: 100, status: "completed",
+                description: "Approved instant SOS Lifeline", createdAt: serverTimestamp()
+            });
+        });
+
+        alert(`KSH 100 deducted from ${userName}'s vault. Send them the M-Pesa right now.`);
+        loadMembers(); 
+    } catch(e) {
+        alert("SOS Execution failed: " + e.message);
+    }
+}
+
+window.toggleSOSAccess = async function(userId, currentState) {
+    const nextState = currentState === 'suspended' ? 'active' : 'suspended';
+    if(!confirm(`Change member's Emergency Vault status to ${nextState.toUpperCase()}?`)) return;
+
+    await updateDoc(doc(db, "users", userId), { emergencyStatus: nextState });
+    await logAdminAction(auth.currentUser.email, `Set emergency status of ${userId} to ${nextState}`, "WARN");
+    loadMembers();
+};
