@@ -1,9 +1,7 @@
 import { auth, db } from './firebase.js';
-// Added sendPasswordResetEmail for the Forgot Password feature
 import { signInWithEmailAndPassword, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-// Grab all the new UI elements
 const loginForm = document.getElementById('loginForm');
 const errorMessageContainer = document.getElementById('errorMessage');
 const errorText = document.querySelector('.error-text');
@@ -13,7 +11,6 @@ const btnIcon = document.getElementById('btnIcon');
 const btnSpinner = document.getElementById('btnSpinner');
 const forgotPasswordLink = document.getElementById('forgotPasswordLink');
 
-// --- Helper Functions for the UI ---
 function showError(message) {
     errorText.textContent = message;
     errorMessageContainer.classList.remove('hidden');
@@ -25,7 +22,6 @@ function hideError() {
     errorMessageContainer.classList.remove('flex');
 }
 
-// --- 1. Forgot Password Feature ---
 forgotPasswordLink.addEventListener('click', async (e) => {
     e.preventDefault();
     hideError();
@@ -49,7 +45,6 @@ forgotPasswordLink.addEventListener('click', async (e) => {
     }
 });
 
-// --- 2. Main Login Flow ---
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     hideError();
@@ -66,7 +61,6 @@ loginForm.addEventListener('submit', async (e) => {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
-        // Fetch user role AND system stats from Firestore simultaneously for speed
         const userDocRef = doc(db, "users", user.uid);
         const statsDocRef = doc(db, "groupStats", "main");
 
@@ -81,11 +75,10 @@ loginForm.addEventListener('submit', async (e) => {
             const isSystemLocked = statsDoc.exists() ? (statsDoc.data().maintenanceMode === true) : false;
             
             if (isSystemLocked && !isAdmin) {
-                await signOut(auth); // Boot them out of Firebase session instantly
+                await signOut(auth);
                 throw new Error("SYSTEM LOCKDOWN: The platform is currently under emergency maintenance. Please try again later.");
             }
 
-            // SECURITY: Check status before allowing entry
             if(userData.status === 'suspended') {
                 await signOut(auth);
                 throw new Error("Your account has been suspended pending review.");
@@ -98,11 +91,10 @@ loginForm.addEventListener('submit', async (e) => {
             btnText.textContent = "Redirecting...";
             btnSpinner.classList.add('hidden');
             
-            // Route based on role
             if (isAdmin) {
-                window.location.href = 'admin.html';
+                window.location.href = '/admin';
             } else {
-                window.location.href = 'member.html';
+                window.location.href = '/member';
             }
         } else {
             await signOut(auth); 
@@ -125,7 +117,7 @@ loginForm.addEventListener('submit', async (e) => {
         } else if (error.code === 'auth/network-request-failed') {
             friendlyMessage = "Network error. Please check your internet connection.";
         } else if (error.message) {
-            friendlyMessage = error.message; // This perfectly catches our custom Lockdown, Suspended, and Exited errors
+            friendlyMessage = error.message;
         }
 
         showError(friendlyMessage);
