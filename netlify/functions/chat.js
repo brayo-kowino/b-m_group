@@ -1,20 +1,18 @@
 // netlify/functions/chat.js
 
 exports.handler = async function (event, context) {
-    // Define your permitted origins
     const headers = {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "https://bmfinance.me", // Allows your GitHub Pages domain to read the data
+        "Access-Control-Allow-Origin": "https://bmfinance.me",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
         "Access-Control-Allow-Methods": "POST, OPTIONS"
     };
 
-    // 1. Handle browser pre-flight CORS check
     if (event.httpMethod === "OPTIONS") {
         return { 
             statusCode: 200, 
             headers, 
-            body: JSON.stringify({ message: "CORS preflight ok" }) 
+            body: JSON.stringify({ message: "OK to proceed" }) 
         };
     }
 
@@ -48,7 +46,7 @@ exports.handler = async function (event, context) {
 
         return {
             statusCode: 200,
-            headers, // Injects CORS and JSON content-type
+            headers,
             body: JSON.stringify(data)
         };
 
