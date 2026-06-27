@@ -10,11 +10,10 @@ onAuthStateChanged(auth, async (user) => {
     if (user) {
         await loadUserData(user.uid);
     } else {
-        window.location.href = '/login';
+        window.location.href = '/auth/login';
     }
 });
 
-// --- Helper: Format Phone Number for Daraja ---
 function formatPhoneNumber(phone) {
     let formatted = phone.trim().replace(/\s+/g, '');
     if (formatted.startsWith('+')) formatted = formatted.substring(1);
@@ -24,23 +23,17 @@ function formatPhoneNumber(phone) {
     return formatted;
 }
 
-// Put this inside your initialization logic in member.js
 const statsRef = doc(db, "groupStats", "main");
 
 onSnapshot(statsRef, async (docSnap) => {
     if (docSnap.exists() && docSnap.data().maintenanceMode === true) {
-        // The admin just flipped the switch! 
-        // 1. Instantly sign the user out
         await signOut(auth);
         
         alert("The system has been placed into emergency maintenance mode by the Administrator. You are being logged out.");
-        window.location.href = "/login"; 
+        window.location.href = "/auth/login"; 
     }
 });
 
-// ==========================================
-// NEW FEATURE LOGIC: LEDGER, SUPPORT & EXIT
-// ==========================================
 
 // --- 1. Load Personal Ledger ---
 async function loadMyLedger(uid) {
@@ -65,7 +58,6 @@ async function loadMyLedger(uid) {
             const data = docSnap.data();
             const dateStr = data.createdAt ? data.createdAt.toDate().toLocaleDateString() : 'Pending';
             
-            // Color code the transaction type
             let typeStyle = 'text-slate-600';
             if (data.type === 'deposit') typeStyle = 'text-green-600 font-medium';
             if (data.type === 'loan') typeStyle = 'text-blue-600 font-medium';
@@ -87,7 +79,6 @@ async function loadMyLedger(uid) {
     }
 }
 
-// --- Theme Switching Logic ---
 function triggerDangerZone(isDanger) {
     const dangerBanner = document.getElementById('dangerBanner');
     const nav = document.querySelector('nav');
@@ -109,7 +100,6 @@ function triggerDangerZone(isDanger) {
     }
 }
 
-// --- Upgraded Load Personal Loan Requests (With Detailed Financials & Penalty Math) ---
 async function loadMyLoans(uid) {
     const container = document.getElementById('myLoansList');
     const lipaSelect = document.getElementById('lipaLoanSelect');
@@ -125,7 +115,7 @@ async function loadMyLoans(uid) {
         if (snapshot.empty) {
             container.innerHTML = '<div class="text-sm text-slate-500 text-center bg-slate-50 p-3 rounded border border-slate-100">No loan history found.</div>';
             if (lipaSelect) lipaSelect.innerHTML = '<option value="">No active loans</option>';
-            triggerDangerZone(false); // Ensure danger zone is off if empty
+            triggerDangerZone(false);
             return;
         }
 
@@ -177,12 +167,11 @@ async function loadMyLoans(uid) {
                     timeInfo = `<span class="text-blue-600">${daysRemaining} Days Left</span>`;
                 }
 
-                // === MERGED FINANCIAL MATH ===
                 const effectiveInterest = loan.interest + penaltyAmount; 
                 const totalDue = loan.amount + effectiveInterest; 
                 const balance = totalDue - paidSoFar;
 
-                // Populate Lipa Mdogo Dropdown
+                // Lipa Mdogo Dropdown
                 if (lipaSelect) {
                     let dropdownText = `KSH ${loan.amount} Loan (Bal: KSH ${balance})`;
                     if (daysRemaining < 0 && !loan.penaltyFrozen) {
@@ -191,7 +180,6 @@ async function loadMyLoans(uid) {
                     lipaSelect.innerHTML += `<option value="${loanId}" data-interest="${effectiveInterest}" data-balance="${balance}">${dropdownText}</option>`;
                 }
 
-                // Show the complete breakdown to the user
                 extraInfo = `
                     <div class="mt-2 space-y-1 bg-slate-50 p-2.5 rounded border border-slate-100">
                         <div class="flex justify-between text-xs text-slate-600">
@@ -226,7 +214,6 @@ async function loadMyLoans(uid) {
                 `;
             }
 
-            // Build UI Card - dynamically style based on severity
             let cardClass = 'border-slate-200 bg-white';
             if (loan.status === 'approved') {
                 if (hasActiveDailyPenalty && !loan.penaltyFrozen) cardClass = 'border-red-300 bg-red-50';
@@ -259,7 +246,7 @@ async function loadMyLoans(uid) {
         container.innerHTML = '<div class="text-xs text-red-500 text-center p-2 bg-red-50 rounded">Failed to load requests. Please refresh.</div>';
     }
 }
-// --- Auto-Prefill Lipa Mdogo Amount ---
+
 const lipaLoanSelect = document.getElementById('lipaLoanSelect');
 const lipaIntent = document.getElementById('lipaIntent');
 const lipaAmount = document.getElementById('lipaAmount');
@@ -329,7 +316,7 @@ if (lipaForm) {
         btn.textContent = "Submitting Code...";
 
         try {
-            // Using the M-Pesa code as the Doc ID prevents duplicate submissions naturally
+            // Using the M-Pesa code as the Doc ID prevents duplicate submissions 
             await setDoc(doc(db, "paymentClaims", mpesaCode), {
                 userId: auth.currentUser.uid,
                 amount: amount,
@@ -357,7 +344,7 @@ if (lipaForm) {
     });
 }
 
-// --- 2. Grievance / Support Form (IMMUNIZED) ---
+// --- 2. Grievance / Support Form  ---
 document.getElementById('grievanceForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector('button');
@@ -367,7 +354,7 @@ document.getElementById('grievanceForm').addEventListener('submit', async (e) =>
     btn.textContent = "Sending...";
 
     try {
-        // 🛡️ ANTI-SPAM: One message per user per day
+        // One message per user per day
         const todayString = new Date().toISOString().split('T')[0];
         const uniqueMsgId = `${auth.currentUser.uid}_msg_${todayString}`;
 
@@ -389,7 +376,7 @@ document.getElementById('grievanceForm').addEventListener('submit', async (e) =>
     }
 });
 
-// --- 3. Constitution-Compliant Exit Strategy (IMMUNIZED) ---
+// --- 3. Constitution-Compliant Exit Strategy  ---
 document.getElementById('exitForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const errorDiv = document.getElementById('exitError');
@@ -421,7 +408,7 @@ document.getElementById('exitForm').addEventListener('submit', async (e) => {
     btn.textContent = "Processing...";
 
     try {
-        // 🛡️ ANTI-SPAM: User can only have ONE exit request document ever
+        // ANTI-SPAM: User can only have ONE exit request document ever
         const uniqueExitId = `${auth.currentUser.uid}_exit_request`;
 
         await setDoc(doc(db, "exitRequests", uniqueExitId), {
@@ -536,7 +523,7 @@ async function renderContributionChart(uid) {
                         type: 'line',
                         label: 'Total Savings (KSH)',
                         data: cumulativeSavings,
-                        borderColor: '#10b981', // Tailwind emerald-500 (Green means money!)
+                        borderColor: '#10b981', 
                         backgroundColor: 'rgba(16, 185, 129, 0.1)',
                         borderWidth: 3,
                         tension: 0.4,
@@ -547,14 +534,14 @@ async function renderContributionChart(uid) {
                         pointBorderWidth: 2,
                         pointRadius: 4,
                         pointHoverRadius: 6,
-                        order: 1 // Draws line on top of bars
+                        order: 1 
                     },
                     {
                         type: 'bar',
                         label: 'Monthly Deposit (KSH)',
                         data: monthlyDeposits,
                         backgroundColor: '#3b82f6', // Tailwind blue-500
-                        borderRadius: 4, // Rounded tops on the bars
+                        borderRadius: 4, 
                         barThickness: 'flex',
                         maxBarThickness: 40,
                         order: 2
@@ -1118,7 +1105,7 @@ document.getElementById('loanForm').addEventListener('submit', async (e) => {
     try {
         const interest = amount * 0.15;
         
-        // 🛡️ ANTI-SPAM: One loan request per user per day
+        // ANTI-SPAM: One loan request per user per day
         const todayString = new Date().toISOString().split('T')[0];
         const uniqueLoanId = `${auth.currentUser.uid}_loan_${todayString}`;
 
