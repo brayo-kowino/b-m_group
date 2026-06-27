@@ -126,7 +126,7 @@
     <aside id="sidebar" class="sidebar-polygon-theme w-72 h-full fixed md:relative z-50 flex flex-col transition-transform transform -translate-x-full md:translate-x-0 duration-300 ease-in-out border-r border-blue-200/50 shadow-2xl md:shadow-none">
         <div class="p-2 flex justify-between items-center gap-3 mt-2 border-b border-slate-100 pb-6">
             <div class="relative inline-block mt-0">
-                <img src="bm_group_logo.png" alt="B&M Group Logo" class="h-16 w-auto object-contain">
+                <img src="/bm_group_logo.png" alt="B&M Group Logo" class="h-16 w-auto object-contain">
                 
                 <span class="absolute top-0 right-0 transform -translate-y-0 translate-x-2 text-[9px] font-extrabold uppercase tracking-widest text-blue-600 px-1.5 py-0.5 pointer-events-none">
                     Member
@@ -143,7 +143,7 @@
         <div class="p-4 border-b border-t border-blue-100">
             <div class="flex items-center gap-4">
                 <div class="w-12 h-12 rounded-full bg-blue-100 border border-blue-200 text-blue-600 flex items-center justify-center shadow-sm shrink-0">
-                    <img id="memberAvatar" src="default_avatar.png" alt="Member Avatar" class="w-10 h-10 rounded-full object-cover">
+                    <img id="memberAvatar" src="/default_avatar.png" alt="Member Avatar" class="w-10 h-10 rounded-full object-cover">
                 </div>
                 <div class="flex flex-col overflow-hidden">
                     <span id="timeGreeting" class="text-[14px] font-bold text-slate-500 tracking-widest leading-none mb-1.5">Hello</span>
@@ -175,7 +175,7 @@
                 Lipa Loan
             </a>
 
-            <a href="/guidelines" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 font-medium">
+            <a href="/documentation/guidelines" class="nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 font-medium">
                 <span class="material-symbols-outlined text-[20px]">policy</span>
                 Group Guidelines
             </a>
@@ -187,7 +187,7 @@
                 BM Assistant
             </button>
 
-            <a href="/admin" id="adminReturnBtn" class="hidden nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-blue-800 font-medium mt-4 bg-white border border-yellow-100">
+            <a href="/platform/admin" id="adminReturnBtn" class="hidden nav-item flex items-center gap-3 px-4 py-3 rounded-xl text-blue-800 font-medium mt-4 bg-white border border-yellow-100">
                 <span class="material-symbols-outlined text-[20px]">admin_panel_settings</span>
                 Admin Portal
             </a>
@@ -803,7 +803,7 @@ function closeEmergencyModal(scrollToCard = false) {
 window.addEventListener('DOMContentLoaded', triggerEmergencyPopout);
 
     </script>
-    <script type="module" src="member.js"></script>
+    <script type="module" src="/platform/member.js"></script>
 
     <!-- Mistral AI Slide-out Chat Drawer -->
     <div id="aiChatDrawer" class="fixed top-0 right-0 h-full w-full sm:w-[450px] bg-slate-950/95 backdrop-blur-xl border-l border-blue-500/20 z-[150] shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col text-white hidden">

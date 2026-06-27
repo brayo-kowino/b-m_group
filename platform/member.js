@@ -10,7 +10,7 @@ onAuthStateChanged(auth, async (user) => {
     if (user) {
         await loadUserData(user.uid);
     } else {
-        window.location.href = '/login';
+        window.location.href = '/auth/login';
     }
 });
 
@@ -30,7 +30,7 @@ onSnapshot(statsRef, async (docSnap) => {
         await signOut(auth);
         
         alert("The system has been placed into emergency maintenance mode by the Administrator. You are being logged out.");
-        window.location.href = "/login"; 
+        window.location.href = "/auth/login"; 
     }
 });
 
