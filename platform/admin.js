@@ -1,29 +1,32 @@
-import { auth, db} from './firebase.js';
+import { auth, db } from './firebase.js';
 import { collection, query, where, orderBy, limit, getDocs, doc, updateDoc, addDoc, getDoc, runTransaction, serverTimestamp, writeBatch, Timestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js";
 
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-onAuthStateChanged(auth, async (user) => {
+onAuthStateChanged(auth, (user) => {
     if (user) {
-        await loadUserData(user.uid);
+        loadGroupStats();
+        loadPendingLoans();
+        loadMembers();
+        loadContributionTracker(); 
+        loadGrievances();
+        loadExitRequests();
+        loadMasterLedger();
+        loadActiveLoans();
+        loadPendingPayments();
+        loadVisualAnalytics();
+        checkSystemStatus();
+        loadSystemLogs();
+        
+        if (typeof listenToSOSRequests === 'function') listenToSOSRequests();
     } else {
         window.location.href = '/auth/login';
     }
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    loadGroupStats();
-    loadPendingLoans();
-    loadMembers();
-    loadContributionTracker(); 
-    loadGrievances();
-    loadExitRequests();
-    loadMasterLedger();
-    loadActiveLoans();
-    loadPendingPayments();
-    loadVisualAnalytics();
-    checkSystemStatus();
-    loadSystemLogs();
+
 });
 
 const addMemberForm = document.getElementById('addMemberForm');
